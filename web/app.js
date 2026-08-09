@@ -188,11 +188,15 @@ function renderSnapshotLines(agent) {
 
   return snapshots
     .map((snapshot) => {
-      const reset = snapshot.resetAt ? formatRelative(snapshot.resetAt) : "No reset";
       return `
         <div class="quota-line">
           <span class="label">${escapeHtml(windowLabel(snapshot.windowType))}</span>
-          <span class="value">${formatRemaining(snapshot)} / ${escapeHtml(reset)}</span>
+          <span class="value quota-value">
+            <span>${formatRemaining(snapshot)}</span>
+            <span class="quota-reset">reported reset ${renderResetValue(
+              snapshot.resetAt
+            )}</span>
+          </span>
         </div>
       `;
     })
@@ -224,7 +228,7 @@ function renderResets() {
         <div class="reset-row">
           <strong>${escapeHtml(agent)}</strong>
           <span>${escapeHtml(windowLabel(snapshot.windowType))}</span>
-          <span class="value">${escapeHtml(formatRelative(snapshot.resetAt))}</span>
+          <span class="value">${renderResetValue(snapshot.resetAt)}</span>
         </div>
       `
     )
@@ -662,7 +666,7 @@ function eventTitle(event) {
 function eventDetail(event) {
   const resetChange =
     event.previousResetAt && event.newResetAt
-      ? `${formatAbsolute(event.previousResetAt)} -> ${formatAbsolute(
+      ? `${formatResetTimestamp(event.previousResetAt)} -> ${formatResetTimestamp(
           event.newResetAt
         )}`
       : "";
@@ -678,6 +682,19 @@ function eventDetail(event) {
   );
 
   return parts.length > 0 ? parts.join(" / ") : event.note;
+}
+
+function renderResetValue(value) {
+  if (!value) {
+    return `<span class="reset-unavailable">No reported reset</span>`;
+  }
+
+  return `
+    <span class="reset-value">
+      <time datetime="${escapeHtml(value)}">${escapeHtml(formatRelative(value))}</time>
+      <span class="reset-absolute">${escapeHtml(formatResetTimestamp(value))}</span>
+    </span>
+  `;
 }
 
 function formatRemaining(snapshot) {
@@ -723,12 +740,13 @@ function formatRelative(value) {
   return date.toLocaleString();
 }
 
-function formatAbsolute(value) {
+function formatResetTimestamp(value) {
   return new Intl.DateTimeFormat(undefined, {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    month: "short"
+    month: "short",
+    timeZoneName: "short"
   }).format(new Date(value));
 }
 

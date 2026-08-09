@@ -19,6 +19,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - CLI export command for normalized JSON/CSV quota data
 - Refresh run history API and Doctor view panel
 - Dashboard empty-state guidance when an agent has no quota snapshots
+- Dashboard reset display with relative and absolute reported reset times
 - Copy buttons for setup commands, local path commands, and command-backed empty states, with selection fallback when clipboard access is unavailable
 - Diagnostics guide and issue template prompts for privacy-safe bug reports
 

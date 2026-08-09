@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AI Agent Quota</title>
-    <link rel="stylesheet" href="/styles.css?v=20260809-copy-commands" />
+    <link rel="stylesheet" href="/styles.css?v=20260809-reset-times" />
   </head>
   <body>
     <main class="shell">
@@ -29,7 +29,10 @@
         <div id="agent-grid" class="agent-grid" aria-live="polite"></div>
         <section class="panel">
           <div class="panel-header">
-            <h2>Reported Resets</h2>
+            <div>
+              <h2>Reported Resets</h2>
+              <p class="panel-note">Observed source values; reset anchors can change.</p>
+            </div>
           </div>
           <div id="reset-list" class="reset-list"></div>
         </section>
@@ -81,6 +84,6 @@
       </section>
     </main>
 
-    <script src="/app.js?v=20260809-copy-commands" type="module"></script>
+    <script src="/app.js?v=20260809-reset-times" type="module"></script>
   </body>
 </html>

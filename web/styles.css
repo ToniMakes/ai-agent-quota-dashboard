@@ -357,6 +357,12 @@ h2 {
   margin-bottom: 12px;
 }
 
+.panel-note {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 .export-actions {
   display: flex;
   flex-wrap: wrap;
@@ -421,6 +427,30 @@ h2 {
   margin-top: 6px;
   color: var(--warning);
   font-size: 0.82rem;
+}
+
+.quota-value,
+.reset-value {
+  display: inline-grid;
+  gap: 3px;
+  justify-items: end;
+}
+
+.quota-reset,
+.reset-absolute,
+.reset-unavailable {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.quota-reset .reset-value {
+  margin-left: 4px;
+  vertical-align: top;
+}
+
+.reset-absolute {
+  white-space: nowrap;
 }
 
 .settings-detail {
@@ -547,5 +577,10 @@ h2 {
 
   .value {
     text-align: left;
+  }
+
+  .quota-value,
+  .reset-value {
+    justify-items: start;
   }
 }
