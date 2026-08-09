@@ -16,6 +16,7 @@ import {
 import { SqliteStore } from "../storage/sqlite-store.js";
 import { runClaudeStatuslineSink } from "./claude-statusline-sink.js";
 import { setupClaudeStatusline } from "./claude-statusline-setup.js";
+import { formatDoctorReport, hasDoctorFailures } from "./doctor-report.js";
 import { readStdin } from "./stdin.js";
 
 export async function runCli(argv: string[], entryPointUrl: string): Promise<void> {
@@ -54,12 +55,55 @@ export async function runCli(argv: string[], entryPointUrl: string): Promise<voi
     return;
   }
 
+  if (command === "doctor") {
+    await runDoctorCommand(argv);
+    return;
+  }
+
   if (command === "help" || command === "--help" || command === "-h") {
     console.log(helpText());
     return;
   }
 
   await startServer(argv, entryPointUrl);
+}
+
+async function runDoctorCommand(argv: string[]): Promise<void> {
+  if (argv.includes("--help") || argv.includes("-h")) {
+    console.log(doctorHelpText());
+    return;
+  }
+
+  const config = loadConfig(argv);
+  const userConfig = await loadUserConfig(config.userConfigPath);
+  const registry = createDefaultRegistry({
+    demoMode: config.demoMode,
+    userConfig: userConfig.config
+  });
+  const store = new SqliteStore(config.dbPath);
+
+  try {
+    const service = new AgentQuotaService(registry, store);
+    const refreshResult = await service.initialize();
+    const report = {
+      agents: service.listAgents(),
+      checks: service.listDoctorChecks(),
+      configErrors: userConfig.errors,
+      configPath: userConfig.path,
+      dbPath: store.path,
+      demoMode: config.demoMode,
+      generatedAt: refreshResult.observedAt,
+      refreshResult
+    };
+
+    console.log(formatDoctorReport(report));
+
+    if (hasDoctorFailures(report)) {
+      process.exitCode = 1;
+    }
+  } finally {
+    store.close();
+  }
 }
 
 async function runConfigPathCommand(argv: string[]): Promise<void> {
@@ -199,6 +243,7 @@ function helpText(): string {
     "",
     "Commands:",
     "  ai-agent-quota [--demo] [--port 4317]       Start local dashboard",
+    "  ai-agent-quota doctor                       Run one local scan and print diagnostics",
     "  ai-agent-quota claude-statusline-sink       Read Claude statusline JSON from stdin",
     "  ai-agent-quota config path list             Show configured local data paths",
     "  ai-agent-quota config path add <agent> <path>",
@@ -208,5 +253,20 @@ function helpText(): string {
     "  ai-agent-quota setup claude-statusline      Print Claude statusline setup snippet",
     "  ai-agent-quota setup claude-statusline --write [--force]",
     "                                             Write ~/.claude/settings.json after review"
+  ].join("\n");
+}
+
+function doctorHelpText(): string {
+  return [
+    "AI Agent Quota Doctor",
+    "",
+    "Usage:",
+    "  ai-agent-quota doctor [--demo] [--db <path>] [--config <path>]",
+    "",
+    "Runs one local scan, writes normalized results to SQLite, and prints agent",
+    "status, Doctor checks, empty-state guidance, and refresh counts.",
+    "",
+    "Exit code is 1 only for blocking failures such as adapter errors or invalid",
+    "config. Missing quota sources are reported as warnings."
   ].join("\n");
 }
