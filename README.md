@@ -100,6 +100,7 @@ It starts the local backend, adds an AI Agent Quota tray icon, and provides:
 - a tray mini panel that hides when it loses focus
 - an optional always-on-top desktop widget
 - a tray tooltip and menu summary for the current quota state
+- automatic tray refresh when Claude Code sends the first statusline snapshot
 - remembered desktop widget position
 - `Esc` to hide the active mini surface
 - a normal full dashboard window for setup, Doctor, and exports

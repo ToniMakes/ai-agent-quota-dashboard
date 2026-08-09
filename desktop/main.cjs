@@ -5,6 +5,11 @@ const { existsSync, mkdirSync, readFileSync, writeFileSync } = require("node:fs"
 const http = require("node:http");
 const net = require("node:net");
 const path = require("node:path");
+const {
+  resolveWidgetBounds: resolveSavedWidgetBounds,
+  shouldRefreshForClaudeStatusline,
+  summarizeAgents
+} = require("./helpers.cjs");
 
 const projectRoot = path.resolve(__dirname, "..");
 const cliPath = path.join(projectRoot, "dist", "index.js");
@@ -114,7 +119,14 @@ async function updateTrayStatus() {
   }
 
   try {
-    const payload = await getJson(`${baseUrl}/api/agents`);
+    let payload = await getJson(`${baseUrl}/api/agents`);
+    const agents = payload.agents ?? [];
+
+    if (await shouldRefreshFromClaudeStatusline(agents)) {
+      await postJson(`${baseUrl}/api/refresh`);
+      payload = await getJson(`${baseUrl}/api/agents`);
+    }
+
     trayStatus = summarizeAgents(payload.agents ?? []);
   } catch {
     trayStatus = "Local service unavailable";
@@ -282,88 +294,17 @@ function createTrayIcon() {
   );
 }
 
-function summarizeAgents(agents) {
-  if (!Array.isArray(agents) || agents.length === 0) {
-    return "No agents configured";
-  }
-
-  return agents.map(summarizeAgent).join(" | ");
-}
-
-function summarizeAgent(agent) {
-  const snapshot = agent.primarySnapshot;
-  const name = agent.shortName ?? agent.displayName ?? agent.agent;
-
-  if (!snapshot) {
-    if (agent.emptyState?.reason === "waiting_for_statusline_data") {
-      return `${name}: waiting`;
-    }
-
-    return `${name}: --`;
-  }
-
-  const remaining =
-    typeof snapshot.remainingPercent === "number"
-      ? `${Math.round(snapshot.remainingPercent)}%`
-      : typeof snapshot.remaining === "number"
-        ? `${snapshot.remaining} ${snapshot.unit}`
-        : "--";
-  const reset = snapshot.resetAt ? ` ${formatResetDistance(snapshot.resetAt)}` : "";
-
-  return `${name}: ${remaining}${reset}`;
-}
-
-function formatResetDistance(value) {
-  const parsed = Date.parse(value);
-
-  if (Number.isNaN(parsed)) {
-    return "reset unknown";
-  }
-
-  const seconds = Math.round((parsed - Date.now()) / 1000);
-  const absoluteSeconds = Math.abs(seconds);
-  const suffix = seconds < 0 ? "ago" : "left";
-
-  if (absoluteSeconds >= 86_400) {
-    return `${Math.round(absoluteSeconds / 86_400)}d ${suffix}`;
-  }
-
-  if (absoluteSeconds >= 3_600) {
-    return `${Math.round(absoluteSeconds / 3_600)}h ${suffix}`;
-  }
-
-  if (absoluteSeconds >= 60) {
-    return `${Math.round(absoluteSeconds / 60)}m ${suffix}`;
-  }
-
-  return `${absoluteSeconds}s ${suffix}`;
-}
-
 function resolveWidgetBounds() {
   const savedBounds = readDesktopState().widgetBounds;
   const workArea = screen.getPrimaryDisplay().workArea;
-  const bounds = isSavedWidgetBounds(savedBounds)
-    ? {
-        ...widgetSize,
-        x: savedBounds.x,
-        y: savedBounds.y
-      }
-    : {
-        ...widgetSize,
-        x: workArea.x + workArea.width - widgetSize.width - 24,
-        y: workArea.y + 72
-      };
+  const bounds = resolveSavedWidgetBounds({
+    clampToWorkArea: false,
+    savedBounds,
+    widgetSize,
+    workArea
+  });
 
   return clampBoundsToNearestDisplay(bounds);
-}
-
-function isSavedWidgetBounds(value) {
-  return (
-    value &&
-    typeof value === "object" &&
-    Number.isFinite(value.x) &&
-    Number.isFinite(value.y)
-  );
 }
 
 function clampBoundsToNearestDisplay(bounds) {
@@ -426,6 +367,12 @@ function writeDesktopState(state) {
   writeFileSync(desktopStatePath, JSON.stringify(state, null, 2));
 }
 
+async function shouldRefreshFromClaudeStatusline(agents) {
+  const setupPayload = await getJson(`${baseUrl}/api/setup/claude-statusline`);
+
+  return shouldRefreshForClaudeStatusline(agents, setupPayload.status);
+}
+
 function getJson(url) {
   return new Promise((resolve, reject) => {
     http
@@ -450,6 +397,24 @@ function getJson(url) {
         });
       })
       .on("error", reject);
+  });
+}
+
+function postJson(url) {
+  return new Promise((resolve, reject) => {
+    const request = http.request(url, { method: "POST" }, (response) => {
+      response.resume();
+
+      if (response.statusCode !== 200) {
+        reject(new Error(`HTTP ${response.statusCode}`));
+        return;
+      }
+
+      response.on("end", resolve);
+    });
+
+    request.on("error", reject);
+    request.end();
   });
 }
 
