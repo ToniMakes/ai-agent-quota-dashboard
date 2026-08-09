@@ -17,10 +17,15 @@ import type {
   ResetEvent
 } from "./types.js";
 
+export type AgentQuotaServiceOptions = {
+  includeDemoSnapshots?: boolean;
+};
+
 export class AgentQuotaService {
   constructor(
     private readonly registry: AdapterRegistry,
-    private readonly store: SqliteStore
+    private readonly store: SqliteStore,
+    private readonly options: AgentQuotaServiceOptions = {}
   ) {}
 
   async initialize(): Promise<RefreshResult> {
@@ -77,7 +82,7 @@ export class AgentQuotaService {
   listAgents(): AgentSummary[] {
     const now = new Date();
     const manifests = this.registry.adapters.map((adapter) => adapter.manifest);
-    const snapshots = this.store.listLatestQuotaSnapshots();
+    const snapshots = this.listVisibleQuotaSnapshots();
     const checks = this.store.listDoctorChecks();
 
     return manifests.map((manifest) => {
@@ -117,7 +122,7 @@ export class AgentQuotaService {
   }
 
   listQuotaSnapshots(): QuotaSnapshot[] {
-    return this.store.listLatestQuotaSnapshots();
+    return this.listVisibleQuotaSnapshots();
   }
 
   listDoctorChecks(): DoctorCheck[] {
@@ -130,6 +135,16 @@ export class AgentQuotaService {
 
   listRefreshRuns(limit?: number): RefreshRun[] {
     return this.store.listRefreshRuns(limit);
+  }
+
+  private listVisibleQuotaSnapshots(): QuotaSnapshot[] {
+    const snapshots = this.store.listLatestQuotaSnapshots();
+
+    if (this.options.includeDemoSnapshots) {
+      return snapshots;
+    }
+
+    return snapshots.filter((snapshot) => snapshot.source !== "demo");
   }
 }
 

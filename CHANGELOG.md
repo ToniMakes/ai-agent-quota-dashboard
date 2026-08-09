@@ -31,6 +31,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 - Exports exclude account identifiers and raw local source references
 - Dashboard quota APIs exclude account identifiers and raw local source references
+- Local real-data mode hides persisted demo snapshots unless demo mode is explicitly enabled
 - Local path configuration stores only user-provided scan roots
 - Refresh history stores aggregate counts, timestamps, and adapter error summaries
 - Public bug-report guidance prefers reviewed `doctor --json` output over local-path-bearing text logs
