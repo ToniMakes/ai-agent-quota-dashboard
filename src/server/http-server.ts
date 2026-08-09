@@ -7,6 +7,10 @@ import type { AgentQuotaService } from "../core/agent-quota-service.js";
 import type { AppConfig } from "../config/app-config.js";
 import type { SqliteStore } from "../storage/sqlite-store.js";
 import {
+  parseCodexManualSnapshotInput,
+  writeCodexManualSnapshot
+} from "../cli/codex-snapshot.js";
+import {
   buildQuotaExport,
   quotaSnapshotsToCsv,
   sanitizeAgentSummary,
@@ -169,6 +173,52 @@ async function handleApiRequest(
     return;
   }
 
+  if (request.method === "POST" && url.pathname === "/api/setup/codex-snapshot") {
+    const now = new Date();
+    let snapshotOptions;
+
+    try {
+      const body = await readJsonBody(request);
+
+      if (!isRecord(body)) {
+        throw new HttpRequestError(400, "Request body must be a JSON object.");
+      }
+
+      snapshotOptions = parseCodexManualSnapshotInput(
+        {
+          planLabel: readOptionalStringField(body, "planLabel"),
+          remainingPercent: readOptionalNumberField(body, "remainingPercent"),
+          resetAt: readOptionalStringField(body, "resetAt"),
+          usedPercent: readOptionalNumberField(body, "usedPercent")
+        },
+        now
+      );
+    } catch (error) {
+      sendJson(response, errorStatusCode(error), {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return;
+    }
+
+    const result = await writeCodexManualSnapshot(snapshotOptions, now);
+    const refreshResult = await context.service.refresh();
+    const snapshot = result.snapshot.quota_snapshot;
+
+    sendJson(response, 200, {
+      generatedAt: new Date().toISOString(),
+      result: {
+        outputPath: result.outputPath,
+        observedAt: snapshot.observed_at,
+        remainingPercent: snapshot.remaining_percent,
+        resetAt: snapshot.reset_at,
+        usedPercent: snapshot.used_percent
+      },
+      refreshResult,
+      status: await getCodexSnapshotSetupStatus()
+    });
+    return;
+  }
+
   if (request.method === "GET" && url.pathname === "/api/setup/local-paths") {
     sendJson(response, 200, {
       generatedAt: new Date().toISOString(),
@@ -184,6 +234,86 @@ async function handleApiRequest(
   }
 
   sendJson(response, 404, { error: "Not found" });
+}
+
+class HttpRequestError extends Error {
+  constructor(
+    readonly statusCode: number,
+    message: string
+  ) {
+    super(message);
+  }
+}
+
+async function readJsonBody(
+  request: IncomingMessage,
+  maxBytes = 16 * 1024
+): Promise<unknown> {
+  const chunks: Buffer[] = [];
+  let size = 0;
+
+  for await (const chunk of request) {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    size += buffer.length;
+
+    if (size > maxBytes) {
+      throw new HttpRequestError(413, "Request body is too large.");
+    }
+
+    chunks.push(buffer);
+  }
+
+  if (size === 0) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  } catch {
+    throw new HttpRequestError(400, "Request body must be valid JSON.");
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readOptionalNumberField(
+  body: Record<string, unknown>,
+  field: string
+): number | undefined {
+  const value = body[field];
+
+  if (value === undefined || value === null || value === "") {
+    return undefined;
+  }
+
+  if (typeof value !== "number") {
+    throw new Error(`${field} must be a number.`);
+  }
+
+  return value;
+}
+
+function readOptionalStringField(
+  body: Record<string, unknown>,
+  field: string
+): string | undefined {
+  const value = body[field];
+
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  if (typeof value !== "string") {
+    throw new Error(`${field} must be a string.`);
+  }
+
+  return value;
+}
+
+function errorStatusCode(error: unknown): number {
+  return error instanceof HttpRequestError ? error.statusCode : 400;
 }
 
 async function serveStaticFile(

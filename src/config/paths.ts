@@ -14,6 +14,10 @@ export function defaultCodexSnapshotDir(): string {
 }
 
 export function defaultCodexManualSnapshotPath(): string {
+  if (process.env.AIQD_CODEX_MANUAL_SNAPSHOT_PATH) {
+    return process.env.AIQD_CODEX_MANUAL_SNAPSHOT_PATH;
+  }
+
   return join(defaultCodexSnapshotDir(), "codex-quota-snapshot.json");
 }
 

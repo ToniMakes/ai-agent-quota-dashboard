@@ -7,6 +7,7 @@ import { parseCodexQuotaSnapshots } from "../adapters/codex/parse-quota-snapshot
 import {
   buildCodexManualSnapshot,
   formatCodexManualSnapshotResult,
+  parseCodexManualSnapshotInput,
   parseCodexManualSnapshotOptions,
   writeCodexManualSnapshot
 } from "./codex-snapshot.js";
@@ -81,6 +82,24 @@ describe("codex manual snapshot command", () => {
     }
   });
 
+  it("parses app-owned manual snapshot input", () => {
+    const options = parseCodexManualSnapshotInput(
+      {
+        outputPath: "codex-quota-snapshot.json",
+        planLabel: " Codex /status ",
+        remainingPercent: 64.34,
+        resetAt: "2026-08-16T03:00:00.000Z"
+      },
+      now
+    );
+
+    assert.equal(options.outputPath, "codex-quota-snapshot.json");
+    assert.equal(options.planLabel, "Codex /status");
+    assert.equal(options.remainingPercent, 64.3);
+    assert.equal(options.usedPercent, 35.7);
+    assert.equal(options.resetAt, "2026-08-16T03:00:00.000Z");
+  });
+
   it("rejects invalid or stale input", () => {
     assert.throws(
       () =>
@@ -120,6 +139,42 @@ describe("codex manual snapshot command", () => {
           now
         ),
       /--reset-at requires a value/
+    );
+  });
+
+  it("rejects invalid app-owned manual snapshot input", () => {
+    assert.throws(
+      () =>
+        parseCodexManualSnapshotInput(
+          {
+            remainingPercent: 70,
+            resetAt: "2026-08-09T03:00:00Z"
+          },
+          now
+        ),
+      /later than the observed time/
+    );
+    assert.throws(
+      () =>
+        parseCodexManualSnapshotInput(
+          {
+            remainingPercent: 70
+          },
+          now
+        ),
+      /resetAt is required/
+    );
+    assert.throws(
+      () =>
+        parseCodexManualSnapshotInput(
+          {
+            planLabel: "x".repeat(81),
+            remainingPercent: 70,
+            resetAt: "2026-08-16T03:00:00Z"
+          },
+          now
+        ),
+      /80 characters/
     );
   });
 });
