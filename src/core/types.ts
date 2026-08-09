@@ -141,6 +141,7 @@ export type AgentEmptyStateReason =
   | "adapter_error"
   | "no_readable_paths"
   | "no_supported_source"
+  | "waiting_for_statusline_data"
   | "no_quota_data";
 
 export type AgentEmptyState = {

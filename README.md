@@ -159,6 +159,8 @@ node dist/index.js setup claude-statusline --write
 node dist/index.js doctor
 ```
 
+After installation, Doctor may show `Waiting for Claude Code data` until Claude Code renders the statusline once and sends the first supported `rate_limits` payload.
+
 Preview without changing Claude settings: `node dist/index.js setup claude-statusline`.
 
 If a `statusLine` already exists, the command refuses to replace it unless you add `--force`.

@@ -41,6 +41,16 @@ const baseCheck: DoctorCheck = {
   observedAt: "2026-08-09T00:00:00.000Z"
 };
 
+const claudeManifest: AgentManifest = {
+  provider: "anthropic",
+  agent: "claude-code",
+  displayName: "Claude Code",
+  shortName: "Claude",
+  description: "Claude Code local usage files and statusline rate limits.",
+  defaultDataPaths: [],
+  supportedWindows: ["session_5h", "weekly"]
+};
+
 describe("quota state", () => {
   it("marks low remaining quota as warning", () => {
     assert.equal(
@@ -139,6 +149,53 @@ describe("quota state", () => {
 
     assert.equal(emptyState?.reason, "no_supported_source");
     assert.equal(emptyState?.title, "No supported quota source");
+  });
+
+  it("describes Claude Code waiting for first statusline data after setup", () => {
+    const emptyState = describeEmptyQuotaState(claudeManifest, [], [
+      {
+        id: "claude-code:statusline:statusline-command",
+        provider: "anthropic",
+        agent: "claude-code",
+        label: "Statusline command",
+        status: "pass",
+        message: "Managed by AIQD",
+        observedAt: "2026-08-09T00:00:00.000Z"
+      },
+      {
+        id: "claude-code:statusline:shim",
+        provider: "anthropic",
+        agent: "claude-code",
+        label: "AIQD shim",
+        status: "pass",
+        message: "Shim file found",
+        observedAt: "2026-08-09T00:00:00.000Z"
+      },
+      {
+        id: "claude-code:statusline:latest-snapshot",
+        provider: "anthropic",
+        agent: "claude-code",
+        label: "Latest snapshot",
+        status: "warn",
+        message: "No statusline snapshot received yet",
+        observedAt: "2026-08-09T00:00:00.000Z"
+      },
+      {
+        id: "claude-code:quota-source",
+        provider: "anthropic",
+        agent: "claude-code",
+        label: "Quota source",
+        status: "warn",
+        message: "No supported Claude Code statusline files found",
+        observedAt: "2026-08-09T00:00:00.000Z"
+      }
+    ]);
+
+    assert.equal(emptyState?.reason, "waiting_for_statusline_data");
+    assert.equal(emptyState?.title, "Waiting for Claude Code data");
+    assert.match(emptyState?.detail ?? "", /configured to call/);
+    assert.match(emptyState?.action ?? "", /Open Claude Code/);
+    assert.doesNotMatch(emptyState?.action ?? "", /setup claude-statusline --write/);
   });
 
   it("prefers adapter errors over source guidance", () => {
