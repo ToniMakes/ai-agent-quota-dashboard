@@ -4,7 +4,8 @@ import { createDefaultRegistry } from "../adapters/registry.js";
 import { loadConfig } from "../config/app-config.js";
 import {
   addUserConfigDataPath,
-  loadUserConfig
+  loadUserConfig,
+  removeUserConfigDataPath
 } from "../config/user-config.js";
 import { AgentQuotaService } from "../core/agent-quota-service.js";
 import { createHttpServer, listen } from "../server/http-server.js";
@@ -91,8 +92,29 @@ async function runConfigPathCommand(argv: string[]): Promise<void> {
     return;
   }
 
+  if (action === "remove") {
+    if (!agent || !dataPath) {
+      throw new Error("Usage: ai-agent-quota config path remove codex|claude-code <path>");
+    }
+
+    const result = await removeUserConfigDataPath({
+      agent,
+      configPath: config.userConfigPath,
+      dataPath
+    });
+
+    console.log(
+      result.removed
+        ? `Removed ${result.agent} data path: ${result.dataPath}`
+        : `Path was not configured for ${result.agent}: ${result.dataPath}`
+    );
+    console.log(`Config file: ${result.path}`);
+    return;
+  }
+
   console.log("Usage: ai-agent-quota config path list");
   console.log("       ai-agent-quota config path add codex|claude-code <path>");
+  console.log("       ai-agent-quota config path remove codex|claude-code <path>");
 }
 
 async function startServer(argv: string[], entryPointUrl: string): Promise<void> {
@@ -164,6 +186,7 @@ function formatLocalPathStatus(status: LocalPathsSetupStatus): string {
     }
 
     lines.push(`  Add: ${agent.addCommand}`);
+    lines.push(`  Remove: ${agent.removeCommand}`);
     lines.push("");
   }
 
@@ -180,6 +203,8 @@ function helpText(): string {
     "  ai-agent-quota config path list             Show configured local data paths",
     "  ai-agent-quota config path add <agent> <path>",
     "                                             Add an extra local data path",
+    "  ai-agent-quota config path remove <agent> <path>",
+    "                                             Remove a configured local data path",
     "  ai-agent-quota setup claude-statusline      Print Claude statusline setup snippet",
     "  ai-agent-quota setup claude-statusline --write [--force]",
     "                                             Write ~/.claude/settings.json after review"

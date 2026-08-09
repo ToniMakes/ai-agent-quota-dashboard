@@ -34,6 +34,14 @@ export type AddUserConfigDataPathResult = {
   config: UserConfig;
 };
 
+export type RemoveUserConfigDataPathResult = {
+  path: string;
+  agent: SupportedConfigAgent;
+  dataPath: string;
+  removed: boolean;
+  config: UserConfig;
+};
+
 const supportedAgents = new Set<SupportedConfigAgent>(["codex", "claude-code"]);
 
 export async function loadUserConfig(
@@ -114,6 +122,44 @@ export async function addUserConfigDataPath(options: {
     agent,
     dataPath,
     added: nextPaths.length > previousPaths.length,
+    config: loaded.config
+  };
+}
+
+export async function removeUserConfigDataPath(options: {
+  agent: string;
+  configPath?: string;
+  dataPath: string;
+}): Promise<RemoveUserConfigDataPathResult> {
+  const agent = parseSupportedAgent(options.agent);
+  const configPath = options.configPath ?? defaultUserConfigPath();
+  const loaded = await loadUserConfig(configPath);
+
+  if (loaded.errors.length > 0) {
+    throw new Error(
+      `Cannot update config until it can be read: ${loaded.errors.join("; ")}`
+    );
+  }
+
+  const dataPath = normalizeDataPath(options.dataPath);
+  const previousPaths = readUserConfigDataPaths(loaded.config, agent);
+  const nextPaths = previousPaths.filter((path) => path !== dataPath);
+
+  if (nextPaths.length === 0) {
+    delete loaded.config.agents[agent];
+  } else {
+    loaded.config.agents[agent] = {
+      dataPaths: nextPaths
+    };
+  }
+
+  await writeUserConfig(configPath, loaded.config);
+
+  return {
+    path: configPath,
+    agent,
+    dataPath,
+    removed: nextPaths.length < previousPaths.length,
     config: loaded.config
   };
 }

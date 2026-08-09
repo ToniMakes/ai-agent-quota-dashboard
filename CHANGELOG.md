@@ -11,8 +11,9 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Normalized JSON and CSV export endpoints for dashboard quota data
 - Settings view export buttons for local JSON/CSV downloads
 - Local `config.json` support for user-configured agent data paths
-- CLI commands to list and add local agent data paths
+- CLI commands to list, add, and remove local agent data paths
 - Settings view status for configured local data paths
+- Doctor view grouping by agent
 
 ### Privacy
 

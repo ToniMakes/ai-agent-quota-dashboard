@@ -7,7 +7,8 @@ import {
   addUserConfigDataPath,
   loadUserConfig,
   parseSupportedAgent,
-  readUserConfigDataPaths
+  readUserConfigDataPaths,
+  removeUserConfigDataPath
 } from "./user-config.js";
 
 describe("user config", () => {
@@ -78,6 +79,68 @@ describe("user config", () => {
       assert.equal(loaded.exists, true);
       assert.equal(loaded.errors.length, 1);
       assert.deepEqual(readUserConfigDataPaths(loaded.config, "codex"), []);
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("removes configured agent data paths", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-config-"));
+    const configPath = join(directory, "config.json");
+    const firstPath = join(directory, "codex-one");
+    const secondPath = join(directory, "codex-two");
+
+    try {
+      await addUserConfigDataPath({
+        agent: "codex",
+        configPath,
+        dataPath: firstPath
+      });
+      await addUserConfigDataPath({
+        agent: "codex",
+        configPath,
+        dataPath: secondPath
+      });
+
+      const result = await removeUserConfigDataPath({
+        agent: "codex",
+        configPath,
+        dataPath: firstPath
+      });
+      const loaded = await loadUserConfig(configPath);
+
+      assert.equal(result.removed, true);
+      assert.deepEqual(readUserConfigDataPaths(loaded.config, "codex"), [
+        secondPath
+      ]);
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("keeps config unchanged when removing an unknown path", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-config-"));
+    const configPath = join(directory, "config.json");
+    const dataPath = join(directory, "codex-data");
+
+    try {
+      await addUserConfigDataPath({
+        agent: "codex",
+        configPath,
+        dataPath
+      });
+
+      const result = await removeUserConfigDataPath({
+        agent: "codex",
+        configPath,
+        dataPath: join(directory, "missing")
+      });
+      const loaded = await loadUserConfig(configPath);
+
+      assert.equal(result.removed, false);
+      assert.deepEqual(readUserConfigDataPaths(loaded.config, "codex"), [
+        dataPath
+      ]);
     } finally {
       await rm(directory, { force: true, recursive: true });
     }

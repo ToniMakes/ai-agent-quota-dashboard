@@ -77,6 +77,7 @@ The app scans conservative default paths for supported agents. You can add expli
 node dist/index.js config path list
 node dist/index.js config path add codex "C:\path\to\codex-data"
 node dist/index.js config path add claude-code "C:\path\to\claude-data"
+node dist/index.js config path remove codex "C:\path\to\codex-data"
 ```
 
 These commands write only the dashboard's own config file:

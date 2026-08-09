@@ -28,6 +28,7 @@ export type LocalPathsAgentStatus = {
   configuredDataPaths: PathInspection[];
   effectiveDataPaths: string[];
   addCommand: string;
+  removeCommand: string;
 };
 
 type AgentPathDescriptor = {
@@ -71,7 +72,8 @@ export async function getLocalPathsSetupStatus(
           configuredDataPaths.map(inspectPath)
         ),
         effectiveDataPaths: descriptor.effectiveDataPaths(configuredDataPaths),
-        addCommand: `node dist/index.js config path add ${descriptor.agent} <path>`
+        addCommand: `node dist/index.js config path add ${descriptor.agent} <path>`,
+        removeCommand: `node dist/index.js config path remove ${descriptor.agent} <path>`
       };
     })
   );
