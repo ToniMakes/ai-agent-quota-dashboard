@@ -24,7 +24,7 @@
     "desktop:smoke": "npm run build && electron desktop/main.cjs --smoke",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "test": "npm run build && node --test dist/**/*.test.js",
+    "test": "npm run build && node --test dist/**/*.test.js desktop/**/*.test.cjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "engines": {
