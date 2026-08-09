@@ -24,6 +24,7 @@ The app may store:
 - Doctor check results
 - Refresh run timestamps, aggregate saved counts, and adapter error summaries
 - User-provided local scan roots
+- Manual Codex quota snapshots the user explicitly records from a visible status or Usage surface
 - Sanitized Claude Code statusline `rate_limits` snapshots, when explicitly enabled
 
 The app should not store:
