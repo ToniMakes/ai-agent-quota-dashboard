@@ -13,6 +13,7 @@ What changed?
 - [ ] This change does not upload prompts, responses, source code, or chat content.
 - [ ] New or changed parsers include sanitized fixtures.
 - [ ] New or changed data source behavior is documented in `docs/data-sources.md`.
+- [ ] New or changed diagnostic output excludes raw content and redacts local paths.
 
 ## UI Safety
 

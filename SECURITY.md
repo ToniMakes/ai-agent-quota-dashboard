@@ -23,6 +23,14 @@ Once this repository is published on GitHub, please use GitHub private security 
 
 Until then, report security issues through a private channel with the project maintainer. Public issues should contain only sanitized, minimal reproduction details.
 
+For ordinary bugs, prefer the reviewed output from:
+
+```bash
+node dist/index.js doctor --json
+```
+
+Do not paste the plain text Doctor report into public issues unless you have removed local paths and other sensitive fields.
+
 ## Scope
 
 Security-sensitive areas include:

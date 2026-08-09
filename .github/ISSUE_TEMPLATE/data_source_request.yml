@@ -8,6 +8,8 @@ body:
     attributes:
       value: |
         This project only accepts legal, transparent, user-visible or official data sources. Requests involving browser cookies, simulated login, private APIs, hidden endpoints, or rate-limit bypassing are out of scope.
+
+        If the current app cannot find quota data for this agent, you can include reviewed output from `node dist/index.js doctor --json`. Do not paste raw logs or private local files.
   - type: input
     id: agent
     attributes:
@@ -43,3 +45,9 @@ body:
       description: What sensitive fields might appear, and how can a parser avoid them?
     validations:
       required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Doctor JSON report
+      description: Optional. Paste reviewed output from `node dist/index.js doctor --json` if it helps explain the missing source.
+      render: json
