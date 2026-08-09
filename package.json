@@ -4,6 +4,14 @@
   "description": "Local-first quota dashboard for AI coding agents.",
   "type": "module",
   "private": true,
+  "homepage": "https://github.com/isToniLiu/ai-agent-quota-dashboard#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/isToniLiu/ai-agent-quota-dashboard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/isToniLiu/ai-agent-quota-dashboard/issues"
+  },
   "bin": {
     "ai-agent-quota-dashboard": "./dist/index.js",
     "ai-agent-quota": "./dist/index.js"
