@@ -4,7 +4,8 @@ import {
   choosePrimarySnapshot,
   describeEmptyQuotaState,
   mostSevereStatus,
-  resolveDoctorStatus
+  resolveDoctorStatus,
+  withSnapshotFreshness
 } from "./quota-state.js";
 import type {
   AgentManifest,
@@ -74,23 +75,24 @@ export class AgentQuotaService {
   }
 
   listAgents(): AgentSummary[] {
+    const now = new Date();
     const manifests = this.registry.adapters.map((adapter) => adapter.manifest);
     const snapshots = this.store.listLatestQuotaSnapshots();
     const checks = this.store.listDoctorChecks();
 
     return manifests.map((manifest) => {
-      const agentSnapshots = snapshots.filter((snapshot) =>
-        isSameAgent(manifest, snapshot)
-      );
+      const agentSnapshots = snapshots
+        .filter((snapshot) => isSameAgent(manifest, snapshot))
+        .map((snapshot) => withSnapshotFreshness(snapshot, now));
       const agentChecks = checks.filter((check) => isSameAgent(manifest, check));
-      const primarySnapshot = choosePrimarySnapshot(agentSnapshots);
+      const primarySnapshot = choosePrimarySnapshot(agentSnapshots, now);
 
       const summary: AgentSummary = {
         provider: manifest.provider,
         agent: manifest.agent,
         displayName: manifest.displayName,
         shortName: manifest.shortName,
-        status: mostSevereStatus(agentSnapshots),
+        status: mostSevereStatus(agentSnapshots, now),
         snapshots: agentSnapshots,
         doctorStatus: resolveDoctorStatus(agentChecks)
       };

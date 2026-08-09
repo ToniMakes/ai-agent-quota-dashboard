@@ -185,6 +185,12 @@ function renderObservedLine(snapshot) {
 }
 
 function renderStaleNote(snapshot) {
+  if (snapshot.freshness?.status === "stale") {
+    return `<span class="freshness-note">${escapeHtml(
+      snapshot.freshness.label
+    )}</span>`;
+  }
+
   if (snapshot.stale) {
     return `<span class="freshness-note">marked stale by source</span>`;
   }

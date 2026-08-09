@@ -25,6 +25,8 @@ The JSON report is intended for bug reports and data-source issues. It excludes 
 - Raw local file content
 - Local filesystem paths
 
+It also includes per-snapshot freshness reasons, such as whether a snapshot is fresh, source-marked stale, or expired.
+
 Always review the output before posting it publicly. The report should not contain prompts, responses, source code, credentials, browser cookies, session IDs, transcript paths, workspace paths, or account identifiers.
 
 ## Exit Codes

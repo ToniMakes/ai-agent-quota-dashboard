@@ -7,6 +7,7 @@ import {
   type DoctorReportInput
 } from "./doctor-report.js";
 import type { AgentSummary, DoctorCheck } from "../core/types.js";
+import { withSnapshotFreshness } from "../core/quota-state.js";
 
 const baseAgent: AgentSummary = {
   provider: "openai",
@@ -80,7 +81,7 @@ describe("doctor report", () => {
           status: "healthy",
           doctorStatus: "pass",
           snapshots: [
-            {
+            withSnapshotFreshness({
               provider: "openai",
               agent: "codex",
               windowType: "weekly",
@@ -91,7 +92,7 @@ describe("doctor report", () => {
               source: "demo",
               confidence: "unknown",
               stale: false
-            }
+            })
           ]
         }
       ],
@@ -113,6 +114,7 @@ describe("doctor report", () => {
     assert.match(report, /Weekly: 72% remaining/);
     assert.match(report, /resets 2026-08-15T13:00:00.000Z/);
     assert.match(report, /demo\/unknown/);
+    assert.match(report, /fresh/);
   });
 
   it("marks only blocking doctor issues as failures", () => {
@@ -140,7 +142,7 @@ describe("doctor report", () => {
         {
           ...baseAgent,
           snapshots: [
-            {
+            withSnapshotFreshness({
               provider: "openai",
               agent: "codex",
               accountIdHash: "account-hash",
@@ -152,7 +154,7 @@ describe("doctor report", () => {
               confidence: "high",
               stale: false,
               rawSourceRef: "C:\\Users\\hitomi\\.codex\\quota.json"
-            }
+            })
           ]
         }
       ],
@@ -181,6 +183,7 @@ describe("doctor report", () => {
       "Codex: failed to read <local-path>"
     );
     assert.equal(report.agents[0]?.snapshots[0]?.remainingPercent, 72);
+    assert.equal(report.agents[0]?.snapshots[0]?.freshness.reason, "fresh");
     assert.doesNotMatch(serialized, /account-hash/);
     assert.doesNotMatch(serialized, /"rawSourceRef"/);
     assert.doesNotMatch(serialized, /C:\\\\Users/);

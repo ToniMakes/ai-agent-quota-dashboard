@@ -43,6 +43,19 @@ export type QuotaStatus =
   | "stale"
   | "unknown";
 
+export type SnapshotFreshnessStatus = "fresh" | "stale";
+
+export type SnapshotFreshnessReason =
+  | "fresh"
+  | "source_marked_stale"
+  | "expired";
+
+export type SnapshotFreshness = {
+  status: SnapshotFreshnessStatus;
+  reason: SnapshotFreshnessReason;
+  label: string;
+};
+
 export type ResetEventType = "reset_anchor_changed" | "quota_replenished";
 
 export type DoctorStatus = "pass" | "warn" | "fail" | "info";
@@ -66,6 +79,10 @@ export type QuotaSnapshot = {
   confidence: ConfidenceLevel;
   stale: boolean;
   rawSourceRef?: string;
+};
+
+export type QuotaSnapshotView = QuotaSnapshot & {
+  freshness: SnapshotFreshness;
 };
 
 export type UsageEvent = {
@@ -114,8 +131,8 @@ export type AgentSummary = {
   shortName: string;
   status: QuotaStatus;
   emptyState?: AgentEmptyState;
-  primarySnapshot?: QuotaSnapshot;
-  snapshots: QuotaSnapshot[];
+  primarySnapshot?: QuotaSnapshotView;
+  snapshots: QuotaSnapshotView[];
   doctorStatus: DoctorStatus;
   lastObservedAt?: string;
 };
