@@ -1,0 +1,96 @@
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import { createDefaultRegistry } from "../adapters/registry.js";
+import { loadConfig } from "../config/app-config.js";
+import { AgentQuotaService } from "../core/agent-quota-service.js";
+import { createHttpServer, listen } from "../server/http-server.js";
+import { SqliteStore } from "../storage/sqlite-store.js";
+import { runClaudeStatuslineSink } from "./claude-statusline-sink.js";
+import { setupClaudeStatusline } from "./claude-statusline-setup.js";
+import { readStdin } from "./stdin.js";
+
+export async function runCli(argv: string[], entryPointUrl: string): Promise<void> {
+  const [command, subcommand, ...rest] = argv;
+
+  if (command === "claude-statusline-sink") {
+    const input = await readStdin();
+    const sinkOptions: Parameters<typeof runClaudeStatuslineSink>[0] = {
+      input
+    };
+
+    if (process.env.AIQD_CLAUDE_STATUSLINE_HISTORY_PATH) {
+      sinkOptions.historyPath = process.env.AIQD_CLAUDE_STATUSLINE_HISTORY_PATH;
+    }
+
+    if (process.env.AIQD_CLAUDE_STATUSLINE_LATEST_PATH) {
+      sinkOptions.latestPath = process.env.AIQD_CLAUDE_STATUSLINE_LATEST_PATH;
+    }
+
+    const result = await runClaudeStatuslineSink(sinkOptions);
+    console.log(result.statusText);
+    return;
+  }
+
+  if (command === "setup" && subcommand === "claude-statusline") {
+    const result = await setupClaudeStatusline({
+      argv: rest,
+      entryPointUrl
+    });
+    console.log(result.message);
+    return;
+  }
+
+  if (command === "help" || command === "--help" || command === "-h") {
+    console.log(helpText());
+    return;
+  }
+
+  await startServer(argv, entryPointUrl);
+}
+
+async function startServer(argv: string[], entryPointUrl: string): Promise<void> {
+  const config = loadConfig(argv);
+  const currentDir = dirname(fileURLToPath(entryPointUrl));
+  const staticDir = join(currentDir, "..", "web");
+  const registry = createDefaultRegistry({ demoMode: config.demoMode });
+  const store = new SqliteStore(config.dbPath);
+  const service = new AgentQuotaService(registry, store);
+
+  await service.initialize();
+
+  const server = createHttpServer({
+    config,
+    service,
+    staticDir,
+    store
+  });
+  const address = await listen(server, config);
+  const url = `http://${address.address}:${address.port}`;
+
+  console.log(`AI Agent Quota Dashboard listening at ${url}`);
+  console.log(`SQLite store: ${store.path}`);
+
+  if (config.demoMode) {
+    console.log("Demo data is enabled. Use npm run dev:local for local-only scans.");
+  }
+
+  process.on("SIGINT", () => {
+    server.close(() => {
+      store.close();
+      process.exit(0);
+    });
+  });
+}
+
+function helpText(): string {
+  return [
+    "AI Agent Quota Dashboard",
+    "",
+    "Commands:",
+    "  ai-agent-quota [--demo] [--port 4317]       Start local dashboard",
+    "  ai-agent-quota claude-statusline-sink       Read Claude statusline JSON from stdin",
+    "  ai-agent-quota setup claude-statusline      Print Claude statusline setup snippet",
+    "  ai-agent-quota setup claude-statusline --write [--force]",
+    "                                             Write ~/.claude/settings.json after review"
+  ].join("\n");
+}

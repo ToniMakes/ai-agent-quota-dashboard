@@ -1,0 +1,10 @@
+{
+  "session_id": "fixture-session",
+  "model": {
+    "display_name": "Claude Sonnet"
+  },
+  "context_window": {
+    "used_percentage": 12.5,
+    "remaining_percentage": 87.5
+  }
+}

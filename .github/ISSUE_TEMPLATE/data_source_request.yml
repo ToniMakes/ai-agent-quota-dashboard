@@ -1,0 +1,45 @@
+name: Data Source Request
+description: Request support for a new agent or quota source.
+title: "[Data source]: "
+labels:
+  - data-source
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This project only accepts legal, transparent, user-visible or official data sources. Requests involving browser cookies, simulated login, private APIs, hidden endpoints, or rate-limit bypassing are out of scope.
+  - type: input
+    id: agent
+    attributes:
+      label: Agent or provider
+      placeholder: Claude Code, Codex, Gemini CLI, Cursor, ...
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Proposed data source
+      description: Link official docs or describe the local file/CLI output. Do not paste sensitive logs.
+    validations:
+      required: true
+  - type: dropdown
+    id: source-kind
+    attributes:
+      label: Source kind
+      options:
+        - official_api
+        - official_cli
+        - official_statusline
+        - local_quota_snapshot
+        - local_usage_log
+        - estimated
+        - unknown
+    validations:
+      required: true
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy notes
+      description: What sensitive fields might appear, and how can a parser avoid them?
+    validations:
+      required: true

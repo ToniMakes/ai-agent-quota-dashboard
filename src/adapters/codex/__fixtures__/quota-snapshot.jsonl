@@ -1,0 +1,2 @@
+{"type":"session_event","message":"fixture line intentionally unrelated"}
+{"type":"quota_snapshot","quota_snapshot":{"window_type":"weekly","unit":"percent","used_percent":28,"remaining_percent":72,"reset_at":"2026-08-12T09:00:00.000Z","source":"official_cli","plan_label":"Codex weekly quota"}}

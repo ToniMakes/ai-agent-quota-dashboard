@@ -1,0 +1,34 @@
+name: Parser Fixture Proposal
+description: Propose a sanitized fixture for an existing parser.
+title: "[Fixture]: "
+labels:
+  - parser
+  - fixture
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Fixtures must be sanitized. Do not include prompts, responses, source code, session IDs, transcript paths, workspace paths, credentials, account identifiers, or browser cookies.
+  - type: input
+    id: parser
+    attributes:
+      label: Parser
+      placeholder: src/adapters/claude-code/parse-statusline.ts
+    validations:
+      required: true
+  - type: textarea
+    id: fixture-shape
+    attributes:
+      label: Fixture shape
+      description: Paste a minimal sanitized example or describe the structure.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected normalized output
+      description: Which QuotaSnapshot fields should be produced?
+      render: text
+    validations:
+      required: true
