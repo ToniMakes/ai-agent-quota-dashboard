@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Agent Quota Mini</title>
+    <link rel="stylesheet" href="/mini.css?v=20260810-desktop-mini" />
+  </head>
+  <body>
+    <main class="mini-shell" data-mode="panel">
+      <header class="mini-header">
+        <div class="mini-brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <strong>AIQD</strong>
+        </div>
+        <div class="mini-actions">
+          <button type="button" data-desktop-action="dashboard" title="Open dashboard">
+            Dash
+          </button>
+          <button type="button" data-desktop-action="widget" title="Toggle desktop widget">
+            Pin
+          </button>
+          <button type="button" data-desktop-action="hide" title="Hide">
+            x
+          </button>
+        </div>
+      </header>
+
+      <section id="mini-grid" class="mini-grid" aria-live="polite"></section>
+      <footer id="mini-footer" class="mini-footer">Refreshing</footer>
+    </main>
+
+    <script src="/mini.js?v=20260810-desktop-mini" type="module"></script>
+  </body>
+</html>

@@ -8,7 +8,7 @@ Local Agent Scanner
   -> Normalizer
   -> SQLite Snapshot Store
   -> Local API
-  -> Web Dashboard
+  -> Web Dashboard / Desktop Mini Surfaces
 ```
 
 ## Boundaries
@@ -18,6 +18,7 @@ Local Agent Scanner
 - `storage/` persists normalized snapshots and events.
 - `server/` exposes localhost-only JSON APIs and serves static dashboard files.
 - `web/` renders the dashboard from API responses only.
+- `desktop/` starts the same local backend and hosts tray/widget windows.
 
 ## Data Flow
 
@@ -25,13 +26,15 @@ Local Agent Scanner
 2. It emits normalized `QuotaSnapshot`, `UsageEvent`, and `DoctorCheck` records.
 3. SQLite stores aggregate snapshots and events.
 4. Reset event detection compares a new snapshot with the previous snapshot for the same provider, agent, and window.
-5. The dashboard reads `/api/agents`, `/api/quota`, `/api/doctor`, `/api/reset-events`, and `/api/setup/claude-statusline`.
+5. The dashboard and mini surfaces read `/api/agents`, `/api/quota`, `/api/doctor`, `/api/reset-events`, and `/api/setup/claude-statusline`.
 
 Candidate file scanning is deliberately narrow. Adapters look for small files whose names indicate quota, status, statusline, or limits data. Ordinary session transcripts are not parsed unless a later parser is backed by sanitized fixtures and a clear privacy review.
 
 Reset times are treated as current observations. The product should say "currently reported reset" rather than claiming a reset is guaranteed to happen at that time.
 
 Setup APIs are read-only unless exposed through an explicit CLI command. The browser UI may show commands and paths, but should not silently edit external tool configuration.
+
+The desktop shell is presentation-only. It does not parse provider files directly; it starts the local service, loads static pages, and exposes minimal window controls to those pages.
 
 ## Adapter Contract
 
