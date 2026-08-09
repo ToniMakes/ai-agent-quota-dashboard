@@ -30,56 +30,102 @@ let widgetWindow;
 let dashboardWindow;
 let isQuitting = false;
 let saveWidgetBoundsTimer;
+let showPanelWhenReady = false;
 
 app.setName("AI Agent Quota");
+app.setAppUserModelId("com.isToniLiu.ai-agent-quota-dashboard");
 
-app.whenReady().then(async () => {
-  desktopStatePath = path.join(app.getPath("userData"), "desktop-state.json");
-  const port = await findFreePort(4317, 4399);
-  baseUrl = `http://127.0.0.1:${port}`;
-  backend = spawn(process.env.AIQD_NODE_PATH ?? "node", backendArgs(port), {
-    cwd: projectRoot,
-    env: process.env,
-    stdio: ["ignore", "pipe", "pipe"],
-    windowsHide: true
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+
+if (!hasSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (smokeMode) {
+      return;
+    }
+
+    if (!baseUrl || !tray) {
+      showPanelWhenReady = true;
+      return;
+    }
+
+    showPanelWindow();
   });
 
-  backend.stdout.on("data", (chunk) => process.stdout.write(chunk));
-  backend.stderr.on("data", (chunk) => process.stderr.write(chunk));
-  backend.on("exit", (code) => {
-    if (!isQuitting) {
-      console.error(`AIQD backend exited with code ${code ?? "unknown"}`);
+  app.whenReady().then(async () => {
+    desktopStatePath = path.join(app.getPath("userData"), "desktop-state.json");
+    const port = await findFreePort(4317, 4399);
+    baseUrl = `http://127.0.0.1:${port}`;
+    backend = spawn(process.env.AIQD_NODE_PATH ?? "node", backendArgs(port), {
+      cwd: projectRoot,
+      env: process.env,
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true
+    });
+
+    backend.stdout.on("data", (chunk) => process.stdout.write(chunk));
+    backend.stderr.on("data", (chunk) => process.stderr.write(chunk));
+    backend.on("exit", (code) => {
+      if (!isQuitting) {
+        console.error(`AIQD backend exited with code ${code ?? "unknown"}`);
+      }
+    });
+
+    await waitForHealth(`${baseUrl}/api/health`);
+
+    if (smokeMode) {
+      console.log(`AIQD desktop smoke ready at ${baseUrl}`);
+      app.quit();
+      return;
+    }
+
+    registerIpc();
+    createTray();
+    createPanelWindow();
+    updateTrayStatus();
+    trayStatusTimer = setInterval(updateTrayStatus, trayStatusIntervalMs);
+
+    if (showPanelWhenReady) {
+      showPanelWhenReady = false;
+      showPanelWindow();
     }
   });
 
-  await waitForHealth(`${baseUrl}/api/health`);
+  app.on("before-quit", () => {
+    isQuitting = true;
+    if (trayStatusTimer) {
+      clearInterval(trayStatusTimer);
+    }
+    if (backend && !backend.killed) {
+      backend.kill();
+    }
+  });
 
-  if (smokeMode) {
-    console.log(`AIQD desktop smoke ready at ${baseUrl}`);
-    app.quit();
+  app.on("window-all-closed", () => {
+    // Keep the tray app alive until the user chooses Quit from the tray menu.
+  });
+}
+
+function showPanelWindow() {
+  if (!panelWindow) {
+    createPanelWindow();
+  }
+
+  positionPanelWindow();
+  panelWindow.show();
+  panelWindow.focus();
+  updateTrayStatus();
+}
+
+function togglePanelWindow() {
+  if (panelWindow?.isVisible()) {
+    panelWindow.hide();
     return;
   }
 
-  registerIpc();
-  createTray();
-  createPanelWindow();
-  updateTrayStatus();
-  trayStatusTimer = setInterval(updateTrayStatus, trayStatusIntervalMs);
-});
-
-app.on("before-quit", () => {
-  isQuitting = true;
-  if (trayStatusTimer) {
-    clearInterval(trayStatusTimer);
-  }
-  if (backend && !backend.killed) {
-    backend.kill();
-  }
-});
-
-app.on("window-all-closed", () => {
-  // Keep the tray app alive until the user chooses Quit from the tray menu.
-});
+  showPanelWindow();
+}
 
 function backendArgs(port) {
   const args = [cliPath, "--port", String(port)];
@@ -178,22 +224,6 @@ function createPanelWindow() {
       panelWindow?.hide();
     }
   });
-}
-
-function togglePanelWindow() {
-  if (!panelWindow) {
-    createPanelWindow();
-  }
-
-  if (panelWindow.isVisible()) {
-    panelWindow.hide();
-    return;
-  }
-
-  positionPanelWindow();
-  panelWindow.show();
-  panelWindow.focus();
-  updateTrayStatus();
 }
 
 function positionPanelWindow() {
