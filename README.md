@@ -22,6 +22,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Reset event timeline for changed reset anchors and sharp replenishment
 - Dashboard and Doctor views
 - Dashboard guidance for missing quota data
+- CLI `doctor` command for one-shot local diagnostics
 - Refresh history with saved counts and adapter error summaries
 - Settings view for Claude Code statusline onboarding
 - Copy buttons for setup and local path commands, with selection fallback when clipboard access is unavailable
@@ -71,6 +72,17 @@ npm run dev:local  # local server without demo quota snapshots
 npm run build      # compile TypeScript
 npm test           # typecheck and run node:test tests
 ```
+
+## Doctor CLI
+
+Run one local scan and print the same diagnostic signal without opening the dashboard:
+
+```bash
+node dist/index.js doctor
+node dist/index.js doctor --demo
+```
+
+The command prints refresh counts, each agent's quota or empty-state guidance, and the underlying Doctor checks. It exits with code `1` only for blocking failures such as adapter errors or invalid config. Missing quota sources are warnings because a freshly installed app may simply need setup.
 
 ## Local Data Paths
 
