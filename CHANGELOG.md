@@ -19,6 +19,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - CLI export command for normalized JSON/CSV quota data
 - Refresh run history API and Doctor view panel
 - Claude Code statusline readiness checks for real-data onboarding
+- Three-step Claude Code real-data setup flow in docs, Settings, and setup output
 - Dashboard empty-state guidance when an agent has no quota snapshots
 - Dashboard reset display with relative and absolute reported reset times
 - Dashboard data freshness display with observed timestamps per agent

@@ -464,6 +464,43 @@ h2 {
   white-space: pre-line;
 }
 
+.setup-flow {
+  display: grid;
+  gap: 10px;
+}
+
+.setup-flow + .settings-list,
+.setup-flow + .command-block {
+  margin-top: 14px;
+}
+
+.setup-step {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.setup-step:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.step-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--accent-strong);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
 .command-block {
   display: grid;
   gap: 6px;
@@ -577,7 +614,8 @@ h2 {
   .doctor-row,
   .event-row,
   .refresh-run-row,
-  .settings-row {
+  .settings-row,
+  .setup-step {
     grid-template-columns: 1fr;
     gap: 4px;
   }
@@ -590,5 +628,10 @@ h2 {
   .reset-value,
   .observed-value {
     justify-items: start;
+  }
+
+  .inline-command code {
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
   }
 }

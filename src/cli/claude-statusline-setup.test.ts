@@ -26,6 +26,9 @@ describe("claude statusline setup", () => {
       assert.equal(existsSync(result.shimPath), true);
       assert.equal(existsSync(settingsPath), false);
       assert.match(result.message, /No Claude settings were changed/);
+      assert.match(result.message, /Real-data check/);
+      assert.match(result.message, /npm run build/);
+      assert.match(result.message, /node dist\/index\.js doctor/);
     } finally {
       await rm(directory, { force: true, recursive: true });
     }
@@ -47,6 +50,8 @@ describe("claude statusline setup", () => {
       assert.equal(result.wroteSettings, true);
       assert.equal(settings.statusLine.type, "command");
       assert.match(settings.statusLine.command, /claude-statusline/);
+      assert.match(result.message, /Settings were updated/);
+      assert.match(result.message, /Open Claude Code/);
     } finally {
       await rm(directory, { force: true, recursive: true });
     }
