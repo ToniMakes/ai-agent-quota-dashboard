@@ -10,6 +10,9 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 - Normalized JSON and CSV export endpoints for dashboard quota data
 - Settings view export buttons for local JSON/CSV downloads
+- Development desktop shell with a tray mini panel and optional always-on-top widget
+- Desktop smoke command for backend startup checks
+- Mini quota panel page for compact daily use
 - Local `config.json` support for user-configured agent data paths
 - CLI commands to list, add, and remove local agent data paths
 - Settings view status for configured local data paths
@@ -34,6 +37,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 - Exports exclude account identifiers and raw local source references
 - Dashboard quota APIs exclude account identifiers and raw local source references
+- Desktop mini surfaces reuse the same local-only sanitized dashboard APIs
 - Local real-data mode hides persisted demo snapshots unless demo mode is explicitly enabled
 - Local path configuration stores only user-provided scan roots
 - Refresh history stores aggregate counts, timestamps, and adapter error summaries

@@ -23,6 +23,8 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Dashboard reset display with relative and absolute reported reset times
 - Dashboard data freshness display with observed timestamps and freshness reasons per agent
 - Dashboard and Doctor views
+- Mini panel page for tray-sized quota checks
+- Electron desktop shell with a tray mini panel and optional always-on-top widget
 - Dashboard guidance for missing quota data
 - CLI `doctor` command for one-shot local diagnostics
 - CLI export command for normalized JSON/CSV output
@@ -78,9 +80,32 @@ If demo snapshots were previously written to the local SQLite database, `npm run
 ```bash
 npm run dev        # local server with demo quota snapshots
 npm run dev:local  # local server without demo quota snapshots
+npm run desktop    # desktop tray app without demo quota snapshots
+npm run desktop:demo
+npm run desktop:smoke
 npm run build      # compile TypeScript
 npm test           # typecheck and run node:test tests
 ```
+
+## Desktop Shell
+
+The desktop shell is a lightweight Electron wrapper around the same local service and APIs.
+
+```bash
+npm run desktop
+```
+
+It starts the local backend, adds an AI Agent Quota tray icon, and provides:
+
+- a tray mini panel that hides when it loses focus
+- an optional always-on-top desktop widget
+- a normal full dashboard window for setup, Doctor, and exports
+
+The mini surfaces reuse the same normalized `/api/agents` and setup endpoints as the main dashboard. They do not read extra files, collect prompts, or call hidden provider APIs.
+
+This is currently a development shell, not an installer. Auto-start, packaging, and signed releases are intentionally left for a later release.
+
+Use `npm run desktop:smoke` to verify that the desktop shell can start the local backend and exit cleanly.
 
 ## Doctor CLI
 
@@ -175,6 +200,7 @@ src/
   core/       quota models, confidence, state, forecast primitives
   storage/    SQLite persistence
   server/     localhost API and static file serving
+desktop/      Electron tray panel and always-on-top widget shell
 web/          dashboard UI
 docs/         architecture, privacy, roadmap
 ```
