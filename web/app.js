@@ -23,6 +23,9 @@ const elements = {
 };
 
 const copyResetTimers = new WeakMap();
+const statuslineWatchIntervalMs = 10_000;
+let statuslineWatchTimer;
+let statuslineWatchInFlight = false;
 
 elements.refreshButton.addEventListener("click", async () => {
   elements.refreshButton.disabled = true;
@@ -119,6 +122,59 @@ function render() {
   renderRefreshRuns();
   renderSettings();
   renderPathSettings();
+  scheduleStatuslineWatch();
+}
+
+function scheduleStatuslineWatch() {
+  if (statuslineWatchTimer) {
+    window.clearTimeout(statuslineWatchTimer);
+    statuslineWatchTimer = undefined;
+  }
+
+  if (!shouldWatchForClaudeStatusline()) {
+    return;
+  }
+
+  statuslineWatchTimer = window.setTimeout(
+    pollClaudeStatusline,
+    statuslineWatchIntervalMs
+  );
+}
+
+function shouldWatchForClaudeStatusline() {
+  return (
+    state.setupStatus?.readiness === "waiting_for_data" ||
+    state.agents.some(
+      (agent) => agent.emptyState?.reason === "waiting_for_statusline_data"
+    )
+  );
+}
+
+async function pollClaudeStatusline() {
+  if (statuslineWatchInFlight) {
+    return;
+  }
+
+  statuslineWatchInFlight = true;
+
+  try {
+    const setupResponse = await fetch("/api/setup/claude-statusline");
+    const setupPayload = await setupResponse.json();
+
+    state.setupStatus = setupPayload.status;
+
+    if (state.setupStatus?.latestHasRateLimits) {
+      await fetch("/api/refresh", { method: "POST" });
+      await load();
+      return;
+    }
+
+    render();
+  } catch {
+    scheduleStatuslineWatch();
+  } finally {
+    statuslineWatchInFlight = false;
+  }
 }
 
 function renderAgents() {
