@@ -22,6 +22,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Reset event timeline for changed reset anchors and sharp replenishment
 - Dashboard and Doctor views
 - Settings view for Claude Code statusline onboarding
+- Local `config.json` for user-configured agent data paths
 - Normalized JSON/CSV export from the Settings view
 - Explicit source and confidence labels
 - Demo data mode for UI development
@@ -67,6 +68,24 @@ npm run dev:local  # local server without demo quota snapshots
 npm run build      # compile TypeScript
 npm test           # typecheck and run node:test tests
 ```
+
+## Local Data Paths
+
+The app scans conservative default paths for supported agents. You can add explicit local scan roots without editing JSON by hand:
+
+```bash
+node dist/index.js config path list
+node dist/index.js config path add codex "C:\path\to\codex-data"
+node dist/index.js config path add claude-code "C:\path\to\claude-data"
+```
+
+These commands write only the dashboard's own config file:
+
+```text
+~/.ai-agent-quota-dashboard/config.json
+```
+
+The Settings view shows the same config path and whether configured scan roots are readable.
 
 ## Claude Code Statusline
 

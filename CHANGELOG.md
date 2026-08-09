@@ -10,10 +10,14 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 - Normalized JSON and CSV export endpoints for dashboard quota data
 - Settings view export buttons for local JSON/CSV downloads
+- Local `config.json` support for user-configured agent data paths
+- CLI commands to list and add local agent data paths
+- Settings view status for configured local data paths
 
 ### Privacy
 
 - Exports exclude account identifiers and raw local source references
+- Local path configuration stores only user-provided scan roots
 
 ## [0.1.0] - 2026-08-09
 

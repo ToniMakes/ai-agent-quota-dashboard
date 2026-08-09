@@ -19,7 +19,7 @@
 
 - Real Codex quota source discovery once a stable structured source is confirmed
 - JSON and CSV export (initial normalized snapshot export in Unreleased)
-- Setup flow for local paths and statusline sources
+- Setup flow for local paths and statusline sources (initial local path config in Unreleased)
 
 ## Later
 

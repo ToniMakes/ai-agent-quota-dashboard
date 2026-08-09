@@ -2,6 +2,23 @@
 
 The project should only parse data that is explicit, local or official, and narrow enough to avoid prompts, responses, source code, and chat content.
 
+## Local Path Configuration
+
+Users can add explicit scan roots with:
+
+```bash
+node dist/index.js config path add codex "C:\path\to\codex-data"
+node dist/index.js config path add claude-code "C:\path\to\claude-data"
+```
+
+These paths are stored in:
+
+```text
+~/.ai-agent-quota-dashboard/config.json
+```
+
+Configured paths do not relax parser boundaries. Adapters still scan only narrow candidate filenames and parse only supported structured quota/statusline records.
+
 ## Claude Code
 
 Claude Code statusline input is an official structured source. Anthropic documents a `rate_limits` object with `five_hour` and `seven_day` windows. Each window includes a used percentage and reset timestamp.

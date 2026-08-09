@@ -7,18 +7,12 @@ import type { DoctorCheck, QuotaSnapshot } from "../../core/types.js";
 import { parseCodexQuotaSnapshots } from "./parse-quota-snapshot.js";
 
 export type CodexAdapterOptions = {
+  configuredDataPaths?: string[];
   demoMode: boolean;
 };
 
 export function createCodexAdapter(options: CodexAdapterOptions): AgentAdapter {
-  const defaultDataPaths = uniquePaths([
-    process.env.CODEX_HOME,
-    join(homedir(), ".codex"),
-    process.env.LOCALAPPDATA
-      ? join(process.env.LOCALAPPDATA, "OpenAI", "Codex")
-      : undefined,
-    process.env.APPDATA ? join(process.env.APPDATA, "Codex") : undefined
-  ]);
+  const defaultDataPaths = resolveCodexDataPaths(options.configuredDataPaths);
 
   return {
     manifest: {
@@ -77,6 +71,21 @@ export function createCodexAdapter(options: CodexAdapterOptions): AgentAdapter {
       };
     }
   };
+}
+
+export function getDefaultCodexDataPaths(): string[] {
+  return uniquePaths([
+    process.env.CODEX_HOME,
+    join(homedir(), ".codex"),
+    process.env.LOCALAPPDATA
+      ? join(process.env.LOCALAPPDATA, "OpenAI", "Codex")
+      : undefined,
+    process.env.APPDATA ? join(process.env.APPDATA, "Codex") : undefined
+  ]);
+}
+
+export function resolveCodexDataPaths(configuredDataPaths: string[] = []): string[] {
+  return uniquePaths([...getDefaultCodexDataPaths(), ...configuredDataPaths]);
 }
 
 async function readCodexQuotaSnapshots(

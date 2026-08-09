@@ -1,6 +1,7 @@
 const state = {
   agents: [],
   doctorChecks: [],
+  pathsStatus: undefined,
   resetEvents: [],
   setupStatus: undefined,
   generatedAt: undefined
@@ -11,6 +12,7 @@ const elements = {
   doctorList: document.querySelector("#doctor-list"),
   eventList: document.querySelector("#event-list"),
   lastRefresh: document.querySelector("#last-refresh"),
+  pathsContent: document.querySelector("#paths-content"),
   refreshButton: document.querySelector("#refresh-button"),
   resetList: document.querySelector("#reset-list"),
   settingsContent: document.querySelector("#settings-content"),
@@ -52,21 +54,25 @@ async function load() {
     agentsResponse,
     doctorResponse,
     eventsResponse,
+    pathsResponse,
     setupResponse
   ] = await Promise.all([
     fetch("/api/agents"),
     fetch("/api/doctor"),
     fetch("/api/reset-events"),
+    fetch("/api/setup/local-paths"),
     fetch("/api/setup/claude-statusline")
   ]);
   const agentsPayload = await agentsResponse.json();
   const doctorPayload = await doctorResponse.json();
   const eventsPayload = await eventsResponse.json();
+  const pathsPayload = await pathsResponse.json();
   const setupPayload = await setupResponse.json();
 
   state.agents = agentsPayload.agents ?? [];
   state.doctorChecks = doctorPayload.checks ?? [];
   state.resetEvents = eventsPayload.events ?? [];
+  state.pathsStatus = pathsPayload.status;
   state.setupStatus = setupPayload.status;
   state.generatedAt = agentsPayload.generatedAt;
 
@@ -80,6 +86,7 @@ function render() {
   renderEvents();
   renderDoctor();
   renderSettings();
+  renderPathSettings();
 }
 
 function renderAgents() {
@@ -292,6 +299,68 @@ function renderSettings() {
         .join("")}</div>
       <span></span>
     </div>
+  `;
+}
+
+function renderPathSettings() {
+  const status = state.pathsStatus;
+
+  if (!status) {
+    elements.pathsContent.innerHTML = `<p class="empty">Path setup unavailable.</p>`;
+    return;
+  }
+
+  const errorRows = (status.loadErrors ?? [])
+    .map((error) =>
+      settingsRow("Config warning", "Check file", error, "warning")
+    )
+    .join("");
+  const agentRows = (status.agents ?? [])
+    .map((agent) => {
+      const configuredCount = agent.configuredDataPaths?.length ?? 0;
+      return settingsRow(
+        agent.displayName,
+        configuredCount === 0
+          ? "Default paths"
+          : `${configuredCount} configured`,
+        agent.addCommand,
+        configuredCount === 0 ? "stale" : "healthy"
+      );
+    })
+    .join("");
+  const configuredPathRows = (status.agents ?? [])
+    .flatMap((agent) =>
+      (agent.configuredDataPaths ?? []).map((path) =>
+        settingsRow(
+          agent.displayName,
+          path.readable ? "Readable" : path.exists ? "Not readable" : "Not found",
+          path.path,
+          path.readable ? "healthy" : "warning"
+        )
+      )
+    )
+    .join("");
+
+  elements.pathsContent.innerHTML = `
+    <div class="settings-list">
+      ${settingsRow(
+        "Config file",
+        status.configExists ? "Found" : "Not found",
+        status.configPath,
+        status.configExists ? "healthy" : "stale"
+      )}
+      ${errorRows}
+      ${agentRows}
+    </div>
+    <div>
+      <div class="label">List command</div>
+      <code class="command-box">${escapeHtml(status.listCommand)}</code>
+    </div>
+    ${
+      configuredPathRows
+        ? `<div class="settings-list">${configuredPathRows}</div>`
+        : ""
+    }
   `;
 }
 
