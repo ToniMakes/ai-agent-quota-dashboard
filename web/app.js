@@ -161,9 +161,39 @@ function renderAgentCard(agent) {
           <span class="label">Source</span>
           <span class="value">${escapeHtml(source)} / ${escapeHtml(confidence)}</span>
         </div>
+        ${primary ? renderObservedLine(primary) : ""}
       </div>
     </article>
   `;
+}
+
+function renderObservedLine(snapshot) {
+  return `
+    <div class="quota-line">
+      <span class="label">Observed</span>
+      <span class="value observed-value">
+        <time datetime="${escapeHtml(snapshot.observedAt)}">${escapeHtml(
+          formatRelative(snapshot.observedAt)
+        )}</time>
+        <span class="observed-absolute">${escapeHtml(
+          formatTimestamp(snapshot.observedAt)
+        )}</span>
+        ${renderStaleNote(snapshot)}
+      </span>
+    </div>
+  `;
+}
+
+function renderStaleNote(snapshot) {
+  if (snapshot.stale) {
+    return `<span class="freshness-note">marked stale by source</span>`;
+  }
+
+  if (snapshot.expiresAt && Date.parse(snapshot.expiresAt) <= Date.now()) {
+    return `<span class="freshness-note">expired observation</span>`;
+  }
+
+  return "";
 }
 
 function renderSnapshotLines(agent) {
@@ -666,7 +696,7 @@ function eventTitle(event) {
 function eventDetail(event) {
   const resetChange =
     event.previousResetAt && event.newResetAt
-      ? `${formatResetTimestamp(event.previousResetAt)} -> ${formatResetTimestamp(
+      ? `${formatTimestamp(event.previousResetAt)} -> ${formatTimestamp(
           event.newResetAt
         )}`
       : "";
@@ -692,7 +722,7 @@ function renderResetValue(value) {
   return `
     <span class="reset-value">
       <time datetime="${escapeHtml(value)}">${escapeHtml(formatRelative(value))}</time>
-      <span class="reset-absolute">${escapeHtml(formatResetTimestamp(value))}</span>
+      <span class="reset-absolute">${escapeHtml(formatTimestamp(value))}</span>
     </span>
   `;
 }
@@ -740,7 +770,7 @@ function formatRelative(value) {
   return date.toLocaleString();
 }
 
-function formatResetTimestamp(value) {
+function formatTimestamp(value) {
   return new Intl.DateTimeFormat(undefined, {
     day: "numeric",
     hour: "numeric",

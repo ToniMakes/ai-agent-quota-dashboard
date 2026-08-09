@@ -21,6 +21,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Claude Code statusline setup helper with explicit opt-in
 - Reset event timeline for changed reset anchors and sharp replenishment
 - Dashboard reset display with relative and absolute reported reset times
+- Dashboard data freshness display with observed timestamps per agent
 - Dashboard and Doctor views
 - Dashboard guidance for missing quota data
 - CLI `doctor` command for one-shot local diagnostics
@@ -178,7 +179,7 @@ official_api / official_cli
 > unavailable
 ```
 
-The product should be conservative: estimated data must be labeled as estimated, stale data must be labeled as stale, and unknown data must not be presented as precise.
+The product should be conservative: estimated data must be labeled as estimated, stale data must be labeled as stale, observed timestamps must be visible, and unknown data must not be presented as precise.
 
 ## Reset Events
 
