@@ -12,6 +12,7 @@ import {
   sanitizeAgentSummary,
   sanitizeQuotaSnapshot
 } from "../core/export-data.js";
+import { getCodexSnapshotSetupStatus } from "../setup/codex-snapshot-status.js";
 import { getClaudeStatuslineSetupStatus } from "../setup/claude-statusline-status.js";
 import { getLocalPathsSetupStatus } from "../setup/local-paths-status.js";
 
@@ -156,6 +157,14 @@ async function handleApiRequest(
     sendJson(response, 200, {
       generatedAt: new Date().toISOString(),
       status: await getClaudeStatuslineSetupStatus()
+    });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/setup/codex-snapshot") {
+    sendJson(response, 200, {
+      generatedAt: new Date().toISOString(),
+      status: await getCodexSnapshotSetupStatus()
     });
     return;
   }

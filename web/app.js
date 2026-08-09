@@ -1,5 +1,6 @@
 const state = {
   agents: [],
+  codexSnapshotStatus: undefined,
   doctorChecks: [],
   pathsStatus: undefined,
   refreshRuns: [],
@@ -10,6 +11,7 @@ const state = {
 
 const elements = {
   agentGrid: document.querySelector("#agent-grid"),
+  codexSnapshotContent: document.querySelector("#codex-snapshot-content"),
   doctorList: document.querySelector("#doctor-list"),
   eventList: document.querySelector("#event-list"),
   lastRefresh: document.querySelector("#last-refresh"),
@@ -82,6 +84,7 @@ await load();
 async function load() {
   const [
     agentsResponse,
+    codexSnapshotResponse,
     doctorResponse,
     eventsResponse,
     pathsResponse,
@@ -89,6 +92,7 @@ async function load() {
     setupResponse
   ] = await Promise.all([
     fetch("/api/agents"),
+    fetch("/api/setup/codex-snapshot"),
     fetch("/api/doctor"),
     fetch("/api/reset-events"),
     fetch("/api/setup/local-paths"),
@@ -96,6 +100,7 @@ async function load() {
     fetch("/api/setup/claude-statusline")
   ]);
   const agentsPayload = await agentsResponse.json();
+  const codexSnapshotPayload = await codexSnapshotResponse.json();
   const doctorPayload = await doctorResponse.json();
   const eventsPayload = await eventsResponse.json();
   const pathsPayload = await pathsResponse.json();
@@ -103,6 +108,7 @@ async function load() {
   const setupPayload = await setupResponse.json();
 
   state.agents = agentsPayload.agents ?? [];
+  state.codexSnapshotStatus = codexSnapshotPayload.status;
   state.doctorChecks = doctorPayload.checks ?? [];
   state.resetEvents = eventsPayload.events ?? [];
   state.pathsStatus = pathsPayload.status;
@@ -120,6 +126,7 @@ function render() {
   renderEvents();
   renderDoctor();
   renderRefreshRuns();
+  renderCodexSnapshotSettings();
   renderSettings();
   renderPathSettings();
   scheduleStatuslineWatch();
@@ -482,6 +489,172 @@ function renderEvents() {
       `
     )
     .join("");
+}
+
+function renderCodexSnapshotSettings() {
+  const status = state.codexSnapshotStatus;
+
+  if (!status) {
+    elements.codexSnapshotContent.innerHTML = `<p class="empty">Codex snapshot status unavailable.</p>`;
+    return;
+  }
+
+  elements.codexSnapshotContent.innerHTML = `
+    ${renderCodexSnapshotSteps(status)}
+
+    <div class="settings-list">
+      ${settingsRow(
+        "Snapshot file",
+        status.snapshotExists ? "Found" : "Not recorded",
+        status.snapshotPath,
+        status.snapshotExists ? "healthy" : "stale"
+      )}
+      ${settingsRow(
+        "Latest quota",
+        formatCodexSnapshotValue(status),
+        formatCodexSnapshotDetail(status),
+        codexSnapshotBadgeClass(status.readiness)
+      )}
+      ${settingsRow(
+        "Readiness",
+        status.readinessLabel ?? "Unknown",
+        status.nextAction ?? "Record a visible Codex quota value.",
+        codexSnapshotBadgeClass(status.readiness),
+        status.readiness ?? "unknown"
+      )}
+      ${renderSetupChecks(status.checks)}
+    </div>
+
+    ${renderCommandBlock("Record command", status.writeCommand)}
+    ${renderCommandBlock("Help command", status.helpCommand)}
+
+    <div class="settings-row">
+      <strong>Stored</strong>
+      <div class="pill-list">${status.savedFields
+        .map((field) => `<span class="badge healthy">${escapeHtml(field)}</span>`)
+        .join("")}</div>
+      <span></span>
+    </div>
+    <div class="settings-row">
+      <strong>Not stored</strong>
+      <div class="pill-list">${status.notSavedFields
+        .map((field) => `<span class="badge stale">${escapeHtml(field)}</span>`)
+        .join("")}</div>
+      <span></span>
+    </div>
+  `;
+}
+
+function renderCodexSnapshotSteps(status) {
+  const steps = [
+    {
+      badge: "1",
+      title: "Check visible status",
+      detail: "Use Codex CLI /status or Codex Settings > Usage.",
+      command: "/status",
+      state: status.latestHasQuota ? "pass" : "info"
+    },
+    {
+      badge: "2",
+      title: "Record snapshot",
+      detail: status.latestHasQuota
+        ? "A structured manual snapshot is available."
+        : "Write only the visible quota value and reported reset time.",
+      command: status.writeCommand,
+      state: status.latestHasQuota ? "pass" : "warn"
+    },
+    {
+      badge: "3",
+      title: "Refresh dashboard",
+      detail:
+        status.readiness === "ready"
+          ? "The next refresh can load the Codex snapshot."
+          : "Refresh after recording a visible Codex quota value.",
+      command: "node dist/index.js doctor",
+      state: status.readiness === "ready" ? "pass" : "info"
+    }
+  ];
+
+  return `
+    <div class="setup-flow" aria-label="Codex manual snapshot setup">
+      ${steps
+        .map(
+          (step) => `
+            <div class="setup-step">
+              <span class="step-marker">${escapeHtml(step.badge)}</span>
+              <div>
+                <strong>${escapeHtml(step.title)}</strong>
+                <div class="settings-detail">${escapeHtml(step.detail)}</div>
+                ${renderInlineCommand(step.command)}
+              </div>
+              <span class="badge ${doctorBadgeClass(step.state)}">${escapeHtml(
+                step.state
+              )}</span>
+            </div>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function formatCodexSnapshotValue(status) {
+  if (typeof status.latestRemainingPercent === "number") {
+    return `${Math.round(status.latestRemainingPercent)}% remaining`;
+  }
+
+  if (typeof status.latestUsedPercent === "number") {
+    return `${Math.round(status.latestUsedPercent)}% used`;
+  }
+
+  return status.snapshotExists ? "No usable quota" : "Not recorded";
+}
+
+function formatCodexSnapshotDetail(status) {
+  if (!status.latestHasQuota) {
+    return status.snapshotPath;
+  }
+
+  const parts = [];
+
+  if (typeof status.latestUsedPercent === "number") {
+    parts.push(`Used ${Math.round(status.latestUsedPercent)}%`);
+  }
+
+  if (status.latestResetAt) {
+    parts.push(`Reported reset ${formatRelative(status.latestResetAt)}`);
+    parts.push(formatTimestamp(status.latestResetAt));
+  }
+
+  if (status.latestObservedAt) {
+    parts.push(`Observed ${formatRelative(status.latestObservedAt)}`);
+  }
+
+  if (typeof status.latestAgeSeconds === "number") {
+    parts.push(`Age ${formatDuration(status.latestAgeSeconds)}`);
+  }
+
+  if (status.latestSource || status.latestConfidence) {
+    parts.push(
+      [sourceLabel(status.latestSource), confidenceLabel(status.latestConfidence)]
+        .filter(Boolean)
+        .join(" / ")
+    );
+  }
+
+  return parts.filter(Boolean).join("\n");
+}
+
+function codexSnapshotBadgeClass(readiness) {
+  if (readiness === "ready") {
+    return "healthy";
+  }
+
+  if (readiness === "expired" || readiness === "needs_attention") {
+    return "warning";
+  }
+
+  return "stale";
 }
 
 function renderSettings() {

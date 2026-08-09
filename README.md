@@ -19,6 +19,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Fixture-driven parsers for Claude Code statusline rate limits
 - A conservative Codex parser for explicit structured quota snapshots
 - Manual Codex snapshot command for visible `/status` or Usage values
+- Settings view status for Codex manual snapshots
 - Claude Code statusline setup helper with explicit opt-in
 - Reset event timeline for changed reset anchors and sharp replenishment
 - Dashboard reset display with relative and absolute reported reset times
@@ -159,6 +160,8 @@ This writes a structured manual snapshot to:
 ```
 
 Manual Codex snapshots are labeled `manual` and expire at the reported reset time.
+
+The Settings view shows whether that snapshot exists, the latest remaining quota, the reported reset time, and copyable commands.
 
 ## Local Data Paths
 
