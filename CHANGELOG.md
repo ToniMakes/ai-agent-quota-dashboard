@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 This project follows semantic versioning loosely while it is pre-1.0: minor versions may still change internal APIs, but privacy and data-source boundaries should remain conservative.
 
+## [Unreleased]
+
+### Added
+
+- Normalized JSON and CSV export endpoints for dashboard quota data
+- Settings view export buttons for local JSON/CSV downloads
+
+### Privacy
+
+- Exports exclude account identifiers and raw local source references
+
 ## [0.1.0] - 2026-08-09
 
 Initial public scaffold.
