@@ -64,6 +64,8 @@ The statusline sink stores sanitized records in:
 
 Only `rate_limits` fields are persisted. Session IDs, transcript paths, workspace paths, prompts, responses, and source code are not copied into these files.
 
+The dashboard treats the latest statusline snapshot as fresh for real-time setup checks only when it was observed recently. Older snapshots are still useful diagnostics, but they are labeled as needing attention because the 5-hour Claude Code window may have moved on.
+
 ## Codex
 
 OpenAI documents that remaining Codex limits can be checked during an active CLI session with `/status`, and that usage can be monitored through the dashboard/settings surfaces. Public docs do not define a stable machine-readable local schema for this dashboard yet.

@@ -18,6 +18,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Machine-readable `doctor --json` output with private fields excluded or redacted
 - CLI export command for normalized JSON/CSV quota data
 - Refresh run history API and Doctor view panel
+- Claude Code statusline readiness checks for real-data onboarding
 - Dashboard empty-state guidance when an agent has no quota snapshots
 - Dashboard reset display with relative and absolute reported reset times
 - Dashboard data freshness display with observed timestamps per agent

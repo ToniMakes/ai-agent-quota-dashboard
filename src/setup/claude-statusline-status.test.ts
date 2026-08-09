@@ -23,6 +23,13 @@ describe("getClaudeStatuslineSetupStatus", () => {
       assert.equal(status.shimExists, false);
       assert.equal(status.latestExists, false);
       assert.equal(status.latestHasRateLimits, false);
+      assert.equal(status.readiness, "needs_setup");
+      assert.equal(status.readinessLabel, "Setup required");
+      assert.match(status.nextAction, /setup claude-statusline --write/);
+      assert.equal(
+        status.checks.find((check) => check.id === "statusline-command")?.status,
+        "warn"
+      );
 
       await assert.rejects(readFile(settingsPath, "utf8"));
     } finally {
@@ -34,9 +41,11 @@ describe("getClaudeStatuslineSetupStatus", () => {
     const directory = await mkdtemp(join(tmpdir(), "aiqd-status-"));
     const settingsPath = join(directory, ".claude", "settings.json");
     const latestPath = join(directory, "latest.json");
+    const shimPath = join(directory, "claude-statusline.ps1");
 
     try {
       await mkdir(dirname(settingsPath), { recursive: true });
+      await writeFile(shimPath, "");
       await writeFile(
         settingsPath,
         JSON.stringify({
@@ -63,15 +72,126 @@ describe("getClaudeStatuslineSetupStatus", () => {
       const status = await getClaudeStatuslineSetupStatus({
         historyPath: join(directory, "history.jsonl"),
         latestPath,
+        now: new Date("2026-08-09T01:00:00.000Z"),
         settingsPath,
-        shimPath: join(directory, "shim.ps1")
+        shimPath
       });
 
       assert.equal(status.settingsExists, true);
       assert.equal(status.statusLineConfigured, true);
       assert.equal(status.statusLineManagedByApp, true);
+      assert.equal(status.shimExists, true);
       assert.equal(status.latestHasRateLimits, true);
       assert.equal(status.latestObservedAt, "2026-08-09T00:00:00.000Z");
+      assert.equal(status.latestAgeSeconds, 3600);
+      assert.deepEqual(status.latestWindowTypes, ["session_5h"]);
+      assert.equal(status.readiness, "ready");
+      assert.equal(
+        status.checks.find((check) => check.id === "latest-snapshot")?.status,
+        "pass"
+      );
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("marks old rate limit snapshots as needing attention", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-status-"));
+    const settingsPath = join(directory, ".claude", "settings.json");
+    const latestPath = join(directory, "latest.json");
+    const shimPath = join(directory, "claude-statusline.ps1");
+
+    try {
+      await mkdir(dirname(settingsPath), { recursive: true });
+      await writeFile(shimPath, "");
+      await writeFile(
+        settingsPath,
+        JSON.stringify({
+          statusLine: {
+            type: "command",
+            command: "powershell -File claude-statusline.ps1"
+          }
+        })
+      );
+      await writeFile(
+        latestPath,
+        JSON.stringify({
+          type: "claude_code_statusline_rate_limits",
+          observed_at: "2026-08-09T00:00:00.000Z",
+          rate_limits: {
+            five_hour: {
+              used_percentage: 44,
+              resets_at: 1786233600
+            },
+            seven_day: {
+              used_percentage: 12,
+              resets_at: 1786579200
+            }
+          }
+        })
+      );
+
+      const status = await getClaudeStatuslineSetupStatus({
+        historyPath: join(directory, "history.jsonl"),
+        latestPath,
+        now: new Date("2026-08-09T08:30:00.000Z"),
+        settingsPath,
+        shimPath
+      });
+
+      assert.equal(status.readiness, "needs_attention");
+      assert.deepEqual(status.latestWindowTypes, ["session_5h", "weekly"]);
+      assert.match(
+        status.checks.find((check) => check.id === "latest-snapshot")?.message ?? "",
+        /old/
+      );
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("does not treat empty rate_limits as usable data", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-status-"));
+    const settingsPath = join(directory, ".claude", "settings.json");
+    const latestPath = join(directory, "latest.json");
+    const shimPath = join(directory, "claude-statusline.ps1");
+
+    try {
+      await mkdir(dirname(settingsPath), { recursive: true });
+      await writeFile(shimPath, "");
+      await writeFile(
+        settingsPath,
+        JSON.stringify({
+          statusLine: {
+            type: "command",
+            command: "powershell -File claude-statusline.ps1"
+          }
+        })
+      );
+      await writeFile(
+        latestPath,
+        JSON.stringify({
+          type: "claude_code_statusline_rate_limits",
+          observed_at: "2026-08-09T00:00:00.000Z",
+          rate_limits: {
+            five_hour: {
+              resets_at: 1786233600
+            }
+          }
+        })
+      );
+
+      const status = await getClaudeStatuslineSetupStatus({
+        historyPath: join(directory, "history.jsonl"),
+        latestPath,
+        now: new Date("2026-08-09T01:00:00.000Z"),
+        settingsPath,
+        shimPath
+      });
+
+      assert.equal(status.latestHasRateLimits, false);
+      assert.deepEqual(status.latestWindowTypes, []);
+      assert.equal(status.readiness, "waiting_for_data");
     } finally {
       await rm(directory, { force: true, recursive: true });
     }

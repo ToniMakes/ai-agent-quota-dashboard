@@ -457,11 +457,17 @@ function renderSettings() {
       ${settingsRow(
         "Snapshot",
         status.latestHasRateLimits ? "Rate limits received" : "Waiting for data",
-        status.latestObservedAt
-          ? `Last observed ${formatRelative(status.latestObservedAt)}`
-          : status.latestPath,
+        formatLatestSnapshotStatus(status),
         status.latestHasRateLimits ? "healthy" : "stale"
       )}
+      ${settingsRow(
+        "Readiness",
+        status.readinessLabel ?? "Unknown",
+        status.nextAction ?? "Run Doctor for setup details.",
+        readinessBadgeClass(status.readiness),
+        status.readiness ?? "unknown"
+      )}
+      ${renderSetupChecks(status.checks)}
     </div>
 
     ${renderCommandBlock("Preview command", status.previewCommand)}
@@ -482,6 +488,44 @@ function renderSettings() {
       <span></span>
     </div>
   `;
+}
+
+function renderSetupChecks(checks) {
+  if (!checks || checks.length === 0) {
+    return "";
+  }
+
+  return checks
+    .map((check) =>
+      settingsRow(
+        check.label,
+        check.message,
+        [check.detail, check.action].filter(Boolean).join("\n"),
+        doctorBadgeClass(check.status),
+        check.status
+      )
+    )
+    .join("");
+}
+
+function formatLatestSnapshotStatus(status) {
+  const parts = [];
+
+  if (status.latestObservedAt) {
+    parts.push(`Last observed ${formatRelative(status.latestObservedAt)}`);
+  } else {
+    parts.push(status.latestPath);
+  }
+
+  if (status.latestWindowTypes?.length > 0) {
+    parts.push(`Windows ${status.latestWindowTypes.map(windowLabel).join(", ")}`);
+  }
+
+  if (typeof status.latestAgeSeconds === "number") {
+    parts.push(`Age ${formatDuration(status.latestAgeSeconds)}`);
+  }
+
+  return parts.join("\n");
 }
 
 function renderPathSettings() {
@@ -678,7 +722,7 @@ function showCopyState(button, result) {
   copyResetTimers.set(button, resetTimer);
 }
 
-function settingsRow(label, value, detail, badgeClass) {
+function settingsRow(label, value, detail, badgeClass, badgeLabel = value) {
   return `
     <div class="settings-row">
       <strong>${escapeHtml(label)}</strong>
@@ -686,7 +730,7 @@ function settingsRow(label, value, detail, badgeClass) {
         <div>${escapeHtml(value)}</div>
         <div class="settings-detail">${escapeHtml(detail)}</div>
       </div>
-      <span class="badge ${badgeClass}">${escapeHtml(value)}</span>
+      <span class="badge ${badgeClass}">${escapeHtml(badgeLabel)}</span>
     </div>
   `;
 }
@@ -835,11 +879,43 @@ function doctorBadgeClass(status) {
   return "healthy";
 }
 
+function readinessBadgeClass(status) {
+  if (status === "ready") {
+    return "healthy";
+  }
+
+  if (status === "needs_attention") {
+    return "warning";
+  }
+
+  if (status === "waiting_for_data") {
+    return "stale";
+  }
+
+  return "warning";
+}
+
 function compactNumber(value) {
   return new Intl.NumberFormat(undefined, {
     notation: "compact",
     maximumFractionDigits: 1
   }).format(value);
+}
+
+function formatDuration(seconds) {
+  if (seconds >= 86400) {
+    return `${Math.round(seconds / 86400)}d`;
+  }
+
+  if (seconds >= 3600) {
+    return `${Math.round(seconds / 3600)}h`;
+  }
+
+  if (seconds >= 60) {
+    return `${Math.round(seconds / 60)}m`;
+  }
+
+  return `${seconds}s`;
 }
 
 function clamp(value, min, max) {

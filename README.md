@@ -28,6 +28,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - CLI export command for normalized JSON/CSV output
 - Refresh history with saved counts and adapter error summaries
 - Settings view for Claude Code statusline onboarding
+- Claude Code statusline readiness checks for setup, shim, and latest rate limit data
 - Copy buttons for setup and local path commands, with selection fallback when clipboard access is unavailable
 - Local `config.json` for user-configured agent data paths
 - Normalized JSON/CSV export from the Settings view
@@ -148,7 +149,7 @@ node dist/index.js setup claude-statusline --write
 
 If a `statusLine` already exists, the command refuses to replace it unless you add `--force`.
 
-The Settings view shows the same setup state and copyable commands. It is read-only: it does not modify Claude Code configuration from the browser.
+The Settings view shows the same setup state, readiness checks, latest received rate limit windows, snapshot age, and copyable commands. It is read-only: it does not modify Claude Code configuration from the browser.
 
 ## Architecture
 
