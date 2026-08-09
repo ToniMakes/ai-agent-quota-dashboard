@@ -198,8 +198,9 @@ function buildSetupMessage(options: {
     "",
     "Real-data check:",
     "1. Build the local CLI: npm run build",
-    "2. Install the statusline: node dist/index.js setup claude-statusline --write",
-    "3. Open Claude Code, then refresh the dashboard or run: node dist/index.js doctor"
+    "2. Test the local sink: node dist/index.js claude-statusline-sink --self-test",
+    "3. Install the statusline: node dist/index.js setup claude-statusline --write",
+    "4. Open Claude Code, then refresh the dashboard or run: node dist/index.js doctor"
   );
 
   return lines.join("\n");

@@ -28,6 +28,7 @@ describe("claude statusline setup", () => {
       assert.match(result.message, /No Claude settings were changed/);
       assert.match(result.message, /Real-data check/);
       assert.match(result.message, /npm run build/);
+      assert.match(result.message, /claude-statusline-sink --self-test/);
       assert.match(result.message, /node dist\/index\.js doctor/);
     } finally {
       await rm(directory, { force: true, recursive: true });

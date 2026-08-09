@@ -14,7 +14,10 @@ import {
   type LocalPathsSetupStatus
 } from "../setup/local-paths-status.js";
 import { SqliteStore } from "../storage/sqlite-store.js";
-import { runClaudeStatuslineSink } from "./claude-statusline-sink.js";
+import {
+  runClaudeStatuslineSink,
+  runClaudeStatuslineSinkSelfTest
+} from "./claude-statusline-sink.js";
 import { setupClaudeStatusline } from "./claude-statusline-setup.js";
 import {
   buildDoctorJsonReport,
@@ -31,6 +34,19 @@ export async function runCli(argv: string[], entryPointUrl: string): Promise<voi
   const [command, subcommand, ...rest] = argv;
 
   if (command === "claude-statusline-sink") {
+    if (subcommand === "--self-test") {
+      const result = await runClaudeStatuslineSinkSelfTest();
+      console.log(result.message);
+      console.log(`Parsed windows: ${result.windows.join(", ")}`);
+      console.log(result.statusText);
+
+      if (!result.ok) {
+        process.exitCode = 1;
+      }
+
+      return;
+    }
+
     const input = await readStdin();
     const sinkOptions: Parameters<typeof runClaudeStatuslineSink>[0] = {
       input
@@ -302,6 +318,8 @@ function helpText(): string {
     "  ai-agent-quota doctor [--json]              Run one local scan and print diagnostics",
     "  ai-agent-quota export [--json|--csv]        Export normalized quota data",
     "  ai-agent-quota claude-statusline-sink       Read Claude statusline JSON from stdin",
+    "  ai-agent-quota claude-statusline-sink --self-test",
+    "                                             Test the local Claude statusline sink",
     "  ai-agent-quota config path list             Show configured local data paths",
     "  ai-agent-quota config path add <agent> <path>",
     "                                             Add an extra local data path",

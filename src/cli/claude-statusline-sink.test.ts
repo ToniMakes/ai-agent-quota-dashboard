@@ -4,8 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import {
+  buildClaudeStatuslineSelfTestInput,
   buildSanitizedClaudeStatuslineRecord,
-  runClaudeStatuslineSink
+  runClaudeStatuslineSink,
+  runClaudeStatuslineSinkSelfTest
 } from "./claude-statusline-sink.js";
 
 const observedAt = new Date("2026-08-09T00:00:00.000Z");
@@ -95,5 +97,25 @@ describe("claude statusline sink", () => {
     } finally {
       await rm(directory, { force: true, recursive: true });
     }
+  });
+
+  it("builds a sanitized self-test payload", () => {
+    const record = buildSanitizedClaudeStatuslineRecord(
+      buildClaudeStatuslineSelfTestInput(observedAt),
+      observedAt
+    );
+
+    assert.equal(record?.rate_limits.five_hour !== undefined, true);
+    assert.equal(record?.rate_limits.seven_day !== undefined, true);
+    assert.equal(JSON.stringify(record).includes("self-test-do-not-store"), false);
+  });
+
+  it("runs a local self-test without keeping raw fields", async () => {
+    const result = await runClaudeStatuslineSinkSelfTest(observedAt);
+
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.windows, ["session_5h", "weekly"]);
+    assert.match(result.message, /self-test passed/);
+    assert.match(result.statusText, /Claude quota: 5h 12% used/);
   });
 });

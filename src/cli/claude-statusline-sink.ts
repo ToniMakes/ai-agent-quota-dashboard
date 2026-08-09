@@ -1,5 +1,13 @@
-import { appendFile, mkdir, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
+import {
+  appendFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import {
   defaultClaudeStatuslineHistoryPath,
   defaultClaudeStatuslineLatestPath
@@ -19,6 +27,13 @@ export type ClaudeStatuslineSinkResult = {
   snapshots: QuotaSnapshot[];
   statusText: string;
   wroteSnapshot: boolean;
+};
+
+export type ClaudeStatuslineSinkSelfTestResult = {
+  ok: boolean;
+  message: string;
+  statusText: string;
+  windows: string[];
 };
 
 type SanitizedClaudeStatuslineRecord = {
@@ -71,6 +86,67 @@ export async function runClaudeStatuslineSink(
     statusText,
     wroteSnapshot: true
   };
+}
+
+export async function runClaudeStatuslineSinkSelfTest(
+  now = new Date()
+): Promise<ClaudeStatuslineSinkSelfTestResult> {
+  const directory = await mkdtemp(join(tmpdir(), "aiqd-claude-statusline-"));
+  const latestPath = join(directory, "latest.json");
+  const historyPath = join(directory, "history.jsonl");
+
+  try {
+    const result = await runClaudeStatuslineSink({
+      input: buildClaudeStatuslineSelfTestInput(now),
+      now,
+      latestPath,
+      historyPath
+    });
+    const latest = await readFile(latestPath, "utf8");
+    const history = await readFile(historyPath, "utf8");
+    const windows = result.snapshots.map((snapshot) => snapshot.windowType);
+    const ok =
+      result.wroteSnapshot &&
+      windows.includes("session_5h") &&
+      windows.includes("weekly") &&
+      latest.includes("rate_limits") &&
+      history.includes("rate_limits") &&
+      !latest.includes("self-test-do-not-store") &&
+      !history.includes("self-test-do-not-store");
+
+    return {
+      ok,
+      message: ok
+        ? "Claude statusline sink self-test passed. No real Claude Code data was read."
+        : "Claude statusline sink self-test failed.",
+      statusText: result.statusText,
+      windows
+    };
+  } finally {
+    await rm(directory, { force: true, recursive: true });
+  }
+}
+
+export function buildClaudeStatuslineSelfTestInput(now = new Date()): string {
+  return JSON.stringify({
+    session_id: "self-test-do-not-store",
+    transcript_path: "self-test-do-not-store",
+    workspace: {
+      current_dir: "self-test-do-not-store"
+    },
+    rate_limits: {
+      five_hour: {
+        used_percentage: 12,
+        remaining_percentage: 88,
+        resets_at: secondsFromNow(now, 3 * 60 * 60)
+      },
+      seven_day: {
+        used_percentage: 34,
+        remaining_percentage: 66,
+        resets_at: secondsFromNow(now, 4 * 24 * 60 * 60)
+      }
+    }
+  });
 }
 
 export function buildSanitizedClaudeStatuslineRecord(
@@ -175,4 +251,8 @@ function formatRelative(value: string): string {
   }
 
   return deltaSeconds >= 0 ? "soon" : "just now";
+}
+
+function secondsFromNow(now: Date, deltaSeconds: number): number {
+  return Math.round(now.getTime() / 1000) + deltaSeconds;
 }

@@ -47,6 +47,7 @@ export type ClaudeStatuslineSetupStatus = {
   nextAction: string;
   checks: ClaudeStatuslineSetupCheck[];
   previewCommand: string;
+  selfTestCommand: string;
   writeCommand: string;
   forceWriteCommand: string;
   savedFields: string[];
@@ -103,6 +104,7 @@ export async function getClaudeStatuslineSetupStatus(
     nextAction: "Run the install command, then open Claude Code.",
     checks: [],
     previewCommand: "node dist/index.js setup claude-statusline",
+    selfTestCommand: "node dist/index.js claude-statusline-sink --self-test",
     writeCommand: "node dist/index.js setup claude-statusline --write",
     forceWriteCommand:
       "node dist/index.js setup claude-statusline --write --force",
