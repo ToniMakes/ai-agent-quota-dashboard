@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Agent Quota</title>
+    <link rel="stylesheet" href="/styles.css?v=20260809-settings" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Local dashboard</p>
+          <h1>AI Agent Quota</h1>
+        </div>
+        <div class="topbar-actions">
+          <span id="last-refresh" class="last-refresh">Last refresh: --</span>
+          <button id="refresh-button" class="button" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <nav class="tabs" aria-label="Views">
+        <button class="tab is-active" type="button" data-view="dashboard">Dashboard</button>
+        <button class="tab" type="button" data-view="doctor">Doctor</button>
+        <button class="tab" type="button" data-view="settings">Settings</button>
+      </nav>
+
+      <section id="dashboard-view" class="view is-active">
+        <div id="agent-grid" class="agent-grid" aria-live="polite"></div>
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Reported Resets</h2>
+          </div>
+          <div id="reset-list" class="reset-list"></div>
+        </section>
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Recent Changes</h2>
+          </div>
+          <div id="event-list" class="event-list"></div>
+        </section>
+      </section>
+
+      <section id="doctor-view" class="view">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Doctor</h2>
+          </div>
+          <div id="doctor-list" class="doctor-list"></div>
+        </div>
+      </section>
+
+      <section id="settings-view" class="view">
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Claude Code Statusline</h2>
+          </div>
+          <div id="settings-content" class="settings-content"></div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js?v=20260809-settings" type="module"></script>
+  </body>
+</html>

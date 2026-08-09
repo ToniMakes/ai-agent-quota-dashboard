@@ -1,0 +1,13 @@
+{
+  "event": "codex_status",
+  "usage_limits": {
+    "weekly": {
+      "unit": "credits",
+      "used": 30,
+      "remaining": 70,
+      "total": 100,
+      "resets_at": 1786579200,
+      "source": "local_quota_snapshot"
+    }
+  }
+}
