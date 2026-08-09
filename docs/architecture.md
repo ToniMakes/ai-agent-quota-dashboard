@@ -34,7 +34,7 @@ Reset times are treated as current observations. The product should say "current
 
 Setup APIs are read-only unless exposed through an explicit CLI command. The browser UI may show commands and paths, but should not silently edit external tool configuration.
 
-The desktop shell is presentation-only. It does not parse provider files directly; it starts the local service, loads static pages, and exposes minimal window controls to those pages.
+The desktop shell is presentation-only. It does not parse provider files directly; it starts the local service, loads static pages, exposes minimal window controls to those pages, and runs as a single tray instance.
 
 ## Adapter Contract
 
