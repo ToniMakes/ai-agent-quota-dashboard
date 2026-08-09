@@ -2,6 +2,7 @@ import type { AdapterRegistry } from "../adapters/registry.js";
 import type { SqliteStore } from "../storage/sqlite-store.js";
 import {
   choosePrimarySnapshot,
+  describeEmptyQuotaState,
   mostSevereStatus,
   resolveDoctorStatus
 } from "./quota-state.js";
@@ -97,6 +98,16 @@ export class AgentQuotaService {
       if (primarySnapshot) {
         summary.primarySnapshot = primarySnapshot;
         summary.lastObservedAt = primarySnapshot.observedAt;
+      }
+
+      const emptyState = describeEmptyQuotaState(
+        manifest,
+        agentSnapshots,
+        agentChecks
+      );
+
+      if (emptyState) {
+        summary.emptyState = emptyState;
       }
 
       return summary;

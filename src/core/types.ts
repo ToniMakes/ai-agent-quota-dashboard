@@ -113,10 +113,24 @@ export type AgentSummary = {
   displayName: string;
   shortName: string;
   status: QuotaStatus;
+  emptyState?: AgentEmptyState;
   primarySnapshot?: QuotaSnapshot;
   snapshots: QuotaSnapshot[];
   doctorStatus: DoctorStatus;
   lastObservedAt?: string;
+};
+
+export type AgentEmptyStateReason =
+  | "adapter_error"
+  | "no_readable_paths"
+  | "no_supported_source"
+  | "no_quota_data";
+
+export type AgentEmptyState = {
+  reason: AgentEmptyStateReason;
+  title: string;
+  detail: string;
+  action: string;
 };
 
 export type RefreshResult = {

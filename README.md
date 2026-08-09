@@ -21,6 +21,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Claude Code statusline setup helper with explicit opt-in
 - Reset event timeline for changed reset anchors and sharp replenishment
 - Dashboard and Doctor views
+- Dashboard guidance for missing quota data
 - Refresh history with saved counts and adapter error summaries
 - Settings view for Claude Code statusline onboarding
 - Local `config.json` for user-configured agent data paths

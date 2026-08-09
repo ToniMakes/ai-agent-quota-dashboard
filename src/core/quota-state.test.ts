@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { choosePrimarySnapshot, resolveQuotaStatus } from "./quota-state.js";
-import type { QuotaSnapshot } from "./types.js";
+import {
+  choosePrimarySnapshot,
+  describeEmptyQuotaState,
+  resolveQuotaStatus
+} from "./quota-state.js";
+import type { AgentManifest, DoctorCheck, QuotaSnapshot } from "./types.js";
 
 const baseSnapshot: QuotaSnapshot = {
   provider: "openai",
@@ -13,6 +17,26 @@ const baseSnapshot: QuotaSnapshot = {
   source: "official_cli",
   confidence: "official",
   stale: false
+};
+
+const manifest: AgentManifest = {
+  provider: "openai",
+  agent: "codex",
+  displayName: "Codex",
+  shortName: "Codex",
+  description: "OpenAI Codex local session and quota snapshots.",
+  defaultDataPaths: [],
+  supportedWindows: ["weekly"]
+};
+
+const baseCheck: DoctorCheck = {
+  id: "codex:quota-source",
+  provider: "openai",
+  agent: "codex",
+  label: "Quota source",
+  status: "warn",
+  message: "No readable Codex data path found",
+  observedAt: "2026-08-09T00:00:00.000Z"
 };
 
 describe("quota state", () => {
@@ -37,5 +61,49 @@ describe("quota state", () => {
     ]);
 
     assert.equal(primary?.windowType, "daily");
+  });
+
+  it("does not describe an empty state when quota snapshots exist", () => {
+    assert.equal(
+      describeEmptyQuotaState(manifest, [baseSnapshot], [baseCheck]),
+      undefined
+    );
+  });
+
+  it("describes missing readable data paths", () => {
+    const emptyState = describeEmptyQuotaState(manifest, [], [baseCheck]);
+
+    assert.equal(emptyState?.reason, "no_readable_paths");
+    assert.equal(emptyState?.title, "No readable data path");
+    assert.match(emptyState?.action ?? "", /config path add codex/);
+  });
+
+  it("describes readable paths without supported quota source", () => {
+    const emptyState = describeEmptyQuotaState(manifest, [], [
+      {
+        ...baseCheck,
+        message: "No supported Codex quota snapshot files found"
+      }
+    ]);
+
+    assert.equal(emptyState?.reason, "no_supported_source");
+    assert.equal(emptyState?.title, "No supported quota source");
+  });
+
+  it("prefers adapter errors over source guidance", () => {
+    const emptyState = describeEmptyQuotaState(manifest, [], [
+      baseCheck,
+      {
+        ...baseCheck,
+        id: "codex:adapter-error",
+        label: "Adapter",
+        status: "fail",
+        message: "Adapter scan failed",
+        detail: "Permission denied"
+      }
+    ]);
+
+    assert.equal(emptyState?.reason, "adapter_error");
+    assert.equal(emptyState?.detail, "Permission denied");
   });
 });
