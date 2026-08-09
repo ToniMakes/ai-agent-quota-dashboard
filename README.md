@@ -22,6 +22,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Reset event timeline for changed reset anchors and sharp replenishment
 - Dashboard and Doctor views
 - Settings view for Claude Code statusline onboarding
+- Normalized JSON/CSV export from the Settings view
 - Explicit source and confidence labels
 - Demo data mode for UI development
 

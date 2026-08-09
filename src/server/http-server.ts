@@ -6,6 +6,7 @@ import type { AddressInfo } from "node:net";
 import type { AgentQuotaService } from "../core/agent-quota-service.js";
 import type { AppConfig } from "../config/app-config.js";
 import type { SqliteStore } from "../storage/sqlite-store.js";
+import { buildQuotaExport, quotaSnapshotsToCsv } from "../core/export-data.js";
 import { getClaudeStatuslineSetupStatus } from "../setup/claude-statusline-status.js";
 
 export type ServerContext = {
@@ -100,6 +101,43 @@ async function handleApiRequest(
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/api/export") {
+    const generatedAt = new Date().toISOString();
+    const snapshots = context.service.listQuotaSnapshots();
+    const resetEvents = context.service.listResetEvents(100);
+    const format = url.searchParams.get("format") ?? "json";
+
+    if (format === "json") {
+      const payload = buildQuotaExport({
+        generatedAt,
+        snapshots,
+        resetEvents
+      });
+      sendDownload(
+        response,
+        200,
+        JSON.stringify(payload, null, 2),
+        "application/json; charset=utf-8",
+        "ai-agent-quota-export.json"
+      );
+      return;
+    }
+
+    if (format === "csv") {
+      sendDownload(
+        response,
+        200,
+        quotaSnapshotsToCsv(snapshots),
+        "text/csv; charset=utf-8",
+        "ai-agent-quota-snapshots.csv"
+      );
+      return;
+    }
+
+    sendJson(response, 400, { error: "Unsupported export format" });
+    return;
+  }
+
   if (request.method === "GET" && url.pathname === "/api/setup/claude-statusline") {
     sendJson(response, 200, {
       generatedAt: new Date().toISOString(),
@@ -165,4 +203,20 @@ function sendJson(
     "Content-Type": "application/json; charset=utf-8"
   });
   response.end(JSON.stringify(payload, null, 2));
+}
+
+function sendDownload(
+  response: ServerResponse,
+  statusCode: number,
+  body: string,
+  contentType: string,
+  filename: string
+): void {
+  response.writeHead(statusCode, {
+    "Cache-Control": "no-store",
+    "Content-Disposition": `attachment; filename="${filename}"`,
+    "Content-Length": Buffer.byteLength(body),
+    "Content-Type": contentType
+  });
+  response.end(body);
 }

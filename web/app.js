@@ -143,7 +143,7 @@ function renderSnapshotLines(snapshots) {
       return `
         <div class="quota-line">
           <span class="label">${escapeHtml(windowLabel(snapshot.windowType))}</span>
-          <span class="value">${formatRemaining(snapshot)} · ${escapeHtml(reset)}</span>
+          <span class="value">${formatRemaining(snapshot)} / ${escapeHtml(reset)}</span>
         </div>
       `;
     })
@@ -334,7 +334,7 @@ function eventDetail(event) {
     Boolean
   );
 
-  return parts.length > 0 ? parts.join(" · ") : event.note;
+  return parts.length > 0 ? parts.join(" / ") : event.note;
 }
 
 function formatRemaining(snapshot) {

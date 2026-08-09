@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AI Agent Quota</title>
-    <link rel="stylesheet" href="/styles.css?v=20260809-settings" />
+    <link rel="stylesheet" href="/styles.css?v=20260809-export" />
   </head>
   <body>
     <main class="shell">
@@ -57,9 +57,18 @@
           </div>
           <div id="settings-content" class="settings-content"></div>
         </div>
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Data Export</h2>
+          </div>
+          <div class="export-actions">
+            <a class="button" href="/api/export?format=json" download>Export JSON</a>
+            <a class="button" href="/api/export?format=csv" download>Export CSV</a>
+          </div>
+        </div>
       </section>
     </main>
 
-    <script src="/app.js?v=20260809-settings" type="module"></script>
+    <script src="/app.js?v=20260809-export" type="module"></script>
   </body>
 </html>
