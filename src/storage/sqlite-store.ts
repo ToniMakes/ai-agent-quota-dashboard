@@ -4,6 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import type {
   DoctorCheck,
   QuotaSnapshot,
+  RefreshRun,
   RefreshResult,
   ResetEvent,
   UsageEvent
@@ -56,6 +57,17 @@ type ResetEventRow = {
   source: string;
   confidence: string;
   note: string;
+};
+
+type RefreshRunRow = {
+  id: number;
+  observed_at: string;
+  snapshots_saved: number;
+  usage_events_saved: number;
+  doctor_checks_saved: number;
+  reset_events_saved: number;
+  adapter_count: number;
+  errors_json: string;
 };
 
 type SaveQuotaSnapshotsResult = {
@@ -501,6 +513,25 @@ export class SqliteStore {
     return rows.map(mapResetEventRow);
   }
 
+  listRefreshRuns(limit = 10): RefreshRun[] {
+    const rows = this.database.prepare(`
+      SELECT
+        id,
+        observed_at,
+        snapshots_saved,
+        usage_events_saved,
+        doctor_checks_saved,
+        reset_events_saved,
+        adapter_count,
+        errors_json
+      FROM refresh_runs
+      ORDER BY observed_at DESC, id DESC
+      LIMIT ?;
+    `).all(limit) as RefreshRunRow[];
+
+    return rows.map(mapRefreshRunRow);
+  }
+
   close(): void {
     this.database.close();
   }
@@ -604,4 +635,31 @@ function mapResetEventRow(row: ResetEventRow): ResetEvent {
   }
 
   return event;
+}
+
+function mapRefreshRunRow(row: RefreshRunRow): RefreshRun {
+  return {
+    id: row.id,
+    observedAt: row.observed_at,
+    snapshotsSaved: row.snapshots_saved,
+    usageEventsSaved: row.usage_events_saved,
+    doctorChecksSaved: row.doctor_checks_saved,
+    resetEventsSaved: row.reset_events_saved,
+    adapterCount: row.adapter_count,
+    errors: parseErrorsJson(row.errors_json)
+  };
+}
+
+function parseErrorsJson(value: string): string[] {
+  try {
+    const parsed: unknown = JSON.parse(value);
+
+    if (Array.isArray(parsed)) {
+      return parsed.filter((item): item is string => typeof item === "string");
+    }
+  } catch {
+    return ["Stored refresh run errors could not be parsed."];
+  }
+
+  return [];
 }

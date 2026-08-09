@@ -14,11 +14,13 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - CLI commands to list, add, and remove local agent data paths
 - Settings view status for configured local data paths
 - Doctor view grouping by agent
+- Refresh run history API and Doctor view panel
 
 ### Privacy
 
 - Exports exclude account identifiers and raw local source references
 - Local path configuration stores only user-provided scan roots
+- Refresh history stores aggregate counts, timestamps, and adapter error summaries
 
 ## [0.1.0] - 2026-08-09
 

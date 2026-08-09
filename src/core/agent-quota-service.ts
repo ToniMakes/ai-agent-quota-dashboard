@@ -10,6 +10,7 @@ import type {
   AgentSummary,
   DoctorCheck,
   QuotaSnapshot,
+  RefreshRun,
   RefreshResult,
   ResetEvent
 } from "./types.js";
@@ -112,6 +113,10 @@ export class AgentQuotaService {
 
   listResetEvents(limit?: number): ResetEvent[] {
     return this.store.listResetEvents(limit);
+  }
+
+  listRefreshRuns(limit?: number): RefreshRun[] {
+    return this.store.listRefreshRuns(limit);
   }
 }
 
