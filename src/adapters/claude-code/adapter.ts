@@ -8,20 +8,16 @@ import type { DoctorCheck, QuotaSnapshot } from "../../core/types.js";
 import { parseClaudeCodeStatusline } from "./parse-statusline.js";
 
 export type ClaudeCodeAdapterOptions = {
+  configuredDataPaths?: string[];
   demoMode: boolean;
 };
 
 export function createClaudeCodeAdapter(
   options: ClaudeCodeAdapterOptions
 ): AgentAdapter {
-  const defaultDataPaths = uniquePaths([
-    process.env.CLAUDE_CONFIG_DIR,
-    join(homedir(), ".claude"),
-    process.env.AIQD_CLAUDE_STATUSLINE_DIR ??
-      defaultClaudeStatuslineSnapshotDir(),
-    process.env.APPDATA ? join(process.env.APPDATA, "Claude") : undefined,
-    process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, "Claude") : undefined
-  ]);
+  const defaultDataPaths = resolveClaudeCodeDataPaths(
+    options.configuredDataPaths
+  );
 
   return {
     manifest: {
@@ -80,6 +76,26 @@ export function createClaudeCodeAdapter(
       };
     }
   };
+}
+
+export function getDefaultClaudeCodeDataPaths(): string[] {
+  return uniquePaths([
+    process.env.CLAUDE_CONFIG_DIR,
+    join(homedir(), ".claude"),
+    process.env.AIQD_CLAUDE_STATUSLINE_DIR ??
+      defaultClaudeStatuslineSnapshotDir(),
+    process.env.APPDATA ? join(process.env.APPDATA, "Claude") : undefined,
+    process.env.LOCALAPPDATA ? join(process.env.LOCALAPPDATA, "Claude") : undefined
+  ]);
+}
+
+export function resolveClaudeCodeDataPaths(
+  configuredDataPaths: string[] = []
+): string[] {
+  return uniquePaths([
+    ...getDefaultClaudeCodeDataPaths(),
+    ...configuredDataPaths
+  ]);
 }
 
 async function readClaudeCodeQuotaSnapshots(

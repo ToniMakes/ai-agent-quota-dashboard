@@ -5,6 +5,10 @@ export function defaultAppDataDir(): string {
   return join(homedir(), ".ai-agent-quota-dashboard");
 }
 
+export function defaultUserConfigPath(): string {
+  return join(defaultAppDataDir(), "config.json");
+}
+
 export function defaultClaudeStatuslineSnapshotDir(): string {
   return join(defaultAppDataDir(), "claude-code");
 }

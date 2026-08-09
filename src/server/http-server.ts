@@ -8,6 +8,7 @@ import type { AppConfig } from "../config/app-config.js";
 import type { SqliteStore } from "../storage/sqlite-store.js";
 import { buildQuotaExport, quotaSnapshotsToCsv } from "../core/export-data.js";
 import { getClaudeStatuslineSetupStatus } from "../setup/claude-statusline-status.js";
+import { getLocalPathsSetupStatus } from "../setup/local-paths-status.js";
 
 export type ServerContext = {
   config: AppConfig;
@@ -142,6 +143,14 @@ async function handleApiRequest(
     sendJson(response, 200, {
       generatedAt: new Date().toISOString(),
       status: await getClaudeStatuslineSetupStatus()
+    });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/setup/local-paths") {
+    sendJson(response, 200, {
+      generatedAt: new Date().toISOString(),
+      status: await getLocalPathsSetupStatus(context.config.userConfigPath)
     });
     return;
   }

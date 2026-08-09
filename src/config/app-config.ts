@@ -1,10 +1,12 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { defaultUserConfigPath } from "./paths.js";
 
 export type AppConfig = {
   host: string;
   port: number;
   dbPath: string;
+  userConfigPath: string;
   demoMode: boolean;
 };
 
@@ -19,6 +21,10 @@ export function loadConfig(
       readFlagValue(argv, "--db") ??
       env.AIQD_DB_PATH ??
       join(homedir(), ".ai-agent-quota-dashboard", "quota.db"),
+    userConfigPath:
+      readFlagValue(argv, "--config") ??
+      env.AIQD_CONFIG_PATH ??
+      defaultUserConfigPath(),
     demoMode: argv.includes("--demo") || env.AIQD_DEMO_DATA === "1"
   };
 }

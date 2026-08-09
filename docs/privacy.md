@@ -9,6 +9,7 @@ It reads known local usage files, local quota snapshots, or official status outp
 - The server binds to `127.0.0.1`.
 - SQLite data is stored locally.
 - Demo data is opt-in through `--demo` or `npm run dev`.
+- User-configured scan roots are stored in the app's own local `config.json`.
 - Network connectors must be explicit and opt-in.
 - The Settings view is read-only and does not modify Claude Code settings.
 
@@ -21,6 +22,7 @@ The app may store:
 - Reset timestamps
 - Source and confidence labels
 - Doctor check results
+- User-provided local scan roots
 - Sanitized Claude Code statusline `rate_limits` snapshots, when explicitly enabled
 
 The app should not store:
