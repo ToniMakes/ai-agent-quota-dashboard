@@ -136,3 +136,7 @@ When a reset time changes or remaining quota jumps back near full, the app recor
 See [CONTRIBUTING.md](CONTRIBUTING.md) before adding an adapter or parser. Parser changes must include sanitized fixtures and tests.
 
 Security and privacy-sensitive reports should follow [SECURITY.md](SECURITY.md). Do not paste prompts, responses, source code, credentials, cookies, session IDs, transcript paths, workspace paths, or full raw logs into public issues.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
