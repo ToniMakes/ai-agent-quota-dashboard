@@ -305,10 +305,12 @@ h2 {
   font-size: 0.84rem;
 }
 
-.agent-empty-state code {
-  overflow-wrap: anywhere;
-  color: var(--accent-strong);
-  font-size: 0.78rem;
+.agent-empty-action {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
 }
 
 .quota-line,
@@ -425,6 +427,18 @@ h2 {
   white-space: pre-line;
 }
 
+.command-block {
+  display: grid;
+  gap: 6px;
+}
+
+.command-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .command-box {
   display: block;
   width: 100%;
@@ -436,6 +450,62 @@ h2 {
   color: var(--text);
   font-size: 0.86rem;
   white-space: pre;
+}
+
+.inline-command-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.inline-command {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.inline-command code {
+  min-width: 0;
+  padding: 7px 9px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  white-space: pre;
+}
+
+.copy-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 68px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.copy-button:hover {
+  border-color: var(--accent);
+}
+
+.copy-button.copied,
+.copy-button.selected {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.copy-button.failed {
+  border-color: var(--warning);
+  color: var(--warning);
 }
 
 .pill-list {

@@ -22,6 +22,8 @@ const elements = {
   views: document.querySelectorAll(".view")
 };
 
+const copyResetTimers = new WeakMap();
+
 elements.refreshButton.addEventListener("click", async () => {
   elements.refreshButton.disabled = true;
   elements.refreshButton.textContent = "Refreshing";
@@ -48,6 +50,29 @@ for (const tab of elements.tabs) {
     }
   });
 }
+
+document.addEventListener("click", async (event) => {
+  const target = event.target;
+
+  if (!(target instanceof Element)) {
+    return;
+  }
+
+  const button = target.closest("[data-copy-text]");
+
+  if (!(button instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const text = button.dataset.copyText;
+
+  if (!text) {
+    return;
+  }
+
+  const result = await copyText(text, button);
+  showCopyState(button, result);
+});
 
 await load();
 
@@ -146,6 +171,8 @@ function renderSnapshotLines(agent) {
 
   if (!snapshots || snapshots.length === 0) {
     const emptyState = agent.emptyState;
+    const action =
+      emptyState?.action ?? "Open Doctor for source checks and refresh history.";
 
     return `
       <div class="agent-empty-state">
@@ -154,9 +181,7 @@ function renderSnapshotLines(agent) {
           emptyState?.detail ??
             "The latest refresh did not produce a quota snapshot for this agent."
         )}</p>
-        <code>${escapeHtml(
-          emptyState?.action ?? "Open Doctor for source checks and refresh history."
-        )}</code>
+        ${renderActionHint(action)}
       </div>
     `;
   }
@@ -399,14 +424,8 @@ function renderSettings() {
       )}
     </div>
 
-    <div>
-      <div class="label">Preview command</div>
-      <code class="command-box">${escapeHtml(status.previewCommand)}</code>
-    </div>
-    <div>
-      <div class="label">Install command</div>
-      <code class="command-box">${escapeHtml(status.writeCommand)}</code>
-    </div>
+    ${renderCommandBlock("Preview command", status.previewCommand)}
+    ${renderCommandBlock("Install command", status.writeCommand)}
 
     <div class="settings-row">
       <strong>Stored</strong>
@@ -438,19 +457,7 @@ function renderPathSettings() {
       settingsRow("Config warning", "Check file", error, "warning")
     )
     .join("");
-  const agentRows = (status.agents ?? [])
-    .map((agent) => {
-      const configuredCount = agent.configuredDataPaths?.length ?? 0;
-      return settingsRow(
-        agent.displayName,
-        configuredCount === 0
-          ? "Default paths"
-          : `${configuredCount} configured`,
-        `${agent.addCommand}\n${agent.removeCommand}`,
-        configuredCount === 0 ? "stale" : "healthy"
-      );
-    })
-    .join("");
+  const agentRows = (status.agents ?? []).map(renderPathAgentRow).join("");
   const configuredPathRows = (status.agents ?? [])
     .flatMap((agent) =>
       (agent.configuredDataPaths ?? []).map((path) =>
@@ -475,16 +482,160 @@ function renderPathSettings() {
       ${errorRows}
       ${agentRows}
     </div>
-    <div>
-      <div class="label">List command</div>
-      <code class="command-box">${escapeHtml(status.listCommand)}</code>
-    </div>
+    ${renderCommandBlock("List command", status.listCommand)}
     ${
       configuredPathRows
         ? `<div class="settings-list">${configuredPathRows}</div>`
         : ""
     }
   `;
+}
+
+function renderActionHint(action) {
+  const command = extractCommand(action);
+
+  if (!command) {
+    return `<p class="agent-empty-action">${escapeHtml(action)}</p>`;
+  }
+
+  const prefix = action.slice(0, action.length - command.length).trim();
+
+  return `
+    <div class="agent-empty-action">
+      ${prefix ? `<span>${escapeHtml(prefix)}</span>` : ""}
+      ${renderInlineCommand(command)}
+    </div>
+  `;
+}
+
+function renderPathAgentRow(agent) {
+  const configuredCount = agent.configuredDataPaths?.length ?? 0;
+  const value =
+    configuredCount === 0 ? "Default paths" : `${configuredCount} configured`;
+
+  return `
+    <div class="settings-row">
+      <strong>${escapeHtml(agent.displayName)}</strong>
+      <div>
+        <div>${escapeHtml(value)}</div>
+        <div class="inline-command-list">
+          ${renderInlineCommand(agent.addCommand)}
+          ${renderInlineCommand(agent.removeCommand)}
+        </div>
+      </div>
+      <span class="badge ${configuredCount === 0 ? "stale" : "healthy"}">${escapeHtml(
+        value
+      )}</span>
+    </div>
+  `;
+}
+
+function renderCommandBlock(label, command) {
+  return `
+    <div class="command-block">
+      <div class="command-header">
+        <div class="label">${escapeHtml(label)}</div>
+        ${renderCopyButton(command)}
+      </div>
+      <code class="command-box">${escapeHtml(command)}</code>
+    </div>
+  `;
+}
+
+function renderInlineCommand(command) {
+  return `
+    <div class="inline-command">
+      <code>${escapeHtml(command)}</code>
+      ${renderCopyButton(command)}
+    </div>
+  `;
+}
+
+function renderCopyButton(text) {
+  return `
+    <button
+      class="copy-button"
+      type="button"
+      data-copy-text="${escapeHtml(text)}"
+      title="Copy command"
+      aria-label="Copy command"
+    >Copy</button>
+  `;
+}
+
+function extractCommand(value) {
+  return /(node dist\/index\.js .+)$/.exec(value)?.[1];
+}
+
+async function copyText(text, button) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return "copied";
+    } catch {
+      // Fall back for local browser contexts without clipboard permission.
+    }
+  }
+
+  const selected = selectCommandText(button);
+
+  if (typeof document.execCommand === "function") {
+    try {
+      if (document.execCommand("copy")) {
+        clearCommandSelection();
+        return "copied";
+      }
+    } catch {
+      // Leaving the visible command selected is still useful.
+    }
+  }
+
+  return selected ? "selected" : "failed";
+}
+
+function selectCommandText(button) {
+  const container = button.closest(".command-block, .inline-command");
+  const code = container?.querySelector("code");
+  const selection = window.getSelection();
+
+  if (!code || !selection) {
+    return false;
+  }
+
+  const range = document.createRange();
+  range.selectNodeContents(code);
+  selection.removeAllRanges();
+  selection.addRange(range);
+  return true;
+}
+
+function clearCommandSelection() {
+  window.getSelection()?.removeAllRanges();
+}
+
+function showCopyState(button, result) {
+  const originalText = button.dataset.defaultText ?? button.textContent ?? "Copy";
+  const label =
+    result === "copied" ? "Copied" : result === "selected" ? "Selected" : "Copy failed";
+
+  button.dataset.defaultText = originalText;
+  button.textContent = label;
+  button.classList.remove("copied", "selected", "failed");
+  button.classList.add(result);
+
+  const existingTimer = copyResetTimers.get(button);
+
+  if (existingTimer) {
+    window.clearTimeout(existingTimer);
+  }
+
+  const resetTimer = window.setTimeout(() => {
+    button.textContent = originalText;
+    button.classList.remove(result);
+    copyResetTimers.delete(button);
+  }, 1200);
+
+  copyResetTimers.set(button, resetTimer);
 }
 
 function settingsRow(label, value, detail, badgeClass) {

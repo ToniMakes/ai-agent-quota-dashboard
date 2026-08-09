@@ -24,6 +24,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Dashboard guidance for missing quota data
 - Refresh history with saved counts and adapter error summaries
 - Settings view for Claude Code statusline onboarding
+- Copy buttons for setup and local path commands, with selection fallback when clipboard access is unavailable
 - Local `config.json` for user-configured agent data paths
 - Normalized JSON/CSV export from the Settings view
 - Explicit source and confidence labels
@@ -88,7 +89,7 @@ These commands write only the dashboard's own config file:
 ~/.ai-agent-quota-dashboard/config.json
 ```
 
-The Settings view shows the same config path and whether configured scan roots are readable.
+The Settings view shows the same config path, whether configured scan roots are readable, and copy buttons for the related commands. If the browser blocks clipboard access, the command is selected so it can be copied manually.
 
 ## Claude Code Statusline
 
@@ -114,7 +115,7 @@ node dist/index.js setup claude-statusline --write
 
 If a `statusLine` already exists, the command refuses to replace it unless you add `--force`.
 
-The Settings view shows the same setup state and commands. It is read-only: it does not modify Claude Code configuration from the browser.
+The Settings view shows the same setup state and copyable commands. It is read-only: it does not modify Claude Code configuration from the browser.
 
 ## Architecture
 
