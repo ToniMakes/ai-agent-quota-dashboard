@@ -176,6 +176,15 @@ export function describeEmptyQuotaState(
   }
 
   if (quotaSource?.message.includes("No supported")) {
+    const statuslineEmptyState = describeClaudeStatuslineEmptyState(
+      manifest,
+      checks
+    );
+
+    if (statuslineEmptyState) {
+      return statuslineEmptyState;
+    }
+
     return {
       reason: "no_supported_source",
       title: "No supported quota source",
@@ -191,6 +200,55 @@ export function describeEmptyQuotaState(
     detail: "The latest refresh did not produce a quota snapshot for this agent.",
     action: "Open Doctor for source checks and refresh history."
   };
+}
+
+function describeClaudeStatuslineEmptyState(
+  manifest: AgentManifest,
+  checks: DoctorCheck[]
+): AgentEmptyState | undefined {
+  if (manifest.agent !== "claude-code") {
+    return undefined;
+  }
+
+  const commandCheck = checks.find(
+    (check) => check.id === "claude-code:statusline:statusline-command"
+  );
+  const shimCheck = checks.find(
+    (check) => check.id === "claude-code:statusline:shim"
+  );
+  const latestCheck = checks.find(
+    (check) => check.id === "claude-code:statusline:latest-snapshot"
+  );
+
+  if (
+    commandCheck?.status !== "pass" ||
+    shimCheck?.status !== "pass" ||
+    latestCheck?.status === "pass"
+  ) {
+    return undefined;
+  }
+
+  return {
+    reason: "waiting_for_statusline_data",
+    title: "Waiting for Claude Code data",
+    detail: claudeStatuslineWaitingDetail(latestCheck),
+    action:
+      "Open Claude Code, let the statusline render once, then run node dist/index.js doctor"
+  };
+}
+
+function claudeStatuslineWaitingDetail(
+  latestCheck: DoctorCheck | undefined
+): string {
+  if (latestCheck?.message.includes("Snapshot has no supported rate_limits")) {
+    return "Claude Code is calling the statusline sink, but the latest payload did not include supported rate_limits fields.";
+  }
+
+  if (latestCheck?.message.includes("Latest snapshot could not be used")) {
+    return "Claude Code is calling the statusline sink, but the latest sanitized snapshot could not be parsed.";
+  }
+
+  return "Claude Code is configured to call the AIQD statusline sink, but no supported rate_limits snapshot has been received yet.";
 }
 
 function supportedSourceAction(agent: string): string {
