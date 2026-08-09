@@ -99,6 +99,9 @@ It starts the local backend, adds an AI Agent Quota tray icon, and provides:
 
 - a tray mini panel that hides when it loses focus
 - an optional always-on-top desktop widget
+- a tray tooltip and menu summary for the current quota state
+- remembered desktop widget position
+- `Esc` to hide the active mini surface
 - a normal full dashboard window for setup, Doctor, and exports
 
 The mini surfaces reuse the same normalized `/api/agents` and setup endpoints as the main dashboard. They do not read extra files, collect prompts, or call hidden provider APIs.

@@ -1,6 +1,7 @@
 const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, screen, shell } =
   require("electron");
 const { spawn } = require("node:child_process");
+const { existsSync, mkdirSync, readFileSync, writeFileSync } = require("node:fs");
 const http = require("node:http");
 const net = require("node:net");
 const path = require("node:path");
@@ -11,18 +12,24 @@ const preloadPath = path.join(__dirname, "preload.cjs");
 const panelSize = { width: 340, height: 236 };
 const widgetSize = { width: 340, height: 196 };
 const smokeMode = process.argv.includes("--smoke");
+const trayStatusIntervalMs = 30_000;
 
 let backend;
 let baseUrl;
+let desktopStatePath;
 let tray;
+let trayStatus = "Starting";
+let trayStatusTimer;
 let panelWindow;
 let widgetWindow;
 let dashboardWindow;
 let isQuitting = false;
+let saveWidgetBoundsTimer;
 
 app.setName("AI Agent Quota");
 
 app.whenReady().then(async () => {
+  desktopStatePath = path.join(app.getPath("userData"), "desktop-state.json");
   const port = await findFreePort(4317, 4399);
   baseUrl = `http://127.0.0.1:${port}`;
   backend = spawn(process.env.AIQD_NODE_PATH ?? "node", backendArgs(port), {
@@ -51,10 +58,15 @@ app.whenReady().then(async () => {
   registerIpc();
   createTray();
   createPanelWindow();
+  updateTrayStatus();
+  trayStatusTimer = setInterval(updateTrayStatus, trayStatusIntervalMs);
 });
 
 app.on("before-quit", () => {
   isQuitting = true;
+  if (trayStatusTimer) {
+    clearInterval(trayStatusTimer);
+  }
   if (backend && !backend.killed) {
     backend.kill();
   }
@@ -92,8 +104,31 @@ function registerIpc() {
 function createTray() {
   tray = new Tray(createTrayIcon());
   tray.setToolTip("AI Agent Quota");
+  updateTrayMenu();
+  tray.on("click", togglePanelWindow);
+}
+
+async function updateTrayStatus() {
+  if (!tray || !baseUrl) {
+    return;
+  }
+
+  try {
+    const payload = await getJson(`${baseUrl}/api/agents`);
+    trayStatus = summarizeAgents(payload.agents ?? []);
+  } catch {
+    trayStatus = "Local service unavailable";
+  }
+
+  tray.setToolTip(`AI Agent Quota\n${trayStatus}`);
+  updateTrayMenu();
+}
+
+function updateTrayMenu() {
   tray.setContextMenu(
     Menu.buildFromTemplate([
+      { label: trayStatus, enabled: false },
+      { type: "separator" },
       { label: "Open Mini Panel", click: togglePanelWindow },
       { label: "Toggle Desktop Widget", click: toggleWidgetWindow },
       { label: "Open Dashboard", click: openDashboardWindow },
@@ -107,7 +142,6 @@ function createTray() {
       }
     ])
   );
-  tray.on("click", togglePanelWindow);
 }
 
 function createPanelWindow() {
@@ -147,6 +181,7 @@ function togglePanelWindow() {
   positionPanelWindow();
   panelWindow.show();
   panelWindow.focus();
+  updateTrayStatus();
 }
 
 function positionPanelWindow() {
@@ -182,6 +217,7 @@ function toggleWidgetWindow() {
       webPreferences: secureWebPreferences()
     });
     widgetWindow.loadURL(`${baseUrl}/mini.html?mode=widget`);
+    widgetWindow.on("move", scheduleSaveWidgetBounds);
     widgetWindow.on("closed", () => {
       widgetWindow = undefined;
     });
@@ -192,13 +228,9 @@ function toggleWidgetWindow() {
     return;
   }
 
-  const workArea = screen.getPrimaryDisplay().workArea;
-  widgetWindow.setBounds({
-    x: workArea.x + workArea.width - widgetSize.width - 24,
-    y: workArea.y + 72,
-    ...widgetSize
-  });
+  widgetWindow.setBounds(resolveWidgetBounds());
   widgetWindow.show();
+  updateTrayStatus();
 }
 
 function openDashboardWindow() {
@@ -223,6 +255,7 @@ function openDashboardWindow() {
   dashboardWindow.loadURL(baseUrl);
   dashboardWindow.show();
   dashboardWindow.focus();
+  updateTrayStatus();
 }
 
 function secureWebPreferences() {
@@ -247,6 +280,177 @@ function createTrayIcon() {
   return nativeImage.createFromDataURL(
     `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
   );
+}
+
+function summarizeAgents(agents) {
+  if (!Array.isArray(agents) || agents.length === 0) {
+    return "No agents configured";
+  }
+
+  return agents.map(summarizeAgent).join(" | ");
+}
+
+function summarizeAgent(agent) {
+  const snapshot = agent.primarySnapshot;
+  const name = agent.shortName ?? agent.displayName ?? agent.agent;
+
+  if (!snapshot) {
+    if (agent.emptyState?.reason === "waiting_for_statusline_data") {
+      return `${name}: waiting`;
+    }
+
+    return `${name}: --`;
+  }
+
+  const remaining =
+    typeof snapshot.remainingPercent === "number"
+      ? `${Math.round(snapshot.remainingPercent)}%`
+      : typeof snapshot.remaining === "number"
+        ? `${snapshot.remaining} ${snapshot.unit}`
+        : "--";
+  const reset = snapshot.resetAt ? ` ${formatResetDistance(snapshot.resetAt)}` : "";
+
+  return `${name}: ${remaining}${reset}`;
+}
+
+function formatResetDistance(value) {
+  const parsed = Date.parse(value);
+
+  if (Number.isNaN(parsed)) {
+    return "reset unknown";
+  }
+
+  const seconds = Math.round((parsed - Date.now()) / 1000);
+  const absoluteSeconds = Math.abs(seconds);
+  const suffix = seconds < 0 ? "ago" : "left";
+
+  if (absoluteSeconds >= 86_400) {
+    return `${Math.round(absoluteSeconds / 86_400)}d ${suffix}`;
+  }
+
+  if (absoluteSeconds >= 3_600) {
+    return `${Math.round(absoluteSeconds / 3_600)}h ${suffix}`;
+  }
+
+  if (absoluteSeconds >= 60) {
+    return `${Math.round(absoluteSeconds / 60)}m ${suffix}`;
+  }
+
+  return `${absoluteSeconds}s ${suffix}`;
+}
+
+function resolveWidgetBounds() {
+  const savedBounds = readDesktopState().widgetBounds;
+  const workArea = screen.getPrimaryDisplay().workArea;
+  const bounds = isSavedWidgetBounds(savedBounds)
+    ? {
+        ...widgetSize,
+        x: savedBounds.x,
+        y: savedBounds.y
+      }
+    : {
+        ...widgetSize,
+        x: workArea.x + workArea.width - widgetSize.width - 24,
+        y: workArea.y + 72
+      };
+
+  return clampBoundsToNearestDisplay(bounds);
+}
+
+function isSavedWidgetBounds(value) {
+  return (
+    value &&
+    typeof value === "object" &&
+    Number.isFinite(value.x) &&
+    Number.isFinite(value.y)
+  );
+}
+
+function clampBoundsToNearestDisplay(bounds) {
+  const display = screen.getDisplayNearestPoint({
+    x: bounds.x,
+    y: bounds.y
+  });
+  const workArea = display.workArea;
+
+  return {
+    ...bounds,
+    x: clamp(bounds.x, workArea.x + 8, workArea.x + workArea.width - bounds.width - 8),
+    y: clamp(bounds.y, workArea.y + 8, workArea.y + workArea.height - bounds.height - 8)
+  };
+}
+
+function scheduleSaveWidgetBounds() {
+  if (!widgetWindow || !widgetWindow.isVisible()) {
+    return;
+  }
+
+  if (saveWidgetBoundsTimer) {
+    clearTimeout(saveWidgetBoundsTimer);
+  }
+
+  saveWidgetBoundsTimer = setTimeout(saveWidgetBounds, 250);
+}
+
+function saveWidgetBounds() {
+  if (!widgetWindow) {
+    return;
+  }
+
+  const state = readDesktopState();
+  const bounds = widgetWindow.getBounds();
+  writeDesktopState({
+    ...state,
+    widgetBounds: {
+      x: bounds.x,
+      y: bounds.y
+    }
+  });
+}
+
+function readDesktopState() {
+  try {
+    if (!existsSync(desktopStatePath)) {
+      return {};
+    }
+
+    const parsed = JSON.parse(readFileSync(desktopStatePath, "utf8"));
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeDesktopState(state) {
+  mkdirSync(path.dirname(desktopStatePath), { recursive: true });
+  writeFileSync(desktopStatePath, JSON.stringify(state, null, 2));
+}
+
+function getJson(url) {
+  return new Promise((resolve, reject) => {
+    http
+      .get(url, (response) => {
+        let body = "";
+
+        response.setEncoding("utf8");
+        response.on("data", (chunk) => {
+          body += chunk;
+        });
+        response.on("end", () => {
+          if (response.statusCode !== 200) {
+            reject(new Error(`HTTP ${response.statusCode}`));
+            return;
+          }
+
+          try {
+            resolve(JSON.parse(body));
+          } catch (error) {
+            reject(error);
+          }
+        });
+      })
+      .on("error", reject);
+  });
 }
 
 async function findFreePort(start, end) {

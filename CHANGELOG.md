@@ -11,6 +11,8 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Normalized JSON and CSV export endpoints for dashboard quota data
 - Settings view export buttons for local JSON/CSV downloads
 - Development desktop shell with a tray mini panel and optional always-on-top widget
+- Tray tooltip/menu quota summaries for the desktop shell
+- Remembered desktop widget position and `Esc` hiding for mini surfaces
 - Desktop smoke command for backend startup checks
 - Mini quota panel page for compact daily use
 - Local `config.json` support for user-configured agent data paths
