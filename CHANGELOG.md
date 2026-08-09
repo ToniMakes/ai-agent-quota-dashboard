@@ -16,6 +16,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Doctor view grouping by agent
 - CLI `doctor` command for one-shot local diagnostics
 - Machine-readable `doctor --json` output with private fields excluded or redacted
+- CLI export command for normalized JSON/CSV quota data
 - Refresh run history API and Doctor view panel
 - Dashboard empty-state guidance when an agent has no quota snapshots
 - Copy buttons for setup commands, local path commands, and command-backed empty states, with selection fallback when clipboard access is unavailable
@@ -27,6 +28,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Local path configuration stores only user-provided scan roots
 - Refresh history stores aggregate counts, timestamps, and adapter error summaries
 - Public bug-report guidance prefers reviewed `doctor --json` output over local-path-bearing text logs
+- CLI exports reuse the same account/source-reference exclusions as dashboard exports
 
 ## [0.1.0] - 2026-08-09
 
