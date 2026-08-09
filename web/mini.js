@@ -47,6 +47,12 @@ document.addEventListener("click", async (event) => {
   }
 });
 
+document.addEventListener("keydown", async (event) => {
+  if (event.key === "Escape") {
+    await window.aiqdDesktop?.hideCurrentWindow();
+  }
+});
+
 await load();
 window.setInterval(load, refreshIntervalMs);
 
