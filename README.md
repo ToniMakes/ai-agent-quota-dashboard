@@ -29,6 +29,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Refresh history with saved counts and adapter error summaries
 - Settings view for Claude Code statusline onboarding
 - Claude Code statusline readiness checks for setup, shim, and latest rate limit data
+- Three-step Claude Code real-data setup flow in docs, Settings, and setup output
 - Copy buttons for setup and local path commands, with selection fallback when clipboard access is unavailable
 - Local `config.json` for user-configured agent data paths
 - Normalized JSON/CSV export from the Settings view
@@ -129,23 +130,27 @@ The Settings view shows the same config path, whether configured scan roots are 
 
 Claude Code can send official `rate_limits` data to a local statusline command. This project provides a sink that stores only sanitized rate limit fields.
 
-Build the local CLI first:
+Real-data setup:
+
+1. Build the local CLI:
 
 ```bash
 npm run build
 ```
 
-Preview the setup without changing Claude settings:
-
-```bash
-node dist/index.js setup claude-statusline
-```
-
-Install the generated statusline command into `~/.claude/settings.json`:
+2. Install the generated statusline command into `~/.claude/settings.json`:
 
 ```bash
 node dist/index.js setup claude-statusline --write
 ```
+
+3. Open Claude Code, then refresh the dashboard or run Doctor:
+
+```bash
+node dist/index.js doctor
+```
+
+Preview without changing Claude settings: `node dist/index.js setup claude-statusline`.
 
 If a `statusLine` already exists, the command refuses to replace it unless you add `--force`.
 

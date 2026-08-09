@@ -186,13 +186,21 @@ function buildSetupMessage(options: {
   ];
 
   if (options.wroteSettings) {
-    lines.push("", "Settings were updated. Restart or interact with Claude Code to refresh the statusline.");
+    lines.push("", "Settings were updated.");
   } else if (!options.writeSettings) {
     lines.push(
       "",
       "No Claude settings were changed. Re-run with --write to install this snippet automatically."
     );
   }
+
+  lines.push(
+    "",
+    "Real-data check:",
+    "1. Build the local CLI: npm run build",
+    "2. Install the statusline: node dist/index.js setup claude-statusline --write",
+    "3. Open Claude Code, then refresh the dashboard or run: node dist/index.js doctor"
+  );
 
   return lines.join("\n");
 }

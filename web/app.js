@@ -437,6 +437,8 @@ function renderSettings() {
   }
 
   elements.settingsContent.innerHTML = `
+    ${renderRealDataSteps(status)}
+
     <div class="settings-list">
       ${settingsRow(
         "Claude settings",
@@ -486,6 +488,58 @@ function renderSettings() {
         .map((field) => `<span class="badge stale">${escapeHtml(field)}</span>`)
         .join("")}</div>
       <span></span>
+    </div>
+  `;
+}
+
+function renderRealDataSteps(status) {
+  const steps = [
+    {
+      badge: "1",
+      title: "Build CLI",
+      detail: "Required before the installed statusline command can run.",
+      command: "npm run build",
+      state: "info"
+    },
+    {
+      badge: "2",
+      title: "Install statusline",
+      detail: status.statusLineManagedByApp
+        ? "Claude Code is configured to call the AIQD statusline sink."
+        : "Writes the managed statusline command into Claude Code settings.",
+      command: status.writeCommand,
+      state: status.statusLineManagedByApp ? "pass" : "warn"
+    },
+    {
+      badge: "3",
+      title: "Refresh real data",
+      detail: status.readiness === "ready"
+        ? "Fresh Claude Code rate limits have been received."
+        : "Open Claude Code, then refresh the dashboard or run Doctor.",
+      command: "node dist/index.js doctor",
+      state: status.readiness === "ready" ? "pass" : "info"
+    }
+  ];
+
+  return `
+    <div class="setup-flow" aria-label="Claude Code real data setup">
+      ${steps
+        .map(
+          (step) => `
+            <div class="setup-step">
+              <span class="step-marker">${escapeHtml(step.badge)}</span>
+              <div>
+                <strong>${escapeHtml(step.title)}</strong>
+                <div class="settings-detail">${escapeHtml(step.detail)}</div>
+                ${renderInlineCommand(step.command)}
+              </div>
+              <span class="badge ${doctorBadgeClass(step.state)}">${escapeHtml(
+                step.state
+              )}</span>
+            </div>
+          `
+        )
+        .join("")}
     </div>
   `;
 }
