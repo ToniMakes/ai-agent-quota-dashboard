@@ -18,6 +18,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Codex and Claude Code adapter boundaries
 - Fixture-driven parsers for Claude Code statusline rate limits
 - A conservative Codex parser for explicit structured quota snapshots
+- Manual Codex snapshot command for visible `/status` or Usage values
 - Claude Code statusline setup helper with explicit opt-in
 - Reset event timeline for changed reset anchors and sharp replenishment
 - Dashboard reset display with relative and absolute reported reset times
@@ -140,6 +141,24 @@ node dist/index.js export --json --no-refresh
 ```
 
 The export command refreshes local sources by default. Use `--no-refresh` to export only the latest data already stored in SQLite. JSON output includes snapshots and reset events; CSV output includes latest quota snapshots. Both formats exclude account identifiers and raw local source references.
+
+## Codex Manual Snapshot
+
+OpenAI documents that Codex remaining limits can be checked with `/status` during an active CLI session, and that Codex Settings > Usage can show usage or credit details. Until there is a stable machine-readable local schema, AIQD does not parse arbitrary Codex transcripts or hidden files.
+
+To record a value you can visibly confirm:
+
+```bash
+node dist/index.js codex snapshot --remaining-percent 72 --reset-at 2026-08-16T03:00:00Z
+```
+
+This writes a structured manual snapshot to:
+
+```text
+~/.ai-agent-quota-dashboard/codex/codex-quota-snapshot.json
+```
+
+Manual Codex snapshots are labeled `manual` and expire at the reported reset time.
 
 ## Local Data Paths
 

@@ -171,7 +171,10 @@ export function describeEmptyQuotaState(
       title: "No readable data path",
       detail:
         "The dashboard checked the default and configured scan roots, but none were readable.",
-      action: `Add a scan root with: node dist/index.js config path add ${manifest.agent} <path>`
+      action:
+        manifest.agent === "codex"
+          ? supportedSourceAction(manifest.agent)
+          : `Add a scan root with: node dist/index.js config path add ${manifest.agent} <path>`
     };
   }
 
@@ -257,7 +260,7 @@ function supportedSourceAction(agent: string): string {
   }
 
   if (agent === "codex") {
-    return "Codex currently requires an explicit structured quota/status/usage-limits snapshot.";
+    return "Record a visible Codex /status value: node dist/index.js codex snapshot --remaining-percent <0-100> --reset-at <iso-time>";
   }
 
   return "Add a supported local quota source, then refresh.";

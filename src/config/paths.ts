@@ -9,6 +9,14 @@ export function defaultUserConfigPath(): string {
   return join(defaultAppDataDir(), "config.json");
 }
 
+export function defaultCodexSnapshotDir(): string {
+  return join(defaultAppDataDir(), "codex");
+}
+
+export function defaultCodexManualSnapshotPath(): string {
+  return join(defaultCodexSnapshotDir(), "codex-quota-snapshot.json");
+}
+
 export function defaultClaudeStatuslineSnapshotDir(): string {
   return join(defaultAppDataDir(), "claude-code");
 }

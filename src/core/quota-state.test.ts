@@ -136,7 +136,7 @@ describe("quota state", () => {
 
     assert.equal(emptyState?.reason, "no_readable_paths");
     assert.equal(emptyState?.title, "No readable data path");
-    assert.match(emptyState?.action ?? "", /config path add codex/);
+    assert.match(emptyState?.action ?? "", /codex snapshot/);
   });
 
   it("describes readable paths without supported quota source", () => {

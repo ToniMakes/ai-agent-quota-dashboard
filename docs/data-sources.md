@@ -91,6 +91,9 @@ src/adapters/codex/__fixtures__/usage-limits-nested.json
 Current boundary:
 
 - Parse only explicit `quota_snapshot`, `quotaSnapshot`, `usage_limits`, or equivalent structured records.
+- Users can write a structured manual snapshot from a visible `/status` or Codex Settings > Usage value with `node dist/index.js codex snapshot --remaining-percent <0-100> --reset-at <iso-time>`.
+- The manual snapshot is stored at `~/.ai-agent-quota-dashboard/codex/codex-quota-snapshot.json`.
+- Manual snapshots use source -> `manual`, confidence -> `unknown`, and expire at the reported reset time.
 - Do not parse arbitrary Codex transcript text.
 - Do not infer quota from prompts, responses, or unrelated session messages.
 - Default source is `local_quota_snapshot` unless the record explicitly identifies a stronger source.
