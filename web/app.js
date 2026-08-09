@@ -2,6 +2,7 @@ const state = {
   agents: [],
   doctorChecks: [],
   pathsStatus: undefined,
+  refreshRuns: [],
   resetEvents: [],
   setupStatus: undefined,
   generatedAt: undefined
@@ -14,6 +15,7 @@ const elements = {
   lastRefresh: document.querySelector("#last-refresh"),
   pathsContent: document.querySelector("#paths-content"),
   refreshButton: document.querySelector("#refresh-button"),
+  refreshRunList: document.querySelector("#refresh-run-list"),
   resetList: document.querySelector("#reset-list"),
   settingsContent: document.querySelector("#settings-content"),
   tabs: document.querySelectorAll(".tab"),
@@ -55,24 +57,28 @@ async function load() {
     doctorResponse,
     eventsResponse,
     pathsResponse,
+    refreshRunsResponse,
     setupResponse
   ] = await Promise.all([
     fetch("/api/agents"),
     fetch("/api/doctor"),
     fetch("/api/reset-events"),
     fetch("/api/setup/local-paths"),
+    fetch("/api/refresh-runs"),
     fetch("/api/setup/claude-statusline")
   ]);
   const agentsPayload = await agentsResponse.json();
   const doctorPayload = await doctorResponse.json();
   const eventsPayload = await eventsResponse.json();
   const pathsPayload = await pathsResponse.json();
+  const refreshRunsPayload = await refreshRunsResponse.json();
   const setupPayload = await setupResponse.json();
 
   state.agents = agentsPayload.agents ?? [];
   state.doctorChecks = doctorPayload.checks ?? [];
   state.resetEvents = eventsPayload.events ?? [];
   state.pathsStatus = pathsPayload.status;
+  state.refreshRuns = refreshRunsPayload.runs ?? [];
   state.setupStatus = setupPayload.status;
   state.generatedAt = agentsPayload.generatedAt;
 
@@ -85,6 +91,7 @@ function render() {
   renderResets();
   renderEvents();
   renderDoctor();
+  renderRefreshRuns();
   renderSettings();
   renderPathSettings();
 }
@@ -235,6 +242,44 @@ function renderDoctorCheck(check) {
   `;
 }
 
+function renderRefreshRuns() {
+  if (state.refreshRuns.length === 0) {
+    elements.refreshRunList.innerHTML = `<p class="empty">No refresh runs yet.</p>`;
+    return;
+  }
+
+  elements.refreshRunList.innerHTML = state.refreshRuns
+    .map(
+      (run) => `
+        <div class="refresh-run-row">
+          <div>
+            <strong>${escapeHtml(formatRelative(run.observedAt))}</strong>
+            <div class="refresh-run-detail">${escapeHtml(formatRefreshRunDetail(run))}</div>
+            ${renderRefreshRunErrors(run)}
+          </div>
+          <span class="badge ${
+            (run.errors?.length ?? 0) > 0 ? "warning" : "healthy"
+          }">${
+            (run.errors?.length ?? 0) > 0 ? "warning" : "pass"
+          }</span>
+        </div>
+      `
+    )
+    .join("");
+}
+
+function renderRefreshRunErrors(run) {
+  if (!run.errors || run.errors.length === 0) {
+    return "";
+  }
+
+  return `
+    <div class="refresh-run-errors">
+      ${run.errors.map((error) => `<div>${escapeHtml(error)}</div>`).join("")}
+    </div>
+  `;
+}
+
 function groupDoctorChecks(checks) {
   const groups = new Map();
 
@@ -273,6 +318,16 @@ function mostSevereDoctorCheckStatus(statuses) {
   return statuses
     .slice()
     .sort((left, right) => severity[right] - severity[left])[0];
+}
+
+function formatRefreshRunDetail(run) {
+  return [
+    `${run.snapshotsSaved} snapshots`,
+    `${run.usageEventsSaved} usage events`,
+    `${run.doctorChecksSaved} doctor checks`,
+    `${run.resetEventsSaved} reset events`,
+    `${run.adapterCount} adapters`
+  ].join(" / ");
 }
 
 function renderEvents() {

@@ -22,6 +22,7 @@ The app may store:
 - Reset timestamps
 - Source and confidence labels
 - Doctor check results
+- Refresh run timestamps, aggregate saved counts, and adapter error summaries
 - User-provided local scan roots
 - Sanitized Claude Code statusline `rate_limits` snapshots, when explicitly enabled
 

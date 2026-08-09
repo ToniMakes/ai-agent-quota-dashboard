@@ -129,6 +129,10 @@ export type RefreshResult = {
   errors: string[];
 };
 
+export type RefreshRun = RefreshResult & {
+  id: number;
+};
+
 export type ResetEvent = {
   id?: number;
   provider: ProviderId;

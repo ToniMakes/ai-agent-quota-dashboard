@@ -102,6 +102,14 @@ async function handleApiRequest(
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/api/refresh-runs") {
+    sendJson(response, 200, {
+      generatedAt: new Date().toISOString(),
+      runs: context.service.listRefreshRuns()
+    });
+    return;
+  }
+
   if (request.method === "GET" && url.pathname === "/api/export") {
     const generatedAt = new Date().toISOString();
     const snapshots = context.service.listQuotaSnapshots();
