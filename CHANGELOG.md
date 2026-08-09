@@ -12,6 +12,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Settings view export buttons for local JSON/CSV downloads
 - Development desktop shell with a tray mini panel and optional always-on-top widget
 - Tray tooltip/menu quota summaries for the desktop shell
+- Compact mini-surface quota rows with manual refresh and reset/observed summaries
 - Single-instance desktop shell behavior that focuses the existing mini panel on repeat launch
 - Tray status refreshes when the first Claude Code statusline snapshot arrives
 - Remembered desktop widget position and `Esc` hiding for mini surfaces
