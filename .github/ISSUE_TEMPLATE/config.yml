@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security or sensitive data issue
-    url: https://github.com/
+    url: https://github.com/isToniLiu/ai-agent-quota-dashboard/security/policy
     about: Please use GitHub private security reporting once the repository is published. Do not paste sensitive data into public issues.
+  - name: Diagnostics guide
+    url: https://github.com/isToniLiu/ai-agent-quota-dashboard/blob/main/docs/diagnostics.md
+    about: Learn what to share when reporting quota, parser, or setup issues.

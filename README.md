@@ -87,6 +87,8 @@ The command prints refresh counts, each agent's quota or empty-state guidance, a
 
 `--json` prints a machine-readable report that excludes account identifiers, raw source references, and raw content, and redacts local paths. The plain text report is meant for local troubleshooting and can include local filesystem paths.
 
+See [docs/diagnostics.md](docs/diagnostics.md) for what to share in public issues.
+
 ## Local Data Paths
 
 The app scans conservative default paths for supported agents. You can add explicit local scan roots without editing JSON by hand:

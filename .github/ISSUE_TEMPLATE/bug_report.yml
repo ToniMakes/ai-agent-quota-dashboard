@@ -8,6 +8,8 @@ body:
     attributes:
       value: |
         Thanks for taking the time to report this. Please do not paste prompts, responses, source code, credentials, browser cookies, or full raw agent logs.
+
+        For quota/source issues, run `npm run build` and then `node dist/index.js doctor --json`. Review the output before posting. The JSON report is designed to redact local paths and exclude raw source content.
   - type: textarea
     id: summary
     attributes:
@@ -43,8 +45,14 @@ body:
     validations:
       required: true
   - type: textarea
-    id: logs
+    id: diagnostics
     attributes:
-      label: Relevant output
-      description: Paste only sanitized output. Remove paths, prompts, responses, and account details when unsure.
+      label: Doctor JSON report
+      description: Paste reviewed output from `node dist/index.js doctor --json` when relevant. Do not paste the plain text Doctor report into public issues because it can include local paths.
+      render: json
+  - type: textarea
+    id: extra-output
+    attributes:
+      label: Additional sanitized output
+      description: Paste only sanitized output. Remove paths, prompts, responses, source code, and account details when unsure.
       render: text
