@@ -36,6 +36,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Explicit source and confidence labels
 - Public dashboard API snapshots exclude account identifiers and raw local source references
 - Demo data mode for UI development
+- Local real-data mode hides persisted demo snapshots
 
 If reliable quota data cannot be obtained from official or local user-visible sources, the app should show `unavailable`.
 
@@ -69,6 +70,8 @@ http://127.0.0.1:4317
 ```bash
 npm run dev:local
 ```
+
+If demo snapshots were previously written to the local SQLite database, `npm run dev:local`, `doctor`, and `export` hide them unless demo mode is explicitly enabled.
 
 ## Scripts
 
@@ -193,6 +196,8 @@ official_api / official_cli
 ```
 
 The product should be conservative: estimated data must be labeled as estimated, stale data must include a freshness reason, observed timestamps must be visible, and unknown data must not be presented as precise.
+
+Persisted `demo` snapshots are visible only when demo mode is explicitly enabled.
 
 ## Reset Events
 

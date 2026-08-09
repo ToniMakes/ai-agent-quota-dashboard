@@ -113,7 +113,9 @@ async function runExportCommand(argv: string[]): Promise<void> {
   const store = new SqliteStore(config.dbPath);
 
   try {
-    const service = new AgentQuotaService(registry, store);
+    const service = new AgentQuotaService(registry, store, {
+      includeDemoSnapshots: config.demoMode
+    });
     const generatedAt = options.refresh
       ? (await service.initialize()).observedAt
       : new Date().toISOString();
@@ -151,7 +153,9 @@ async function runDoctorCommand(argv: string[]): Promise<void> {
   const store = new SqliteStore(config.dbPath);
 
   try {
-    const service = new AgentQuotaService(registry, store);
+    const service = new AgentQuotaService(registry, store, {
+      includeDemoSnapshots: config.demoMode
+    });
     const refreshResult = await service.initialize();
     const report = {
       agents: service.listAgents(),
@@ -243,7 +247,9 @@ async function startServer(argv: string[], entryPointUrl: string): Promise<void>
     userConfig: userConfig.config
   });
   const store = new SqliteStore(config.dbPath);
-  const service = new AgentQuotaService(registry, store);
+  const service = new AgentQuotaService(registry, store, {
+    includeDemoSnapshots: config.demoMode
+  });
 
   await service.initialize();
 
