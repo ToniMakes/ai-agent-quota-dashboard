@@ -26,7 +26,7 @@ Local Agent Scanner
 2. It emits normalized `QuotaSnapshot`, `UsageEvent`, and `DoctorCheck` records.
 3. SQLite stores aggregate snapshots and events.
 4. Reset event detection compares a new snapshot with the previous snapshot for the same provider, agent, and window.
-5. The dashboard and mini surfaces read `/api/agents`, `/api/quota`, `/api/doctor`, `/api/reset-events`, and `/api/setup/claude-statusline`.
+5. The dashboard and mini surfaces read `/api/agents`, `/api/quota`, `/api/doctor`, `/api/reset-events`, `/api/setup/codex-snapshot`, and `/api/setup/claude-statusline`.
 
 Candidate file scanning is deliberately narrow. Adapters look for small files whose names indicate quota, status, statusline, or limits data. Ordinary session transcripts are not parsed unless a later parser is backed by sanitized fixtures and a clear privacy review.
 
