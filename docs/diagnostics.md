@@ -2,6 +2,8 @@
 
 Use the Doctor CLI when the dashboard has no quota data, shows stale data, or behaves differently from what an agent reports.
 
+For Claude Code, Doctor and Settings report the same statusline readiness checks: Claude settings, the managed shim, the latest sanitized snapshot, and whether supported `rate_limits` windows have been received recently.
+
 ## Human-Readable Report
 
 ```bash

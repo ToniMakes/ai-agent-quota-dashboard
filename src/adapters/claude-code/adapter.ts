@@ -5,6 +5,10 @@ import { findReadableCandidateFiles } from "../local-candidates.js";
 import { inspectPath, uniquePaths } from "../path-utils.js";
 import { defaultClaudeStatuslineSnapshotDir } from "../../config/paths.js";
 import type { DoctorCheck, QuotaSnapshot } from "../../core/types.js";
+import {
+  claudeStatuslineChecksToDoctorChecks,
+  getClaudeStatuslineSetupStatus
+} from "../../setup/claude-statusline-status.js";
 import { parseClaudeCodeStatusline } from "./parse-statusline.js";
 
 export type ClaudeCodeAdapterOptions = {
@@ -51,6 +55,15 @@ export function createClaudeCodeAdapter(
           detail: inspection.path,
           observedAt: context.now.toISOString()
         });
+      }
+
+      if (!options.demoMode) {
+        const setupStatus = await getClaudeStatuslineSetupStatus({
+          now: context.now
+        });
+        checks.push(
+          ...claudeStatuslineChecksToDoctorChecks(setupStatus, context.now)
+        );
       }
 
       checks.push({
