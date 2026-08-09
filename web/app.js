@@ -195,26 +195,84 @@ function renderDoctor() {
     return;
   }
 
-  elements.doctorList.innerHTML = state.doctorChecks
-    .map(
-      (check) => `
-        <div class="doctor-row">
-          <strong>${escapeHtml(check.agent)}</strong>
-          <div>
-            <div>${escapeHtml(check.label)}: ${escapeHtml(check.message)}</div>
-            ${
-              check.detail
-                ? `<div class="doctor-detail">${escapeHtml(check.detail)}</div>`
-                : ""
-            }
-          </div>
-          <span class="badge ${doctorBadgeClass(check.status)}">${escapeHtml(
-            check.status
-          )}</span>
-        </div>
-      `
-    )
+  elements.doctorList.innerHTML = groupDoctorChecks(state.doctorChecks)
+    .map(renderDoctorGroup)
     .join("");
+}
+
+function renderDoctorGroup(group) {
+  return `
+    <section class="doctor-group">
+      <div class="doctor-group-header">
+        <strong>${escapeHtml(group.displayName)}</strong>
+        <span class="badge ${doctorBadgeClass(group.status)}">${escapeHtml(
+          group.status
+        )}</span>
+      </div>
+      <div class="doctor-group-list">
+        ${group.checks.map(renderDoctorCheck).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderDoctorCheck(check) {
+  return `
+    <div class="doctor-row">
+      <strong>${escapeHtml(check.label)}</strong>
+      <div>
+        <div>${escapeHtml(check.message)}</div>
+        ${
+          check.detail
+            ? `<div class="doctor-detail">${escapeHtml(check.detail)}</div>`
+            : ""
+        }
+      </div>
+      <span class="badge ${doctorBadgeClass(check.status)}">${escapeHtml(
+        check.status
+      )}</span>
+    </div>
+  `;
+}
+
+function groupDoctorChecks(checks) {
+  const groups = new Map();
+
+  for (const check of checks) {
+    const key = `${check.provider}:${check.agent}`;
+    const agent = state.agents.find(
+      (item) => item.provider === check.provider && item.agent === check.agent
+    );
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        displayName: agent?.displayName ?? check.agent,
+        status: check.status,
+        checks: []
+      });
+    }
+
+    const group = groups.get(key);
+    group.checks.push(check);
+    group.status = mostSevereDoctorCheckStatus([group.status, check.status]);
+  }
+
+  return [...groups.values()].sort((left, right) =>
+    left.displayName.localeCompare(right.displayName)
+  );
+}
+
+function mostSevereDoctorCheckStatus(statuses) {
+  const severity = {
+    fail: 3,
+    warn: 2,
+    info: 1,
+    pass: 0
+  };
+
+  return statuses
+    .slice()
+    .sort((left, right) => severity[right] - severity[left])[0];
 }
 
 function renderEvents() {
@@ -323,7 +381,7 @@ function renderPathSettings() {
         configuredCount === 0
           ? "Default paths"
           : `${configuredCount} configured`,
-        agent.addCommand,
+        `${agent.addCommand}\n${agent.removeCommand}`,
         configuredCount === 0 ? "stale" : "healthy"
       );
     })

@@ -336,6 +336,35 @@ h2 {
   gap: 10px;
 }
 
+.doctor-group {
+  display: grid;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.doctor-group:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.doctor-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.doctor-group-list {
+  display: grid;
+  gap: 8px;
+}
+
+.doctor-group-list .doctor-row:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
 .reset-row,
 .doctor-row,
 .event-row,
@@ -355,6 +384,10 @@ h2 {
   color: var(--muted);
   font-size: 0.82rem;
   overflow-wrap: anywhere;
+}
+
+.settings-detail {
+  white-space: pre-line;
 }
 
 .command-box {

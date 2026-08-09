@@ -9,6 +9,7 @@ Users can add explicit scan roots with:
 ```bash
 node dist/index.js config path add codex "C:\path\to\codex-data"
 node dist/index.js config path add claude-code "C:\path\to\claude-data"
+node dist/index.js config path remove codex "C:\path\to\codex-data"
 ```
 
 These paths are stored in:
