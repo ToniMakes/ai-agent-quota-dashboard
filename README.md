@@ -20,6 +20,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - A conservative Codex parser for explicit structured quota snapshots
 - Claude Code statusline setup helper with explicit opt-in
 - Reset event timeline for changed reset anchors and sharp replenishment
+- Dashboard reset display with relative and absolute reported reset times
 - Dashboard and Doctor views
 - Dashboard guidance for missing quota data
 - CLI `doctor` command for one-shot local diagnostics
@@ -181,7 +182,7 @@ The product should be conservative: estimated data must be labeled as estimated,
 
 ## Reset Events
 
-Some agents, especially Codex, can change their reported reset anchor because of banked resets, shared agentic usage pools, credits, promotions, or backend limit updates. The dashboard treats `resetAt` as an observed value, not a prediction.
+Some agents, especially Codex, can change their reported reset anchor because of banked resets, shared agentic usage pools, credits, promotions, or backend limit updates. The dashboard treats `resetAt` as an observed value, not a prediction, and shows both relative and absolute reported reset times.
 
 When a reset time changes or remaining quota jumps back near full, the app records a reset event and shows it in the Recent Changes panel.
 
