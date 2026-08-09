@@ -21,6 +21,10 @@ import {
   formatDoctorReport,
   hasDoctorFailures
 } from "./doctor-report.js";
+import {
+  formatCliExport,
+  parseCliExportOptions
+} from "./export-command.js";
 import { readStdin } from "./stdin.js";
 
 export async function runCli(argv: string[], entryPointUrl: string): Promise<void> {
@@ -64,12 +68,55 @@ export async function runCli(argv: string[], entryPointUrl: string): Promise<voi
     return;
   }
 
+  if (command === "export") {
+    await runExportCommand(argv);
+    return;
+  }
+
   if (command === "help" || command === "--help" || command === "-h") {
     console.log(helpText());
     return;
   }
 
   await startServer(argv, entryPointUrl);
+}
+
+async function runExportCommand(argv: string[]): Promise<void> {
+  if (argv.includes("--help") || argv.includes("-h")) {
+    console.log(exportHelpText());
+    return;
+  }
+
+  const options = parseCliExportOptions(argv);
+  const config = loadConfig(argv);
+  const userConfig = await loadUserConfig(config.userConfigPath);
+  const registry = createDefaultRegistry({
+    demoMode: config.demoMode,
+    userConfig: userConfig.config
+  });
+  const store = new SqliteStore(config.dbPath);
+
+  try {
+    const service = new AgentQuotaService(registry, store);
+    const generatedAt = options.refresh
+      ? (await service.initialize()).observedAt
+      : new Date().toISOString();
+
+    process.stdout.write(
+      formatCliExport({
+        format: options.format,
+        generatedAt,
+        snapshots: service.listQuotaSnapshots(),
+        resetEvents: service.listResetEvents(100)
+      })
+    );
+
+    for (const error of userConfig.errors) {
+      process.stderr.write(`Config warning: ${error}\n`);
+    }
+  } finally {
+    store.close();
+  }
 }
 
 async function runDoctorCommand(argv: string[]): Promise<void> {
@@ -253,6 +300,7 @@ function helpText(): string {
     "Commands:",
     "  ai-agent-quota [--demo] [--port 4317]       Start local dashboard",
     "  ai-agent-quota doctor [--json]              Run one local scan and print diagnostics",
+    "  ai-agent-quota export [--json|--csv]        Export normalized quota data",
     "  ai-agent-quota claude-statusline-sink       Read Claude statusline JSON from stdin",
     "  ai-agent-quota config path list             Show configured local data paths",
     "  ai-agent-quota config path add <agent> <path>",
@@ -281,5 +329,23 @@ function doctorHelpText(): string {
     "",
     "Exit code is 1 only for blocking failures such as adapter errors or invalid",
     "config. Missing quota sources are reported as warnings."
+  ].join("\n");
+}
+
+function exportHelpText(): string {
+  return [
+    "AI Agent Quota Export",
+    "",
+    "Usage:",
+    "  ai-agent-quota export [--json|--csv] [--no-refresh]",
+    "  ai-agent-quota export --format json|csv [--no-refresh]",
+    "  ai-agent-quota export [--demo] [--db <path>] [--config <path>]",
+    "",
+    "Exports normalized quota snapshots and reset events to stdout.",
+    "The command refreshes local sources by default. Use --no-refresh to export",
+    "only the latest data already stored in SQLite.",
+    "",
+    "JSON output excludes account identifiers and raw local source references.",
+    "CSV output includes only normalized latest quota snapshots."
   ].join("\n");
 }

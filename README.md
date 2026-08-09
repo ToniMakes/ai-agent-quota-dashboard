@@ -23,6 +23,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Dashboard and Doctor views
 - Dashboard guidance for missing quota data
 - CLI `doctor` command for one-shot local diagnostics
+- CLI export command for normalized JSON/CSV output
 - Refresh history with saved counts and adapter error summaries
 - Settings view for Claude Code statusline onboarding
 - Copy buttons for setup and local path commands, with selection fallback when clipboard access is unavailable
@@ -88,6 +89,18 @@ The command prints refresh counts, each agent's quota or empty-state guidance, a
 `--json` prints a machine-readable report that excludes account identifiers, raw source references, and raw content, and redacts local paths. The plain text report is meant for local troubleshooting and can include local filesystem paths.
 
 See [docs/diagnostics.md](docs/diagnostics.md) for what to share in public issues.
+
+## CLI Export
+
+Export normalized quota data without opening the dashboard:
+
+```bash
+node dist/index.js export
+node dist/index.js export --csv
+node dist/index.js export --json --no-refresh
+```
+
+The export command refreshes local sources by default. Use `--no-refresh` to export only the latest data already stored in SQLite. JSON output includes snapshots and reset events; CSV output includes latest quota snapshots. Both formats exclude account identifiers and raw local source references.
 
 ## Local Data Paths
 
