@@ -26,6 +26,10 @@ describe("getClaudeStatuslineSetupStatus", () => {
       assert.equal(status.readiness, "needs_setup");
       assert.equal(status.readinessLabel, "Setup required");
       assert.match(status.nextAction, /setup claude-statusline --write/);
+      assert.match(
+        status.selfTestCommand,
+        /claude-statusline-sink --self-test/
+      );
       assert.equal(
         status.checks.find((check) => check.id === "statusline-command")?.status,
         "warn"

@@ -503,6 +503,15 @@ function renderRealDataSteps(status) {
     },
     {
       badge: "2",
+      title: "Test sink",
+      detail: "Uses temporary files and a fake rate_limits payload; no real Claude data is read.",
+      command:
+        status.selfTestCommand ??
+        "node dist/index.js claude-statusline-sink --self-test",
+      state: "info"
+    },
+    {
+      badge: "3",
       title: "Install statusline",
       detail: status.statusLineManagedByApp
         ? "Claude Code is configured to call the AIQD statusline sink."
@@ -511,7 +520,7 @@ function renderRealDataSteps(status) {
       state: status.statusLineManagedByApp ? "pass" : "warn"
     },
     {
-      badge: "3",
+      badge: "4",
       title: "Refresh real data",
       detail: status.readiness === "ready"
         ? "Fresh Claude Code rate limits have been received."
