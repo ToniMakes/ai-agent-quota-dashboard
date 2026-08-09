@@ -1,4 +1,6 @@
 import type {
+  AgentEmptyState,
+  AgentManifest,
   DoctorCheck,
   DoctorStatus,
   QuotaSnapshot,
@@ -99,4 +101,68 @@ export function mostSevereStatus(
 ): QuotaStatus {
   const primary = choosePrimarySnapshot(snapshots, now);
   return resolveQuotaStatus(primary, now);
+}
+
+export function describeEmptyQuotaState(
+  manifest: AgentManifest,
+  snapshots: QuotaSnapshot[],
+  checks: DoctorCheck[]
+): AgentEmptyState | undefined {
+  if (snapshots.length > 0) {
+    return undefined;
+  }
+
+  const adapterError = checks.find(
+    (check) => check.label === "Adapter" && check.status === "fail"
+  );
+
+  if (adapterError) {
+    return {
+      reason: "adapter_error",
+      title: "Adapter scan failed",
+      detail: adapterError.detail ?? adapterError.message,
+      action: "Open Doctor for the failing adapter check."
+    };
+  }
+
+  const quotaSource = checks.find((check) => check.label === "Quota source");
+
+  if (quotaSource?.message.includes("No readable")) {
+    return {
+      reason: "no_readable_paths",
+      title: "No readable data path",
+      detail:
+        "The dashboard checked the default and configured scan roots, but none were readable.",
+      action: `Add a scan root with: node dist/index.js config path add ${manifest.agent} <path>`
+    };
+  }
+
+  if (quotaSource?.message.includes("No supported")) {
+    return {
+      reason: "no_supported_source",
+      title: "No supported quota source",
+      detail:
+        "At least one data path is readable, but no supported quota/statusline snapshot was found.",
+      action: supportedSourceAction(manifest.agent)
+    };
+  }
+
+  return {
+    reason: "no_quota_data",
+    title: "No quota data yet",
+    detail: "The latest refresh did not produce a quota snapshot for this agent.",
+    action: "Open Doctor for source checks and refresh history."
+  };
+}
+
+function supportedSourceAction(agent: string): string {
+  if (agent === "claude-code") {
+    return "Set up Claude Code statusline: node dist/index.js setup claude-statusline --write";
+  }
+
+  if (agent === "codex") {
+    return "Codex currently requires an explicit structured quota/status/usage-limits snapshot.";
+  }
+
+  return "Add a supported local quota source, then refresh.";
 }

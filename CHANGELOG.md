@@ -15,6 +15,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Settings view status for configured local data paths
 - Doctor view grouping by agent
 - Refresh run history API and Doctor view panel
+- Dashboard empty-state guidance when an agent has no quota snapshots
 
 ### Privacy
 

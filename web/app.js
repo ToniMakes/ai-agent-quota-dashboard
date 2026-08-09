@@ -131,7 +131,7 @@ function renderAgentCard(agent) {
       </div>
 
       <div class="quota-lines">
-        ${renderSnapshotLines(agent.snapshots)}
+        ${renderSnapshotLines(agent)}
         <div class="quota-line">
           <span class="label">Source</span>
           <span class="value">${escapeHtml(source)} / ${escapeHtml(confidence)}</span>
@@ -141,12 +141,22 @@ function renderAgentCard(agent) {
   `;
 }
 
-function renderSnapshotLines(snapshots) {
+function renderSnapshotLines(agent) {
+  const snapshots = agent.snapshots;
+
   if (!snapshots || snapshots.length === 0) {
+    const emptyState = agent.emptyState;
+
     return `
-      <div class="quota-line">
-        <span class="label">Quota</span>
-        <span class="value">No data</span>
+      <div class="agent-empty-state">
+        <strong>${escapeHtml(emptyState?.title ?? "No quota data yet")}</strong>
+        <p>${escapeHtml(
+          emptyState?.detail ??
+            "The latest refresh did not produce a quota snapshot for this agent."
+        )}</p>
+        <code>${escapeHtml(
+          emptyState?.action ?? "Open Doctor for source checks and refresh history."
+        )}</code>
       </div>
     `;
   }
