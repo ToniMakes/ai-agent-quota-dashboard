@@ -25,6 +25,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Dashboard data freshness display with observed timestamps per agent
 - Shared freshness reasons for agent API snapshots and `doctor --json`
 - Claude Code empty-state guidance for installed statusline setups waiting for first real data
+- Clearer Claude Code setup next actions after statusline installation
 - Copy buttons for setup commands, local path commands, and command-backed empty states, with selection fallback when clipboard access is unavailable
 - Diagnostics guide and issue template prompts for privacy-safe bug reports
 

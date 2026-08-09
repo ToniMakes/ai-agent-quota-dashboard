@@ -210,7 +210,7 @@ function resolveReadiness(input: {
       readiness: "waiting_for_data",
       readinessLabel: "Waiting for Claude Code data",
       nextAction:
-        "Open Claude Code after installing the statusline, then refresh this dashboard."
+        "Open Claude Code, let the statusline render once, then refresh this dashboard."
     };
   }
 
@@ -347,7 +347,7 @@ function buildLatestSnapshotCheck(input: {
       message: "No statusline snapshot received yet",
       detail: input.status.latestPath,
       action:
-        "Open Claude Code after installing the statusline, then refresh this dashboard."
+        "Open Claude Code, let the statusline render once, then refresh this dashboard."
     };
   }
 
@@ -370,7 +370,7 @@ function buildLatestSnapshotCheck(input: {
       message: "Snapshot has no supported rate_limits",
       detail: input.status.latestPath,
       action:
-        "Open Claude Code and wait for statusline input that includes rate_limits."
+        "Open Claude Code, let the statusline render once with rate_limits, then refresh this dashboard."
     };
   }
 

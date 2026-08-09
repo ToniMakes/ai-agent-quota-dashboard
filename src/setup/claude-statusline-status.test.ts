@@ -99,6 +99,44 @@ describe("getClaudeStatuslineSetupStatus", () => {
     }
   });
 
+  it("waits for data after setup without suggesting another install", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-status-"));
+    const settingsPath = join(directory, ".claude", "settings.json");
+    const shimPath = join(directory, "claude-statusline.ps1");
+
+    try {
+      await mkdir(dirname(settingsPath), { recursive: true });
+      await writeFile(shimPath, "");
+      await writeFile(
+        settingsPath,
+        JSON.stringify({
+          statusLine: {
+            type: "command",
+            command: "powershell -File claude-statusline.ps1"
+          }
+        })
+      );
+
+      const status = await getClaudeStatuslineSetupStatus({
+        historyPath: join(directory, "history.jsonl"),
+        latestPath: join(directory, "latest.json"),
+        settingsPath,
+        shimPath
+      });
+      const latestCheck = status.checks.find(
+        (check) => check.id === "latest-snapshot"
+      );
+
+      assert.equal(status.readiness, "waiting_for_data");
+      assert.match(status.nextAction, /let the statusline render once/);
+      assert.doesNotMatch(status.nextAction, /after installing/);
+      assert.match(latestCheck?.action ?? "", /let the statusline render once/);
+      assert.doesNotMatch(latestCheck?.action ?? "", /after installing/);
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
   it("marks old rate limit snapshots as needing attention", async () => {
     const directory = await mkdtemp(join(tmpdir(), "aiqd-status-"));
     const settingsPath = join(directory, ".claude", "settings.json");
