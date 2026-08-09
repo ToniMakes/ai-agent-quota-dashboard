@@ -16,7 +16,11 @@ import {
 import { SqliteStore } from "../storage/sqlite-store.js";
 import { runClaudeStatuslineSink } from "./claude-statusline-sink.js";
 import { setupClaudeStatusline } from "./claude-statusline-setup.js";
-import { formatDoctorReport, hasDoctorFailures } from "./doctor-report.js";
+import {
+  buildDoctorJsonReport,
+  formatDoctorReport,
+  hasDoctorFailures
+} from "./doctor-report.js";
 import { readStdin } from "./stdin.js";
 
 export async function runCli(argv: string[], entryPointUrl: string): Promise<void> {
@@ -74,6 +78,7 @@ async function runDoctorCommand(argv: string[]): Promise<void> {
     return;
   }
 
+  const jsonOutput = argv.includes("--json");
   const config = loadConfig(argv);
   const userConfig = await loadUserConfig(config.userConfigPath);
   const registry = createDefaultRegistry({
@@ -96,7 +101,11 @@ async function runDoctorCommand(argv: string[]): Promise<void> {
       refreshResult
     };
 
-    console.log(formatDoctorReport(report));
+    console.log(
+      jsonOutput
+        ? JSON.stringify(buildDoctorJsonReport(report), null, 2)
+        : formatDoctorReport(report)
+    );
 
     if (hasDoctorFailures(report)) {
       process.exitCode = 1;
@@ -243,7 +252,7 @@ function helpText(): string {
     "",
     "Commands:",
     "  ai-agent-quota [--demo] [--port 4317]       Start local dashboard",
-    "  ai-agent-quota doctor                       Run one local scan and print diagnostics",
+    "  ai-agent-quota doctor [--json]              Run one local scan and print diagnostics",
     "  ai-agent-quota claude-statusline-sink       Read Claude statusline JSON from stdin",
     "  ai-agent-quota config path list             Show configured local data paths",
     "  ai-agent-quota config path add <agent> <path>",
@@ -262,9 +271,13 @@ function doctorHelpText(): string {
     "",
     "Usage:",
     "  ai-agent-quota doctor [--demo] [--db <path>] [--config <path>]",
+    "  ai-agent-quota doctor --json [--demo] [--db <path>] [--config <path>]",
     "",
     "Runs one local scan, writes normalized results to SQLite, and prints agent",
     "status, Doctor checks, empty-state guidance, and refresh counts.",
+    "",
+    "--json prints a machine-readable report with account identifiers, raw",
+    "source references, raw content, and local paths excluded or redacted.",
     "",
     "Exit code is 1 only for blocking failures such as adapter errors or invalid",
     "config. Missing quota sources are reported as warnings."
