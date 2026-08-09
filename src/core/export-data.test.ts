@@ -3,9 +3,11 @@ import { describe, it } from "node:test";
 import {
   buildQuotaExport,
   quotaSnapshotsToCsv,
+  sanitizeAgentSummary,
   sanitizeQuotaSnapshot
 } from "./export-data.js";
-import type { QuotaSnapshot, ResetEvent } from "./types.js";
+import { withSnapshotFreshness } from "./quota-state.js";
+import type { AgentSummary, QuotaSnapshot, ResetEvent } from "./types.js";
 
 const snapshot: QuotaSnapshot = {
   provider: "openai",
@@ -99,5 +101,25 @@ describe("quota export", () => {
       confidence: "official",
       stale: false
     });
+  });
+
+  it("sanitizes agent summaries while preserving freshness", () => {
+    const agent: AgentSummary = {
+      provider: "openai",
+      agent: "codex",
+      displayName: "Codex",
+      shortName: "Codex",
+      status: "healthy",
+      doctorStatus: "pass",
+      snapshots: [withSnapshotFreshness(snapshot)]
+    };
+    const sanitized = sanitizeAgentSummary(agent);
+    const serialized = JSON.stringify(sanitized);
+
+    assert.equal(sanitized.snapshots[0]?.freshness.reason, "fresh");
+    assert.equal(Object.hasOwn(sanitized.snapshots[0] ?? {}, "rawSourceRef"), false);
+    assert.equal(Object.hasOwn(sanitized.snapshots[0] ?? {}, "accountIdHash"), false);
+    assert.equal(serialized.includes("C:\\Users"), false);
+    assert.equal(serialized.includes("account-hash"), false);
   });
 });

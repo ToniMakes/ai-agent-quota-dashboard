@@ -1,4 +1,10 @@
-import type { QuotaSnapshot, ResetEvent } from "./types.js";
+import type {
+  AgentSummary,
+  QuotaSnapshot,
+  QuotaSnapshotView,
+  ResetEvent,
+  SnapshotFreshness
+} from "./types.js";
 
 export type PublicQuotaSnapshot = Omit<
   QuotaSnapshot,
@@ -6,6 +12,18 @@ export type PublicQuotaSnapshot = Omit<
 >;
 
 export type PublicResetEvent = Omit<ResetEvent, "id">;
+
+export type PublicAgentQuotaSnapshot = PublicQuotaSnapshot & {
+  freshness: SnapshotFreshness;
+};
+
+export type PublicAgentSummary = Omit<
+  AgentSummary,
+  "primarySnapshot" | "snapshots"
+> & {
+  primarySnapshot?: PublicAgentQuotaSnapshot;
+  snapshots: PublicAgentQuotaSnapshot[];
+};
 
 export type QuotaExport = {
   schemaVersion: 1;
@@ -97,6 +115,37 @@ export function sanitizeQuotaSnapshot(snapshot: QuotaSnapshot): PublicQuotaSnaps
   if (snapshot.expiresAt !== undefined) sanitized.expiresAt = snapshot.expiresAt;
 
   return sanitized;
+}
+
+export function sanitizeAgentSummary(agent: AgentSummary): PublicAgentSummary {
+  const sanitized: PublicAgentSummary = {
+    provider: agent.provider,
+    agent: agent.agent,
+    displayName: agent.displayName,
+    shortName: agent.shortName,
+    status: agent.status,
+    doctorStatus: agent.doctorStatus,
+    snapshots: agent.snapshots.map(sanitizeAgentQuotaSnapshot)
+  };
+
+  if (agent.emptyState !== undefined) sanitized.emptyState = agent.emptyState;
+  if (agent.primarySnapshot !== undefined) {
+    sanitized.primarySnapshot = sanitizeAgentQuotaSnapshot(agent.primarySnapshot);
+  }
+  if (agent.lastObservedAt !== undefined) {
+    sanitized.lastObservedAt = agent.lastObservedAt;
+  }
+
+  return sanitized;
+}
+
+export function sanitizeAgentQuotaSnapshot(
+  snapshot: QuotaSnapshotView
+): PublicAgentQuotaSnapshot {
+  return {
+    ...sanitizeQuotaSnapshot(snapshot),
+    freshness: snapshot.freshness
+  };
 }
 
 function sanitizeResetEvent(event: ResetEvent): PublicResetEvent {

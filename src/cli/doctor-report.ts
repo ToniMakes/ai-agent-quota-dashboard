@@ -1,10 +1,14 @@
-import { sanitizeQuotaSnapshot, type PublicQuotaSnapshot } from "../core/export-data.js";
+import {
+  sanitizeAgentQuotaSnapshot,
+  type PublicAgentQuotaSnapshot
+} from "../core/export-data.js";
 import type {
   AgentEmptyState,
   AgentSummary,
   DoctorCheck,
   DoctorStatus,
   QuotaSnapshot,
+  QuotaSnapshotView,
   QuotaStatus,
   RefreshResult
 } from "../core/types.js";
@@ -51,8 +55,8 @@ export type DoctorJsonAgent = {
   status: QuotaStatus;
   doctorStatus: DoctorStatus;
   emptyState?: AgentEmptyState;
-  primarySnapshot?: PublicQuotaSnapshot;
-  snapshots: PublicQuotaSnapshot[];
+  primarySnapshot?: PublicAgentQuotaSnapshot;
+  snapshots: PublicAgentQuotaSnapshot[];
   lastObservedAt?: string;
 };
 
@@ -142,12 +146,12 @@ function sanitizeAgent(agent: AgentSummary): DoctorJsonAgent {
     shortName: agent.shortName,
     status: agent.status,
     doctorStatus: agent.doctorStatus,
-    snapshots: agent.snapshots.map(sanitizeQuotaSnapshot)
+    snapshots: agent.snapshots.map(sanitizeAgentQuotaSnapshot)
   };
 
   if (agent.emptyState) sanitized.emptyState = agent.emptyState;
   if (agent.primarySnapshot) {
-    sanitized.primarySnapshot = sanitizeQuotaSnapshot(agent.primarySnapshot);
+    sanitized.primarySnapshot = sanitizeAgentQuotaSnapshot(agent.primarySnapshot);
   }
   if (agent.lastObservedAt) sanitized.lastObservedAt = agent.lastObservedAt;
 
@@ -230,12 +234,18 @@ function formatAgent(
   return lines;
 }
 
-function formatSnapshot(snapshot: QuotaSnapshot): string {
+function formatSnapshot(snapshot: QuotaSnapshotView | QuotaSnapshot): string {
+  const freshness =
+    "freshness" in snapshot
+      ? snapshot.freshness.label
+      : snapshot.stale
+        ? "marked stale by source"
+        : "fresh";
   const parts = [
     `${windowLabel(snapshot.windowType)}: ${formatRemaining(snapshot)}`,
     snapshot.resetAt ? `resets ${snapshot.resetAt}` : "reset unknown",
     `${snapshot.source}/${snapshot.confidence}`,
-    snapshot.stale ? "stale" : "fresh",
+    freshness,
     `observed ${snapshot.observedAt}`
   ];
 

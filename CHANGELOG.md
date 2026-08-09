@@ -21,12 +21,14 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Dashboard empty-state guidance when an agent has no quota snapshots
 - Dashboard reset display with relative and absolute reported reset times
 - Dashboard data freshness display with observed timestamps per agent
+- Shared freshness reasons for agent API snapshots and `doctor --json`
 - Copy buttons for setup commands, local path commands, and command-backed empty states, with selection fallback when clipboard access is unavailable
 - Diagnostics guide and issue template prompts for privacy-safe bug reports
 
 ### Privacy
 
 - Exports exclude account identifiers and raw local source references
+- Dashboard quota APIs exclude account identifiers and raw local source references
 - Local path configuration stores only user-provided scan roots
 - Refresh history stores aggregate counts, timestamps, and adapter error summaries
 - Public bug-report guidance prefers reviewed `doctor --json` output over local-path-bearing text logs

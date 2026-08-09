@@ -6,7 +6,12 @@ import type { AddressInfo } from "node:net";
 import type { AgentQuotaService } from "../core/agent-quota-service.js";
 import type { AppConfig } from "../config/app-config.js";
 import type { SqliteStore } from "../storage/sqlite-store.js";
-import { buildQuotaExport, quotaSnapshotsToCsv } from "../core/export-data.js";
+import {
+  buildQuotaExport,
+  quotaSnapshotsToCsv,
+  sanitizeAgentSummary,
+  sanitizeQuotaSnapshot
+} from "../core/export-data.js";
 import { getClaudeStatuslineSetupStatus } from "../setup/claude-statusline-status.js";
 import { getLocalPathsSetupStatus } from "../setup/local-paths-status.js";
 
@@ -73,7 +78,7 @@ async function handleApiRequest(
   if (request.method === "GET" && url.pathname === "/api/agents") {
     sendJson(response, 200, {
       generatedAt: new Date().toISOString(),
-      agents: context.service.listAgents()
+      agents: context.service.listAgents().map(sanitizeAgentSummary)
     });
     return;
   }
@@ -81,7 +86,7 @@ async function handleApiRequest(
   if (request.method === "GET" && url.pathname === "/api/quota") {
     sendJson(response, 200, {
       generatedAt: new Date().toISOString(),
-      snapshots: context.service.listQuotaSnapshots()
+      snapshots: context.service.listQuotaSnapshots().map(sanitizeQuotaSnapshot)
     });
     return;
   }

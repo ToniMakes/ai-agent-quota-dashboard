@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   choosePrimarySnapshot,
+  describeSnapshotFreshness,
   describeEmptyQuotaState,
-  resolveQuotaStatus
+  resolveQuotaStatus,
+  withSnapshotFreshness
 } from "./quota-state.js";
 import type { AgentManifest, DoctorCheck, QuotaSnapshot } from "./types.js";
 
@@ -52,6 +54,55 @@ describe("quota state", () => {
       resolveQuotaStatus({ ...baseSnapshot, remainingPercent: 10 }),
       "critical"
     );
+  });
+
+  it("marks expired quota snapshots as stale", () => {
+    assert.equal(
+      resolveQuotaStatus(
+        {
+          ...baseSnapshot,
+          expiresAt: "2026-08-09T00:30:00.000Z"
+        },
+        new Date("2026-08-09T01:00:00.000Z")
+      ),
+      "stale"
+    );
+  });
+
+  it("describes source-marked stale snapshots", () => {
+    const freshness = describeSnapshotFreshness({
+      ...baseSnapshot,
+      stale: true
+    });
+
+    assert.deepEqual(freshness, {
+      status: "stale",
+      reason: "source_marked_stale",
+      label: "marked stale by source"
+    });
+  });
+
+  it("describes expired snapshots", () => {
+    const freshness = describeSnapshotFreshness(
+      {
+        ...baseSnapshot,
+        expiresAt: "2026-08-09T00:30:00.000Z"
+      },
+      new Date("2026-08-09T01:00:00.000Z")
+    );
+
+    assert.deepEqual(freshness, {
+      status: "stale",
+      reason: "expired",
+      label: "expired observation"
+    });
+  });
+
+  it("attaches freshness to agent-facing snapshots", () => {
+    const snapshot = withSnapshotFreshness(baseSnapshot);
+
+    assert.equal(snapshot.freshness.status, "fresh");
+    assert.equal(snapshot.freshness.reason, "fresh");
   });
 
   it("chooses the most constrained snapshot as primary", () => {

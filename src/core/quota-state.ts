@@ -4,6 +4,7 @@ import type {
   DoctorCheck,
   DoctorStatus,
   QuotaSnapshot,
+  QuotaSnapshotView,
   QuotaStatus
 } from "./types.js";
 
@@ -33,6 +34,43 @@ export function isSnapshotExpired(
   return Date.parse(snapshot.expiresAt) <= now.getTime();
 }
 
+export function describeSnapshotFreshness(
+  snapshot: QuotaSnapshot,
+  now = new Date()
+): QuotaSnapshotView["freshness"] {
+  if (snapshot.stale) {
+    return {
+      status: "stale",
+      reason: "source_marked_stale",
+      label: "marked stale by source"
+    };
+  }
+
+  if (isSnapshotExpired(snapshot, now)) {
+    return {
+      status: "stale",
+      reason: "expired",
+      label: "expired observation"
+    };
+  }
+
+  return {
+    status: "fresh",
+    reason: "fresh",
+    label: "fresh"
+  };
+}
+
+export function withSnapshotFreshness(
+  snapshot: QuotaSnapshot,
+  now = new Date()
+): QuotaSnapshotView {
+  return {
+    ...snapshot,
+    freshness: describeSnapshotFreshness(snapshot, now)
+  };
+}
+
 export function resolveQuotaStatus(
   snapshot: QuotaSnapshot | undefined,
   now = new Date()
@@ -60,10 +98,10 @@ export function resolveQuotaStatus(
   return "healthy";
 }
 
-export function choosePrimarySnapshot(
-  snapshots: QuotaSnapshot[],
+export function choosePrimarySnapshot<TSnapshot extends QuotaSnapshot>(
+  snapshots: TSnapshot[],
   now = new Date()
-): QuotaSnapshot | undefined {
+): TSnapshot | undefined {
   return [...snapshots].sort((left, right) => {
     const leftStatus = resolveQuotaStatus(left, now);
     const rightStatus = resolveQuotaStatus(right, now);

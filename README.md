@@ -21,7 +21,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Claude Code statusline setup helper with explicit opt-in
 - Reset event timeline for changed reset anchors and sharp replenishment
 - Dashboard reset display with relative and absolute reported reset times
-- Dashboard data freshness display with observed timestamps per agent
+- Dashboard data freshness display with observed timestamps and freshness reasons per agent
 - Dashboard and Doctor views
 - Dashboard guidance for missing quota data
 - CLI `doctor` command for one-shot local diagnostics
@@ -32,6 +32,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Local `config.json` for user-configured agent data paths
 - Normalized JSON/CSV export from the Settings view
 - Explicit source and confidence labels
+- Public dashboard API snapshots exclude account identifiers and raw local source references
 - Demo data mode for UI development
 
 If reliable quota data cannot be obtained from official or local user-visible sources, the app should show `unavailable`.
@@ -88,7 +89,7 @@ node dist/index.js doctor --json
 
 The command prints refresh counts, each agent's quota or empty-state guidance, and the underlying Doctor checks. It exits with code `1` only for blocking failures such as adapter errors or invalid config. Missing quota sources are warnings because a freshly installed app may simply need setup.
 
-`--json` prints a machine-readable report that excludes account identifiers, raw source references, and raw content, and redacts local paths. The plain text report is meant for local troubleshooting and can include local filesystem paths.
+`--json` prints a machine-readable report that excludes account identifiers, raw source references, and raw content, redacts local paths, and includes per-snapshot freshness reasons. The plain text report is meant for local troubleshooting and can include local filesystem paths.
 
 See [docs/diagnostics.md](docs/diagnostics.md) for what to share in public issues.
 
@@ -179,7 +180,7 @@ official_api / official_cli
 > unavailable
 ```
 
-The product should be conservative: estimated data must be labeled as estimated, stale data must be labeled as stale, observed timestamps must be visible, and unknown data must not be presented as precise.
+The product should be conservative: estimated data must be labeled as estimated, stale data must include a freshness reason, observed timestamps must be visible, and unknown data must not be presented as precise.
 
 ## Reset Events
 
