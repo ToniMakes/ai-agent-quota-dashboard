@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AI Agent Quota Mini</title>
-    <link rel="stylesheet" href="/mini.css?v=20260810-desktop-mini" />
+    <link rel="stylesheet" href="/mini.css?v=20260810-mini-polish" />
   </head>
   <body>
     <main class="mini-shell" data-mode="panel">
@@ -14,14 +14,41 @@
           <strong>AIQD</strong>
         </div>
         <div class="mini-actions">
-          <button type="button" data-desktop-action="dashboard" title="Open dashboard">
-            Dash
+          <button
+            class="tool-button"
+            type="button"
+            data-desktop-action="refresh"
+            title="Refresh quota data"
+            aria-label="Refresh quota data"
+          >
+            <span class="icon icon-refresh" aria-hidden="true"></span>
           </button>
-          <button type="button" data-desktop-action="widget" title="Toggle desktop widget">
-            Pin
+          <button
+            class="tool-button"
+            type="button"
+            data-desktop-action="dashboard"
+            title="Open dashboard"
+            aria-label="Open dashboard"
+          >
+            <span class="icon icon-dashboard" aria-hidden="true"></span>
           </button>
-          <button type="button" data-desktop-action="hide" title="Hide">
-            x
+          <button
+            class="tool-button"
+            type="button"
+            data-desktop-action="widget"
+            title="Toggle desktop widget"
+            aria-label="Toggle desktop widget"
+          >
+            <span class="icon icon-pin" aria-hidden="true"></span>
+          </button>
+          <button
+            class="tool-button"
+            type="button"
+            data-desktop-action="hide"
+            title="Hide"
+            aria-label="Hide"
+          >
+            <span class="icon icon-close" aria-hidden="true"></span>
           </button>
         </div>
       </header>
@@ -30,6 +57,6 @@
       <footer id="mini-footer" class="mini-footer">Refreshing</footer>
     </main>
 
-    <script src="/mini.js?v=20260810-desktop-mini" type="module"></script>
+    <script src="/mini.js?v=20260810-mini-polish" type="module"></script>
   </body>
 </html>

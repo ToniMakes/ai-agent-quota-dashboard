@@ -1,12 +1,15 @@
 const state = {
   agents: [],
   generatedAt: undefined,
+  isRefreshing: false,
+  lastError: undefined,
   setupStatus: undefined
 };
 
 const elements = {
   footer: document.querySelector("#mini-footer"),
   grid: document.querySelector("#mini-grid"),
+  refreshButton: document.querySelector('[data-desktop-action="refresh"]'),
   shell: document.querySelector(".mini-shell")
 };
 
@@ -29,6 +32,11 @@ document.addEventListener("click", async (event) => {
   }
 
   const action = button.dataset.desktopAction;
+
+  if (action === "refresh") {
+    await refreshNow();
+    return;
+  }
 
   if (action === "dashboard") {
     if (window.aiqdDesktop) {
@@ -66,15 +74,14 @@ async function load(options = {}) {
   const allowRefresh = options.allowRefresh ?? true;
 
   try {
-    const [agentsResponse, setupResponse] = await Promise.all([
-      fetch("/api/agents"),
-      fetch("/api/setup/claude-statusline")
+    const [agentsPayload, setupPayload] = await Promise.all([
+      fetchJson("/api/agents"),
+      fetchJson("/api/setup/claude-statusline")
     ]);
-    const agentsPayload = await agentsResponse.json();
-    const setupPayload = await setupResponse.json();
 
     state.agents = agentsPayload.agents ?? [];
     state.generatedAt = agentsPayload.generatedAt;
+    state.lastError = undefined;
     state.setupStatus = setupPayload.status;
 
     if (
@@ -82,7 +89,7 @@ async function load(options = {}) {
       state.setupStatus?.latestHasRateLimits &&
       hasClaudeWaitingState(state.agents)
     ) {
-      await fetch("/api/refresh", { method: "POST" });
+      await fetchJson("/api/refresh", { method: "POST" });
       await load({ allowRefresh: false });
       return;
     }
@@ -102,35 +109,54 @@ function render() {
     elements.grid.innerHTML = agents.map(renderAgent).join("");
   }
 
-  elements.footer.textContent = footerText();
+  renderFooter();
 }
 
 function renderAgent(agent) {
   const primary = agent.primarySnapshot;
   const status = agent.status ?? "unknown";
-  const title = primary
-    ? `${windowLabel(primary.windowType)} ${renderResetText(primary.resetAt)}`
-    : agent.emptyState?.title ?? "No quota data";
-  const detail = primary
-    ? `${sourceLabel(primary.source)} / ${primary.confidence}`
-    : emptyStateDetail(agent);
+  const detail = primary ? snapshotDetail(primary) : emptyStateDetail(agent);
+  const label = primary
+    ? `${windowLabel(primary.windowType)} left`
+    : emptyStateLabel(agent);
 
   return `
-    <article class="mini-agent ${escapeHtml(status)}">
+    <article class="mini-agent ${escapeHtml(status)}" title="${escapeHtml(detail)}">
       <div class="mini-agent-top">
         <span class="status-dot ${escapeHtml(status)}" aria-hidden="true"></span>
         <strong>${escapeHtml(agent.shortName ?? agent.displayName)}</strong>
         <span class="mini-remaining">${formatRemaining(primary)}</span>
       </div>
+      <div class="mini-primary-label">${escapeHtml(label)}</div>
       <div class="mini-meter" aria-hidden="true">
         <div class="mini-meter-fill ${escapeHtml(status)}" style="--value: ${meterValue(
           primary
         )}%"></div>
       </div>
-      <div class="mini-line">${escapeHtml(title)}</div>
+      <div class="mini-window-list">${renderWindowRows(agent)}</div>
       <div class="mini-detail">${escapeHtml(detail)}</div>
     </article>
   `;
+}
+
+async function refreshNow() {
+  if (state.isRefreshing) {
+    return;
+  }
+
+  state.isRefreshing = true;
+  renderFooter();
+
+  try {
+    await fetchJson("/api/refresh", { method: "POST" });
+    await load({ allowRefresh: false });
+  } catch {
+    state.lastError = "Refresh failed";
+    renderError();
+  } finally {
+    state.isRefreshing = false;
+    renderFooter();
+  }
 }
 
 function renderError() {
@@ -141,19 +167,104 @@ function renderError() {
         <strong>Offline</strong>
         <span class="mini-remaining">--</span>
       </div>
-      <div class="mini-line">Local service unavailable</div>
-      <div class="mini-detail">Restart the dashboard.</div>
+      <div class="mini-primary-label">offline</div>
+      <div class="mini-window-list">
+        <div class="mini-empty-state">
+          <strong>Local service unavailable</strong>
+          <span>Restart the dashboard</span>
+        </div>
+      </div>
+      <div class="mini-detail">Waiting for local service</div>
     </article>
   `;
-  elements.footer.textContent = "Waiting for local service";
+  state.lastError = state.lastError ?? "Local service unavailable";
+  renderFooter();
+}
+
+function renderFooter() {
+  elements.footer.textContent = footerText();
+
+  if (elements.refreshButton instanceof HTMLButtonElement) {
+    elements.refreshButton.disabled = state.isRefreshing;
+    elements.refreshButton.classList.toggle("is-spinning", state.isRefreshing);
+  }
 }
 
 function footerText() {
+  if (state.isRefreshing) {
+    return "Refreshing now";
+  }
+
+  if (state.lastError) {
+    return state.lastError;
+  }
+
   if (hasClaudeWaitingState(state.agents)) {
-    return "Watching Claude Code";
+    return state.setupStatus?.statusLineManagedByApp
+      ? "Watching Claude Code for rate_limits"
+      : "Claude Code setup needed";
   }
 
   return `Updated ${formatRelative(state.generatedAt)}`;
+}
+
+function renderWindowRows(agent) {
+  const snapshots = prioritizeSnapshots(agent.snapshots ?? [], agent.primarySnapshot);
+
+  if (snapshots.length === 0) {
+    return `
+      <div class="mini-empty-state">
+        <strong>${escapeHtml(agent.emptyState?.title ?? "No quota data")}</strong>
+        <span>${escapeHtml(emptyStateAction(agent))}</span>
+      </div>
+    `;
+  }
+
+  const visibleSnapshots = snapshots.slice(0, 2);
+  const rows = visibleSnapshots.map(renderWindowRow).join("");
+  const hiddenCount = snapshots.length - visibleSnapshots.length;
+  const more =
+    hiddenCount > 0
+      ? `<div class="mini-window-more">+${hiddenCount} more ${
+          hiddenCount === 1 ? "window" : "windows"
+        }</div>`
+      : "";
+
+  return rows + more;
+}
+
+function renderWindowRow(snapshot) {
+  const reset = resetSummary(snapshot.resetAt);
+  const resetTitle = snapshot.resetAt
+    ? `Reported reset ${formatTimestamp(snapshot.resetAt, { long: true })}`
+    : "No reported reset";
+
+  return `
+    <div class="mini-window-row" title="${escapeHtml(resetTitle)}">
+      <span>${escapeHtml(windowLabel(snapshot.windowType))}</span>
+      <strong>${escapeHtml(formatRemainingText(snapshot))}</strong>
+      <time datetime="${escapeHtml(snapshot.resetAt ?? "")}">${escapeHtml(reset)}</time>
+    </div>
+  `;
+}
+
+function prioritizeSnapshots(snapshots, primary) {
+  if (!primary) {
+    return snapshots;
+  }
+
+  return [
+    primary,
+    ...snapshots.filter(
+      (snapshot) =>
+        !(
+          snapshot.provider === primary.provider &&
+          snapshot.agent === primary.agent &&
+          snapshot.windowType === primary.windowType &&
+          snapshot.observedAt === primary.observedAt
+        )
+    )
+  ];
 }
 
 function hasClaudeWaitingState(agents) {
@@ -166,7 +277,7 @@ function hasClaudeWaitingState(agents) {
 
 function emptyStateDetail(agent) {
   if (agent.emptyState?.reason === "waiting_for_statusline_data") {
-    return "Open Claude Code once";
+    return "Open Claude Code once; AIQD will refresh when data arrives.";
   }
 
   if (agent.emptyState?.reason === "no_supported_source") {
@@ -174,6 +285,28 @@ function emptyStateDetail(agent) {
   }
 
   return "Unavailable";
+}
+
+function emptyStateLabel(agent) {
+  if (agent.emptyState?.reason === "waiting_for_statusline_data") {
+    return "waiting";
+  }
+
+  return agent.emptyState?.reason === "no_supported_source"
+    ? "unsupported"
+    : "unavailable";
+}
+
+function emptyStateAction(agent) {
+  if (agent.emptyState?.reason === "waiting_for_statusline_data") {
+    return "Open Claude Code";
+  }
+
+  if (agent.emptyState?.reason === "no_readable_paths") {
+    return "Check data paths";
+  }
+
+  return "Open Doctor";
 }
 
 function sortAgents(agents) {
@@ -205,15 +338,60 @@ function formatRemaining(snapshot) {
 }
 
 function meterValue(snapshot) {
-  return clamp(snapshot?.remainingPercent ?? 0, 0, 100);
-}
-
-function renderResetText(value) {
-  if (!value) {
-    return "reset unknown";
+  if (!snapshot) {
+    return 0;
   }
 
-  return `resets ${formatRelative(value)}`;
+  if (typeof snapshot.remainingPercent === "number") {
+    return clamp(snapshot.remainingPercent, 0, 100);
+  }
+
+  if (
+    typeof snapshot.remaining === "number" &&
+    typeof snapshot.total === "number" &&
+    snapshot.total > 0
+  ) {
+    return clamp((snapshot.remaining / snapshot.total) * 100, 0, 100);
+  }
+
+  return 0;
+}
+
+function resetSummary(value) {
+  if (!value) {
+    return "reset --";
+  }
+
+  return `${formatResetDistance(value)} / ${formatTimestamp(value)}`;
+}
+
+function snapshotDetail(snapshot) {
+  const parts = [
+    `${sourceLabel(snapshot.source)} / ${confidenceLabel(snapshot.confidence)}`,
+    `seen ${formatRelative(snapshot.observedAt)}`
+  ];
+
+  if (snapshot.freshness?.status === "stale") {
+    parts.push(snapshot.freshness.label);
+  }
+
+  return parts.join(" / ");
+}
+
+function formatRemainingText(snapshot) {
+  if (!snapshot) {
+    return "--";
+  }
+
+  if (typeof snapshot.remainingPercent === "number") {
+    return `${Math.round(snapshot.remainingPercent)}%`;
+  }
+
+  if (typeof snapshot.remaining === "number") {
+    return `${compactNumber(snapshot.remaining)} ${snapshot.unit}`;
+  }
+
+  return "--";
 }
 
 function formatRelative(value) {
@@ -239,6 +417,50 @@ function formatRelative(value) {
   }
 
   return date.toLocaleString();
+}
+
+function formatResetDistance(value) {
+  if (!value) {
+    return "--";
+  }
+
+  const date = new Date(value);
+  const deltaSeconds = Math.round((date.getTime() - Date.now()) / 1000);
+  const absoluteSeconds = Math.abs(deltaSeconds);
+  const suffix = deltaSeconds < 0 ? "ago" : "left";
+
+  if (absoluteSeconds >= 86400) {
+    return `${Math.round(absoluteSeconds / 86400)}d ${suffix}`;
+  }
+
+  if (absoluteSeconds >= 3600) {
+    return `${Math.round(absoluteSeconds / 3600)}h ${suffix}`;
+  }
+
+  if (absoluteSeconds >= 60) {
+    return `${Math.round(absoluteSeconds / 60)}m ${suffix}`;
+  }
+
+  return `${absoluteSeconds}s ${suffix}`;
+}
+
+function formatTimestamp(value, options = {}) {
+  if (!value) {
+    return "--";
+  }
+
+  const date = new Date(value);
+  const formatter = new Intl.DateTimeFormat(undefined, {
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    month: "short",
+    timeZoneName: options.long ? "short" : undefined,
+    weekday: options.long ? "short" : undefined,
+    year: options.long ? "numeric" : undefined
+  });
+
+  return formatter.format(date);
 }
 
 function windowLabel(windowType) {
@@ -270,6 +492,18 @@ function sourceLabel(source) {
   return labels[source] ?? source;
 }
 
+function confidenceLabel(confidence) {
+  const labels = {
+    estimated: "estimated",
+    high: "high",
+    medium: "medium",
+    official: "official",
+    unknown: "unknown"
+  };
+
+  return labels[confidence] ?? confidence;
+}
+
 function compactNumber(value) {
   return new Intl.NumberFormat(undefined, {
     maximumFractionDigits: 1,
@@ -279,6 +513,16 @@ function compactNumber(value) {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+async function fetchJson(url, options) {
+  const response = await fetch(url, options);
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  return response.json();
 }
 
 function escapeHtml(value) {

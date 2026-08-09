@@ -47,6 +47,7 @@ button {
 
 .mini-shell[data-mode="widget"] {
   border-color: rgb(79 212 167 / 34%);
+  padding: 10px;
 }
 
 .mini-header {
@@ -54,8 +55,12 @@ button {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   -webkit-app-region: drag;
+}
+
+.mini-shell[data-mode="widget"] .mini-header {
+  margin-bottom: 8px;
 }
 
 .mini-brand,
@@ -82,21 +87,116 @@ button {
   -webkit-app-region: no-drag;
 }
 
-.mini-actions button {
-  min-width: 34px;
+.tool-button {
+  display: grid;
+  width: 28px;
   height: 28px;
+  min-width: 28px;
+  place-items: center;
   border: 1px solid var(--panel-border);
   border-radius: 8px;
   background: var(--surface);
   color: var(--text);
   cursor: pointer;
-  font-size: 0.72rem;
-  font-weight: 800;
 }
 
-.mini-actions button:hover {
+.tool-button:hover {
   border-color: rgb(79 212 167 / 58%);
   background: var(--surface-strong);
+}
+
+.tool-button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.icon {
+  position: relative;
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  color: currentColor;
+}
+
+.icon-refresh {
+  border: 2px solid currentColor;
+  border-left-color: transparent;
+  border-radius: 50%;
+}
+
+.icon-refresh::after {
+  position: absolute;
+  right: -2px;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-top: 4px solid currentColor;
+  border-right: 4px solid transparent;
+  content: "";
+}
+
+.tool-button.is-spinning .icon-refresh {
+  animation: spin 760ms linear infinite;
+}
+
+.icon-dashboard::before {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 5px;
+  height: 5px;
+  border-radius: 2px;
+  background: currentColor;
+  box-shadow:
+    7px 0 0 currentColor,
+    0 7px 0 currentColor,
+    7px 7px 0 currentColor;
+  content: "";
+}
+
+.icon-pin::before {
+  position: absolute;
+  top: 1px;
+  left: 5px;
+  width: 5px;
+  height: 8px;
+  border: 2px solid currentColor;
+  border-bottom: 0;
+  border-radius: 2px 2px 0 0;
+  content: "";
+  transform: rotate(34deg);
+}
+
+.icon-pin::after {
+  position: absolute;
+  top: 8px;
+  left: 7px;
+  width: 2px;
+  height: 7px;
+  background: currentColor;
+  content: "";
+  transform: rotate(34deg);
+  transform-origin: top center;
+}
+
+.icon-close::before,
+.icon-close::after {
+  position: absolute;
+  top: 6px;
+  left: 1px;
+  width: 12px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+}
+
+.icon-close::before {
+  transform: rotate(45deg);
+}
+
+.icon-close::after {
+  transform: rotate(-45deg);
 }
 
 .mini-grid {
@@ -106,12 +206,17 @@ button {
 }
 
 .mini-agent {
-  min-height: 126px;
+  min-height: 132px;
   padding: 10px;
   overflow: hidden;
   border: 1px solid var(--panel-border);
   border-radius: 8px;
   background: var(--surface);
+}
+
+.mini-shell[data-mode="widget"] .mini-agent {
+  min-height: 102px;
+  padding: 8px;
 }
 
 .mini-agent-top {
@@ -163,9 +268,20 @@ button {
   white-space: nowrap;
 }
 
+.mini-primary-label {
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .mini-meter {
   height: 6px;
-  margin: 10px 0;
+  margin: 8px 0;
   overflow: hidden;
   border-radius: 999px;
   background: rgb(255 255 255 / 10%);
@@ -179,19 +295,82 @@ button {
   background: var(--unknown);
 }
 
-.mini-line {
-  min-height: 34px;
+.mini-window-list {
+  display: grid;
+  gap: 3px;
+}
+
+.mini-window-row {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
+.mini-window-row span,
+.mini-window-row strong,
+.mini-window-row time,
+.mini-window-more {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-window-row span {
   color: var(--text);
-  font-size: 0.78rem;
   font-weight: 800;
-  line-height: 1.25;
+}
+
+.mini-window-row strong {
+  color: var(--text);
+  font-size: 0.72rem;
+}
+
+.mini-window-row time {
+  text-align: right;
+}
+
+.mini-window-more {
+  color: var(--muted);
+  font-size: 0.66rem;
+  line-height: 1.15;
+}
+
+.mini-empty-state {
+  display: grid;
+  gap: 3px;
+}
+
+.mini-empty-state strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.72rem;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-empty-state span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.15;
 }
 
 .mini-detail {
-  margin-top: 4px;
+  margin-top: 6px;
+  overflow: hidden;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-shell[data-mode="widget"] .mini-detail {
+  display: none;
 }
 
 .mini-empty {
@@ -202,15 +381,28 @@ button {
 }
 
 .mini-footer {
-  margin-top: 10px;
+  margin-top: 8px;
+  overflow: hidden;
   color: var(--muted);
   font-size: 0.72rem;
   font-weight: 700;
   text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-shell[data-mode="widget"] .mini-footer {
+  margin-top: 6px;
 }
 
 @media (max-width: 319px) {
   .mini-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
