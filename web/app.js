@@ -1,5 +1,6 @@
 const state = {
   agents: [],
+  codexSnapshotSaveStatus: undefined,
   codexSnapshotStatus: undefined,
   doctorChecks: [],
   pathsStatus: undefined,
@@ -77,6 +78,17 @@ document.addEventListener("click", async (event) => {
 
   const result = await copyText(text, button);
   showCopyState(button, result);
+});
+
+document.addEventListener("submit", async (event) => {
+  const target = event.target;
+
+  if (!(target instanceof HTMLFormElement) || target.id !== "codex-snapshot-form") {
+    return;
+  }
+
+  event.preventDefault();
+  await saveCodexSnapshotForm(target);
 });
 
 await load();
@@ -501,6 +513,7 @@ function renderCodexSnapshotSettings() {
 
   elements.codexSnapshotContent.innerHTML = `
     ${renderCodexSnapshotSteps(status)}
+    ${renderCodexSnapshotForm(status)}
 
     <div class="settings-list">
       ${settingsRow(
@@ -543,6 +556,147 @@ function renderCodexSnapshotSettings() {
       <span></span>
     </div>
   `;
+}
+
+function renderCodexSnapshotForm(status) {
+  const remainingValue =
+    typeof status.latestRemainingPercent === "number"
+      ? status.latestRemainingPercent
+      : "";
+  const resetValue = status.latestResetAt
+    ? toDateTimeLocalValue(status.latestResetAt)
+    : "";
+  const saveStatus = state.codexSnapshotSaveStatus;
+
+  return `
+    <form id="codex-snapshot-form" class="settings-form">
+      <div class="settings-form-grid">
+        <label class="form-field">
+          <span>Remaining %</span>
+          <input
+            name="remainingPercent"
+            type="number"
+            min="0"
+            max="100"
+            step="0.1"
+            inputmode="decimal"
+            value="${escapeHtml(remainingValue)}"
+            required
+          >
+        </label>
+        <label class="form-field">
+          <span>Reported reset</span>
+          <input
+            name="resetAt"
+            type="datetime-local"
+            value="${escapeHtml(resetValue)}"
+            required
+          >
+        </label>
+        <label class="form-field">
+          <span>Label</span>
+          <input
+            name="planLabel"
+            type="text"
+            maxlength="80"
+            value="Codex visible status"
+          >
+        </label>
+      </div>
+      <div class="form-actions">
+        <button class="button" type="submit">Save snapshot</button>
+        <span
+          class="form-status ${saveStatus?.kind ?? ""}"
+          data-codex-snapshot-form-status
+        >${escapeHtml(saveStatus?.message ?? "")}</span>
+      </div>
+    </form>
+  `;
+}
+
+async function saveCodexSnapshotForm(form) {
+  const remainingInput = formField(form, "remainingPercent");
+  const resetInput = formField(form, "resetAt");
+  const labelInput = formField(form, "planLabel");
+  const button = form.querySelector("button[type='submit']");
+
+  if (!remainingInput || !resetInput) {
+    return;
+  }
+
+  const remainingPercent = Number(remainingInput.value);
+  const resetDate = resetInput.value ? new Date(resetInput.value) : undefined;
+
+  if (!Number.isFinite(remainingPercent)) {
+    setCodexSnapshotFormStatus(
+      form,
+      "Remaining percent must be a number.",
+      "error"
+    );
+    return;
+  }
+
+  if (!resetDate || Number.isNaN(resetDate.getTime())) {
+    setCodexSnapshotFormStatus(form, "Reported reset must be a valid time.", "error");
+    return;
+  }
+
+  if (button instanceof HTMLButtonElement) {
+    button.disabled = true;
+    button.textContent = "Saving";
+  }
+
+  setCodexSnapshotFormStatus(form, "Saving snapshot", "pending");
+
+  try {
+    const response = await fetch("/api/setup/codex-snapshot", {
+      body: JSON.stringify({
+        planLabel: labelInput?.value.trim() || undefined,
+        remainingPercent,
+        resetAt: resetDate.toISOString()
+      }),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      method: "POST"
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(payload.error ?? "Snapshot could not be saved.");
+    }
+
+    state.codexSnapshotSaveStatus = {
+      kind: "success",
+      message: "Snapshot saved and dashboard refreshed."
+    };
+    await load();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    setCodexSnapshotFormStatus(form, message, "error");
+  } finally {
+    if (button instanceof HTMLButtonElement) {
+      button.disabled = false;
+      button.textContent = "Save snapshot";
+    }
+  }
+}
+
+function formField(form, name) {
+  const field = form.elements.namedItem(name);
+
+  return field instanceof HTMLInputElement ? field : undefined;
+}
+
+function setCodexSnapshotFormStatus(form, message, kind) {
+  const statusElement = form.querySelector("[data-codex-snapshot-form-status]");
+
+  if (!statusElement) {
+    return;
+  }
+
+  statusElement.textContent = message;
+  statusElement.className = `form-status ${kind}`;
 }
 
 function renderCodexSnapshotSteps(status) {
@@ -1120,6 +1274,18 @@ function formatTimestamp(value) {
     month: "short",
     timeZoneName: "short"
   }).format(new Date(value));
+}
+
+function toDateTimeLocalValue(value) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+
+  return localDate.toISOString().slice(0, 16);
 }
 
 function windowLabel(windowType) {

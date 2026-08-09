@@ -18,7 +18,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Codex and Claude Code adapter boundaries
 - Fixture-driven parsers for Claude Code statusline rate limits
 - A conservative Codex parser for explicit structured quota snapshots
-- Manual Codex snapshot command for visible `/status` or Usage values
+- Manual Codex snapshot command and Settings form for visible `/status` or Usage values
 - Settings view status for Codex manual snapshots
 - Claude Code statusline setup helper with explicit opt-in
 - Reset event timeline for changed reset anchors and sharp replenishment
@@ -153,6 +153,8 @@ To record a value you can visibly confirm:
 node dist/index.js codex snapshot --remaining-percent 72 --reset-at 2026-08-16T03:00:00Z
 ```
 
+You can also save the same visible values from the Settings view. The browser form writes only AIQD's own manual snapshot file and refreshes the local dashboard after saving.
+
 This writes a structured manual snapshot to:
 
 ```text
@@ -161,7 +163,7 @@ This writes a structured manual snapshot to:
 
 Manual Codex snapshots are labeled `manual` and expire at the reported reset time.
 
-The Settings view shows whether that snapshot exists, the latest remaining quota, the reported reset time, and copyable commands.
+The Settings view shows whether that snapshot exists, the latest remaining quota, the reported reset time, copyable commands, and the fields that are stored or deliberately not stored.
 
 ## Local Data Paths
 

@@ -3,7 +3,10 @@ import { join } from "node:path";
 import type { AgentAdapter, AdapterScanContext } from "../contracts.js";
 import { findReadableCandidateFiles } from "../local-candidates.js";
 import { inspectPath, uniquePaths } from "../path-utils.js";
-import { defaultCodexSnapshotDir } from "../../config/paths.js";
+import {
+  defaultCodexManualSnapshotPath,
+  defaultCodexSnapshotDir
+} from "../../config/paths.js";
 import type { DoctorCheck, QuotaSnapshot } from "../../core/types.js";
 import { parseCodexQuotaSnapshots } from "./parse-quota-snapshot.js";
 
@@ -76,6 +79,7 @@ export function createCodexAdapter(options: CodexAdapterOptions): AgentAdapter {
 
 export function getDefaultCodexDataPaths(): string[] {
   return uniquePaths([
+    defaultCodexManualSnapshotPath(),
     defaultCodexSnapshotDir(),
     process.env.CODEX_HOME,
     join(homedir(), ".codex"),

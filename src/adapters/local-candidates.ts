@@ -1,5 +1,5 @@
 import { readdir, readFile, stat } from "node:fs/promises";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 
 export type CandidateFile = {
   path: string;
@@ -23,7 +23,7 @@ export async function findReadableCandidateFiles(
   const candidates: CandidateFile[] = [];
 
   for (const root of roots) {
-    await walk(root, 0);
+    await collect(root, 0);
 
     if (candidates.length >= maxFiles) {
       break;
@@ -32,15 +32,32 @@ export async function findReadableCandidateFiles(
 
   return candidates;
 
-  async function walk(directory: string, depth: number): Promise<void> {
+  async function collect(path: string, depth: number): Promise<void> {
     if (depth > maxDepth || candidates.length >= maxFiles) {
+      return;
+    }
+
+    let pathStats;
+
+    try {
+      pathStats = await stat(path);
+    } catch {
+      return;
+    }
+
+    if (pathStats.isFile()) {
+      await maybeAddFile(path, basename(path), pathStats.size);
+      return;
+    }
+
+    if (!pathStats.isDirectory()) {
       return;
     }
 
     let entries;
 
     try {
-      entries = await readdir(directory, { withFileTypes: true });
+      entries = await readdir(path, { withFileTypes: true });
     } catch {
       return;
     }
@@ -50,31 +67,46 @@ export async function findReadableCandidateFiles(
         return;
       }
 
-      const fullPath = join(directory, entry.name);
+      const fullPath = join(path, entry.name);
 
       if (entry.isDirectory()) {
-        await walk(fullPath, depth + 1);
+        await collect(fullPath, depth + 1);
         continue;
       }
 
-      if (!entry.isFile() || !options.namePattern.test(entry.name)) {
+      if (!entry.isFile()) {
         continue;
       }
 
       try {
         const fileStats = await stat(fullPath);
-
-        if (fileStats.size > maxBytes) {
-          continue;
-        }
-
-        candidates.push({
-          path: fullPath,
-          content: await readFile(fullPath, "utf8")
-        });
+        await maybeAddFile(fullPath, entry.name, fileStats.size);
       } catch {
         continue;
       }
+    }
+  }
+
+  async function maybeAddFile(
+    path: string,
+    name: string,
+    size: number
+  ): Promise<void> {
+    if (candidates.length >= maxFiles) {
+      return;
+    }
+
+    if (size > maxBytes || !options.namePattern.test(name)) {
+      return;
+    }
+
+    try {
+      candidates.push({
+        path,
+        content: await readFile(path, "utf8")
+      });
+    } catch {
+      return;
     }
   }
 }

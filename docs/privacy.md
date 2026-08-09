@@ -11,7 +11,7 @@ It reads known local usage files, local quota snapshots, or official status outp
 - Demo data is opt-in through `--demo` or `npm run dev`.
 - User-configured scan roots are stored in the app's own local `config.json`.
 - Network connectors must be explicit and opt-in.
-- The Settings view is read-only and does not modify Claude Code settings.
+- The Settings view does not modify external tool settings. The Codex manual snapshot form writes only AIQD's own local snapshot file after an explicit save action.
 
 ## Stored Data
 

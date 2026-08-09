@@ -34,6 +34,15 @@ export type CodexManualSnapshotDocument = {
   };
 };
 
+export type CodexManualSnapshotInput = {
+  observedAt?: string | undefined;
+  outputPath?: string | undefined;
+  planLabel?: string | undefined;
+  remainingPercent?: number | undefined;
+  resetAt?: string | undefined;
+  usedPercent?: number | undefined;
+};
+
 export function parseCodexManualSnapshotOptions(
   argv: string[],
   now = new Date()
@@ -42,17 +51,95 @@ export function parseCodexManualSnapshotOptions(
   const usedPercent = readPercentFlag(argv, "--used-percent");
   const resetAt = parseRequiredDateFlag(argv, "--reset-at", "reset time");
   const observedAt = parseOptionalDateFlag(argv, "--observed-at");
-  const effectiveObservedAt = observedAt ?? now.toISOString();
   const outputPath =
     readFlagValue(argv, "--output") ?? defaultCodexManualSnapshotPath();
   const planLabel =
     readFlagValue(argv, "--plan-label") ?? "Codex visible status";
 
+  return normalizeCodexManualSnapshotInput(
+    {
+      observedAt,
+      outputPath,
+      planLabel,
+      remainingPercent,
+      resetAt,
+      usedPercent
+    },
+    now,
+    {
+      remainingPercent: "--remaining-percent",
+      resetAt: "--reset-at",
+      usedPercent: "--used-percent"
+    }
+  );
+}
+
+export function parseCodexManualSnapshotInput(
+  input: CodexManualSnapshotInput,
+  now = new Date()
+): CodexManualSnapshotOptions {
+  const resetAt = parseRequiredDateValue(input.resetAt, "resetAt");
+  const observedAt = parseOptionalDateValue(input.observedAt, "observedAt");
+  const remainingPercent = parseOptionalPercentValue(
+    input.remainingPercent,
+    "remainingPercent"
+  );
+  const usedPercent = parseOptionalPercentValue(input.usedPercent, "usedPercent");
+  const outputPath = input.outputPath ?? defaultCodexManualSnapshotPath();
+  const planLabel = normalizePlanLabel(input.planLabel);
+
+  return normalizeCodexManualSnapshotInput(
+    {
+      observedAt,
+      outputPath,
+      planLabel,
+      remainingPercent,
+      resetAt,
+      usedPercent
+    },
+    now
+  );
+}
+
+type NormalizedCodexManualSnapshotInput = {
+  observedAt?: string | undefined;
+  outputPath: string;
+  planLabel: string;
+  remainingPercent?: number | undefined;
+  resetAt: string;
+  usedPercent?: number | undefined;
+};
+
+type CodexManualSnapshotInputLabels = {
+  remainingPercent: string;
+  resetAt: string;
+  usedPercent: string;
+};
+
+function normalizeCodexManualSnapshotInput(
+  input: NormalizedCodexManualSnapshotInput,
+  now: Date,
+  labels: CodexManualSnapshotInputLabels = {
+    remainingPercent: "remainingPercent",
+    resetAt: "resetAt",
+    usedPercent: "usedPercent"
+  }
+): CodexManualSnapshotOptions {
+  const {
+    observedAt,
+    outputPath,
+    planLabel,
+    remainingPercent,
+    resetAt,
+    usedPercent
+  } = input;
   if (
     typeof remainingPercent !== "number" &&
     typeof usedPercent !== "number"
   ) {
-    throw new Error("Provide --remaining-percent or --used-percent.");
+    throw new Error(
+      `Provide ${labels.remainingPercent} or ${labels.usedPercent}.`
+    );
   }
 
   if (
@@ -61,12 +148,14 @@ export function parseCodexManualSnapshotOptions(
     Math.abs(remainingPercent + usedPercent - 100) > 0.5
   ) {
     throw new Error(
-      "--remaining-percent and --used-percent must add up to roughly 100."
+      `${labels.remainingPercent} and ${labels.usedPercent} must add up to roughly 100.`
     );
   }
 
+  const effectiveObservedAt = observedAt ?? now.toISOString();
+
   if (Date.parse(resetAt) <= Date.parse(effectiveObservedAt)) {
-    throw new Error("--reset-at must be later than the observed time.");
+    throw new Error(`${labels.resetAt} must be later than the observed time.`);
   }
 
   const options: CodexManualSnapshotOptions = {
@@ -198,6 +287,50 @@ function parseOptionalDateFlag(
   return new Date(parsed).toISOString();
 }
 
+function parseRequiredDateValue(value: string | undefined, label: string): string {
+  if (!value) {
+    throw new Error(`${label} is required.`);
+  }
+
+  return parseDateValue(value, label);
+}
+
+function parseOptionalDateValue(
+  value: string | undefined,
+  label: string
+): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  return parseDateValue(value, label);
+}
+
+function parseDateValue(value: string, label: string): string {
+  const parsed = Date.parse(value);
+
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`${label} must be a valid date/time.`);
+  }
+
+  return new Date(parsed).toISOString();
+}
+
+function parseOptionalPercentValue(
+  value: number | undefined,
+  label: string
+): number | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (!Number.isFinite(value) || value < 0 || value > 100) {
+    throw new Error(`${label} must be a number between 0 and 100.`);
+  }
+
+  return roundPercent(value);
+}
+
 function readPercentFlag(argv: string[], flag: string): number | undefined {
   const raw = readFlagValue(argv, flag);
 
@@ -212,6 +345,16 @@ function readPercentFlag(argv: string[], flag: string): number | undefined {
   }
 
   return roundPercent(parsed);
+}
+
+function normalizePlanLabel(value: string | undefined): string {
+  const label = value?.trim() || "Codex visible status";
+
+  if (label.length > 80) {
+    throw new Error("planLabel must be 80 characters or fewer.");
+  }
+
+  return label;
 }
 
 function readFlagValue(argv: string[], flag: string): string | undefined {

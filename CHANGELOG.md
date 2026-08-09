@@ -11,6 +11,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Normalized JSON and CSV export endpoints for dashboard quota data
 - Settings view export buttons for local JSON/CSV downloads
 - Manual Codex snapshot CLI for visible `/status` or Usage values
+- Settings view form to save visible Codex manual snapshots and refresh dashboard data
 - Settings view status and copyable commands for Codex manual snapshots
 - Development desktop shell with a tray mini panel and optional always-on-top widget
 - Tray tooltip/menu quota summaries for the desktop shell
