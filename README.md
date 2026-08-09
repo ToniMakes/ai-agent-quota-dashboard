@@ -80,9 +80,12 @@ Run one local scan and print the same diagnostic signal without opening the dash
 ```bash
 node dist/index.js doctor
 node dist/index.js doctor --demo
+node dist/index.js doctor --json
 ```
 
 The command prints refresh counts, each agent's quota or empty-state guidance, and the underlying Doctor checks. It exits with code `1` only for blocking failures such as adapter errors or invalid config. Missing quota sources are warnings because a freshly installed app may simply need setup.
+
+`--json` prints a machine-readable report that excludes account identifiers, raw source references, and raw content, and redacts local paths. The plain text report is meant for local troubleshooting and can include local filesystem paths.
 
 ## Local Data Paths
 

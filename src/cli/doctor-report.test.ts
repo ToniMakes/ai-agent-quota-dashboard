@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  buildDoctorJsonReport,
   formatDoctorReport,
   hasDoctorFailures,
   type DoctorReportInput
@@ -130,5 +131,58 @@ describe("doctor report", () => {
       }),
       true
     );
+  });
+
+  it("builds a shareable JSON report with private fields redacted", () => {
+    const report = buildDoctorJsonReport({
+      ...baseInput,
+      agents: [
+        {
+          ...baseAgent,
+          snapshots: [
+            {
+              provider: "openai",
+              agent: "codex",
+              accountIdHash: "account-hash",
+              windowType: "weekly",
+              unit: "percent",
+              remainingPercent: 72,
+              observedAt: "2026-08-09T00:00:00.000Z",
+              source: "local_quota_snapshot",
+              confidence: "high",
+              stale: false,
+              rawSourceRef: "C:\\Users\\hitomi\\.codex\\quota.json"
+            }
+          ]
+        }
+      ],
+      checks: [
+        {
+          ...baseCheck,
+          id: "codex:path:C:\\Users\\hitomi\\.codex",
+          detail: "C:\\Users\\hitomi\\.codex"
+        }
+      ],
+      refreshResult: {
+        ...baseInput.refreshResult,
+        errors: ["Codex: failed to read C:\\Users\\hitomi\\.codex\\quota.json"]
+      }
+    });
+    const serialized = JSON.stringify(report);
+
+    assert.equal(report.schemaVersion, 1);
+    assert.equal(report.reportKind, "doctor");
+    assert.equal(report.privacy.localPaths, "redacted");
+    assert.equal(report.storage.configPath, "<local-path>");
+    assert.equal(report.checks[0]?.detail, "<local-path>");
+    assert.equal(report.checks[0]?.id, "codex:path:<local-path>");
+    assert.equal(
+      report.refresh.errors[0],
+      "Codex: failed to read <local-path>"
+    );
+    assert.equal(report.agents[0]?.snapshots[0]?.remainingPercent, 72);
+    assert.doesNotMatch(serialized, /account-hash/);
+    assert.doesNotMatch(serialized, /"rawSourceRef"/);
+    assert.doesNotMatch(serialized, /C:\\\\Users/);
   });
 });

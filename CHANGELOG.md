@@ -15,6 +15,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Settings view status for configured local data paths
 - Doctor view grouping by agent
 - CLI `doctor` command for one-shot local diagnostics
+- Machine-readable `doctor --json` output with private fields excluded or redacted
 - Refresh run history API and Doctor view panel
 - Dashboard empty-state guidance when an agent has no quota snapshots
 - Copy buttons for setup commands, local path commands, and command-backed empty states, with selection fallback when clipboard access is unavailable
