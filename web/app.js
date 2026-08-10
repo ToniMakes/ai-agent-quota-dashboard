@@ -423,8 +423,8 @@ async function runClaudeStatuslineCheck() {
     detail: state.setupStatus?.latestPath,
     kind: "warning",
     message: tx(
-      "Checked, but no Claude Code statusline data was received. Open Claude Code in a CLI/terminal session, not the Claude desktop app, then try again.",
-      "已检查，但还没有收到 Claude Code statusline 数据。请打开 Claude Code CLI/终端会话，不是普通 Claude 桌面应用，然后再试。"
+      "No Claude data yet. Run the highlighted command, then check again.",
+      "还没收到 Claude 数据。运行高亮命令后再检查。"
     )
   };
   state.refreshStatus = state.claudeCheckFeedback;
@@ -1415,8 +1415,6 @@ function buildInitialSetupModel(items, readiness) {
   const claudeAutoSetupPending = Boolean(state.claudeAutoSetupPending);
   const canAutoSetupClaude =
     !claudeComplete && (!claudeManaged || !claudeCliAvailable);
-  const claudeCliCommand = state.setupStatus?.claudeCliCommand ?? "claude";
-  const claudeCliVersionCommand = `${claudeCliCommand} --version`;
   const claudeCliOpenCommand =
     state.setupStatus?.claudeCliOpenCommand ??
     "Set-Location -LiteralPath 'C:\\path\\to\\your-project'\nclaude";
@@ -1426,6 +1424,10 @@ function buildInitialSetupModel(items, readiness) {
   const claudeCliInstallCommand =
     state.setupStatus?.claudeCliInstallCommand ??
     "winget install Anthropic.ClaudeCode";
+  const claudeCliPasteTarget = tx(
+    "PowerShell or Windows Terminal",
+    "PowerShell 或 Windows Terminal"
+  );
   const claudeCliHelper = claudeWaiting
     ? {
         autoSetupPending: claudeAutoSetupPending,
@@ -1433,144 +1435,50 @@ function buildInitialSetupModel(items, readiness) {
         detail: claudeCliAvailable
           ? claudeCliOnPath
             ? tx(
-                "AIQD found the claude command. Copy only the highlighted project command below, paste it into PowerShell, and press Enter.",
-                "AIQD 已找到 claude 命令。只复制下面高亮的项目命令，粘贴到 PowerShell，然后按 Enter。"
+                "Copy the command below into {target}, then press Enter.",
+                "把下面的命令复制到 {target}，然后按 Enter。",
+                { target: claudeCliPasteTarget }
               )
             : tx(
-                "AIQD found Claude Code in its local install folder, but that folder is not on PATH yet. Copy only the full-path project command below; it will work without editing PATH.",
-                "AIQD 已在本地安装目录找到 Claude Code，但这个目录还没有加入 PATH。只复制下面的完整路径项目命令；它不需要你先改 PATH。"
+                "Copy the full-path command below into {target}; no PATH change is needed.",
+                "把下面的完整路径命令复制到 {target}；不用改 PATH。",
+                { target: claudeCliPasteTarget }
               )
           : tx(
-              "AIQD did not find the claude command. Do only the highlighted install step first. After pressing Enter, the terminal can stay quiet for a while; wait for the installer to finish.",
-              "AIQD 没有找到 claude 命令。现在只做高亮的安装步骤。按 Enter 后终端可能会安静一段时间；请等安装器完成。"
+              "Copy the install command into {target}, press Enter, then wait for the prompt to return.",
+              "把安装命令复制到 {target}，按 Enter，然后等提示符回来。",
+              { target: claudeCliPasteTarget }
             ),
-        methods: [
-          ...(claudeCliAvailable
-            ? [
-                {
-                  steps: [
-                    tx(
-                      "Click the highlighted copy button below; ignore internal statusline commands in technical details.",
-                      "点击下面高亮的复制按钮；不要复制技术细节里的内部 statusline 命令。"
-                    ),
-                    tx(
-                      "Paste into PowerShell or Windows Terminal, then press Enter.",
-                      "粘贴到 PowerShell 或 Windows Terminal，然后按 Enter。"
-                    ),
-                    tx(
-                      "When Claude Code opens, wait for its statusline once, then return here and check.",
-                      "Claude Code 打开后，等它显示一次 statusline，再回到这里检查。"
-                    )
-                  ],
-                  title: tx(
-                    "Now: open Claude Code in this project",
-                    "现在：在当前项目里打开 Claude Code"
-                  )
-                }
-              ]
-            : [
-                {
-                  steps: [
-                    tx(
-                      "Open a normal PowerShell or Windows Terminal. Administrator mode is not needed.",
-                      "打开普通 PowerShell 或 Windows Terminal，不需要管理员模式。"
-                    ),
-                    tx(
-                      "Click the highlighted copy button below.",
-                      "点击下面高亮的复制按钮。"
-                    ),
-                    tx(
-                      "Paste into PowerShell and press Enter. No output for 30 seconds to a few minutes can be normal.",
-                      "粘贴到 PowerShell 并按 Enter。30 秒到几分钟没有新输出都可能是正常的。"
-                    ),
-                    tx(
-                      "Do not paste claude --version yet. Wait until Installation complete or a new PS ...> prompt appears.",
-                      "现在不要粘贴 claude --version。请等出现 Installation complete 或新的 PS ...> 提示符。"
-                    )
-                  ],
-                  title: tx(
-                    "Now: install Claude Code CLI",
-                    "现在：安装 Claude Code CLI"
-                  )
-                }
-              ])
-        ],
         primaryCommand: claudeCliAvailable
           ? {
               command: claudeCliExampleProjectOpenCommand,
-              copyLabel: tx("Copy project command", "复制项目命令"),
+              copyLabel: tx("Copy command", "复制命令"),
               detail: tx(
-                "This command first enters the current AIQD project folder, then runs claude.",
-                "这条命令会先进入当前 AIQD 项目文件夹，然后运行 claude。"
+                "Meaning: enter the AIQD project folder, then start Claude Code CLI.",
+                "命令作用：进入 AIQD 项目文件夹，然后启动 Claude Code CLI。"
               ),
-              eyebrow: tx("Copy this one now", "现在复制这一条"),
-              title: tx(
-                "Open Claude Code in this project",
-                "在当前项目里打开 Claude Code"
-              )
+              eyebrow: tx(
+                "Paste into {target}",
+                "复制到 {target}",
+                { target: claudeCliPasteTarget }
+              ),
+              title: tx("Run this command", "运行这条命令")
             }
           : {
               command: claudeCliInstallCommand,
-              copyLabel: tx("Copy install command", "复制安装命令"),
+              copyLabel: tx("Copy command", "复制命令"),
               detail: tx(
-                "Run this in PowerShell first. The installer may show no output for a while; that is normal. After the prompt returns, come back and click the check button.",
-                "先在 PowerShell 里运行这条。安装器可能有一段时间没有新输出，这是正常的。等提示符回来后，回到这里点击检查按钮。"
+                "Meaning: install Claude Code CLI. Quiet waiting during install can be normal.",
+                "命令作用：安装 Claude Code CLI。安装时短暂没输出是正常的。"
               ),
-              eyebrow: tx("Copy this one now", "现在复制这一条"),
-              title: tx("Install Claude Code CLI", "安装 Claude Code CLI")
+              eyebrow: tx(
+                "Paste into {target}",
+                "复制到 {target}",
+                { target: claudeCliPasteTarget }
+              ),
+              title: tx("Run this command", "运行这条命令")
             },
-        tip: claudeCliAvailable
-          ? {
-              text: tx(
-                "If PowerShell will not accept paste, its title may say Select Windows PowerShell. Press Esc once, then paste again. If you ever see 'Claude quota: waiting for rate limit data', that was AIQD's internal receiver; run the highlighted Claude Code project command instead.",
-                "如果 PowerShell 不接受粘贴，标题栏可能显示“选择 Windows PowerShell”。按一次 Esc，再重新粘贴。如果你看到“Claude quota: waiting for rate limit data”，说明运行到了 AIQD 内部接收器；请改运行高亮的 Claude Code 项目命令。"
-              ),
-              title: tx("Paste not working?", "粘贴不进去？")
-            }
-          : {
-              text: tx(
-                "Seeing only a blinking cursor after the install command is not automatically an error. Wait for Setting up Claude Code, Installation complete, or a new PS ...> prompt. Only cancel if nothing changes after several minutes.",
-                "输入安装命令后只看到光标闪烁，不一定是出错。请等出现 Setting up Claude Code、Installation complete，或新的 PS ...> 提示符。只有几分钟都没有任何变化时再取消。"
-              ),
-              title: tx("Waiting is normal", "等待是正常的")
-            },
-        secondaryCommands: claudeCliAvailable
-          ? [
-              {
-                command: claudeCliVersionCommand,
-                label: tx("Optional: check the CLI version", "可选：检查 CLI 版本")
-              },
-              {
-                command: claudeCliCommand,
-                label: tx(
-                  "Optional: run when terminal is already in a project",
-                  "可选：终端已经在项目里时运行"
-                )
-              }
-            ]
-          : [
-              {
-                command: claudeCliVersionCommand,
-                label: tx(
-                  "After install: check whether claude works",
-                  "安装后：检查 claude 是否可用"
-                )
-              },
-              {
-                command: claudeCliExampleProjectOpenCommand,
-                label: tx(
-                  "After install: open Claude Code in this project",
-                  "安装后：在当前项目里打开 Claude Code"
-                )
-              }
-            ],
-        secondarySummary: claudeCliAvailable
-          ? tx("Optional commands", "可选命令")
-          : tx("Do not copy these yet: after install", "现在先别复制：安装完成后再看"),
-        title: tx(
-          "Which command should I copy?",
-          "我现在该复制哪一条？"
-        )
+        title: tx("Where do I paste it?", "复制到哪里？")
       }
     : undefined;
   const claudeAutoSetupHelper =
@@ -1579,19 +1487,12 @@ function buildInitialSetupModel(items, readiness) {
           autoSetupPending: claudeAutoSetupPending,
           autoSetupResult: state.claudeAutoSetupResult,
           detail: tx(
-            "AIQD will connect your existing Claude Code by writing its local statusline capture setting. It will not install new software from this button.",
-            "AIQD 会通过写入本地 statusline 采集设置来接入你已有的 Claude Code。这个按钮不会安装新软件。"
+            "Click the button. AIQD will write the local Claude Code data setting.",
+            "点击按钮。AIQD 会写入本地 Claude Code 数据设置。"
           ),
-          tip: {
-            text: tx(
-              "Claude desktop and Claude Code CLI are different. AIQD needs Claude Code's terminal/statusline data; the ordinary Claude desktop app cannot send quota statusline fields.",
-              "Claude 桌面应用和 Claude Code CLI 不是同一个东西。AIQD 需要 Claude Code 的终端/statusline 数据；普通 Claude 桌面应用不会发送这些额度字段。"
-            ),
-            title: tx("Claude app vs Claude Code", "Claude 应用和 Claude Code 的区别")
-          },
           title: tx(
-            "Connect existing Claude Code",
-            "接入已有 Claude Code"
+            "Connect Claude Code data",
+            "接入 Claude Code 数据"
           )
         }
       : undefined;
@@ -1604,16 +1505,16 @@ function buildInitialSetupModel(items, readiness) {
           message: claudeCliAvailable
             ? claudeCliOnPath
               ? tx(
-                  "Current check: no Claude Code statusline file has been received yet. Open a terminal in a project and run claude.",
-                  "当前检测结果：还没有收到 Claude Code statusline 文件。请在项目文件夹里打开终端并运行 claude。"
+                  "No Claude data yet. Paste the command below into PowerShell or Windows Terminal.",
+                  "还没收到 Claude 数据。把下面命令粘贴到 PowerShell 或 Windows Terminal。"
                 )
               : tx(
-                  "Current check: no Claude Code statusline file has been received yet. Claude Code is installed outside PATH, so use the full-path project command shown below.",
-                  "当前检测结果：还没有收到 Claude Code statusline 文件。Claude Code 已安装但不在 PATH 里，请使用下面显示的完整路径项目命令。"
+                  "No Claude data yet. Use the full-path command below.",
+                  "还没收到 Claude 数据。请运行下面的完整路径命令。"
                 )
             : tx(
-                "Current check: no Claude Code statusline file has been received yet, and AIQD did not find the claude command on PATH.",
-                "当前检测结果：还没有收到 Claude Code statusline 文件，并且 AIQD 没有在 PATH 里找到 claude 命令。"
+                "Claude command not found. Run the install command below first.",
+                "还没找到 Claude 命令。先运行下面的安装命令。"
               )
         }
       : undefined);
@@ -1677,24 +1578,24 @@ function buildInitialSetupModel(items, readiness) {
           ? claudeAutoSetupPending
             ? tx("Setting up Claude", "正在设置 Claude")
             : tx(
-                "Connect existing Claude Code",
-                "接入已有 Claude Code"
+                "Connect Claude data",
+                "接入 Claude 数据"
               )
         : claudeManaged
           ? tx(
-              "I opened Claude Code CLI; check now",
-              "我已打开 Claude Code CLI，检查是否收到数据"
+              "I ran it; check",
+              "我已运行，检查"
             )
           : tx("Open Claude setup", "打开 Claude 设置"),
       actionTitle: canAutoSetupClaude
         ? tx(
-            "Let AIQD connect your existing Claude Code",
-            "让 AIQD 接入你已有的 Claude Code"
+            "Connect Claude Code data",
+            "接入 Claude Code 数据"
           )
         : claudeManaged
         ? tx(
-            "Open Claude Code CLI once",
-            "打开 Claude Code CLI 一次"
+            "Run the Claude Code command once",
+            "运行一次 Claude Code 命令"
           )
         : tx("Turn on Claude Code data capture", "启用 Claude Code 数据接入"),
       checklist: canAutoSetupClaude
@@ -1704,42 +1605,42 @@ function buildInitialSetupModel(items, readiness) {
               "点击接入按钮。"
             ),
             tx(
-              "AIQD writes its local statusline setting; it does not install software here.",
-              "AIQD 会写入本地 statusline 设置；这里不会安装新软件。"
+              "Wait for the button to finish.",
+              "等按钮处理完成。"
             ),
             tx(
-              "Then open Claude Code CLI once from your normal terminal so it can send quota data.",
-              "然后从你平时使用的终端打开一次 Claude Code CLI，让它发送额度数据。"
+              "Then follow the command step.",
+              "然后按下一步运行命令。"
             )
           ]
         : claudeManaged
         ? claudeCliAvailable
           ? [
               tx(
-                "Copy only the highlighted project command below.",
-                "只复制下面高亮的项目命令。"
+                "Click Copy command below.",
+                "点击下面的“复制命令”。"
               ),
               tx(
-                "Paste it into PowerShell or Windows Terminal, then press Enter.",
+                "Paste into PowerShell or Windows Terminal, then press Enter.",
                 "粘贴到 PowerShell 或 Windows Terminal，然后按 Enter。"
               ),
               tx(
-                "Do not run claude-statusline.ps1 yourself; after Claude Code shows a statusline once, come back and click the check button.",
-                "不要自己运行 claude-statusline.ps1；等 Claude Code 显示过一次 statusline 后，回到这里点击检查按钮。"
+                "When Claude Code appears, come back and click check.",
+                "Claude Code 出现后，回到这里点检查。"
               )
             ]
           : [
               tx(
-                "Copy the highlighted install command below.",
-                "复制下面高亮的安装命令。"
+                "Click Copy command below.",
+                "点击下面的“复制命令”。"
               ),
               tx(
-                "Paste it into PowerShell, press Enter, and wait for installation to finish.",
-                "粘贴到 PowerShell，按 Enter，等待安装完成。"
+                "Paste into PowerShell or Windows Terminal, then press Enter.",
+                "粘贴到 PowerShell 或 Windows Terminal，然后按 Enter。"
               ),
               tx(
-                "Come back here and click the check button; AIQD will then show the project command.",
-                "回到这里点击检查按钮；AIQD 接着会显示项目命令。"
+                "When the prompt returns, come back and click check.",
+                "提示符回来后，回到这里点检查。"
               )
             ]
         : [
@@ -1759,13 +1660,13 @@ function buildInitialSetupModel(items, readiness) {
       complete: claudeComplete,
       detail: canAutoSetupClaude
         ? tx(
-            "AIQD can configure the local statusline capture for your existing Claude Code. It will not install Claude Code unless you choose an explicit install path later.",
-            "AIQD 可以为你已有的 Claude Code 配置本地 statusline 采集。除非后续你明确选择安装路径，否则它不会安装 Claude Code。"
+            "This writes a local setting so Claude Code can send quota data to AIQD.",
+            "这会写入本地设置，让 Claude Code 能把额度数据发给 AIQD。"
           )
         : claudeManaged
         ? tx(
-            "Open Claude Code from a CLI/terminal session, then come back and check whether AIQD received quota data.",
-            "从 CLI/终端会话打开 Claude Code，然后回到这里检查 AIQD 是否收到额度数据。"
+            "Run the command below once; AIQD will listen for Claude Code quota data.",
+            "运行下面的命令一次；AIQD 会等待 Claude Code 发来额度数据。"
           )
         : tx(
             "Review the generated command, then install the local statusline hook only if you approve it.",
@@ -1782,8 +1683,8 @@ function buildInitialSetupModel(items, readiness) {
         ? tx("Claude Code quota data received.", "已收到 Claude Code 额度数据。")
         : claudeAutoSetupPending
           ? tx(
-              "AIQD is installing or configuring Claude Code.",
-              "AIQD 正在安装或配置 Claude Code。"
+              "AIQD is writing Claude Code settings.",
+              "AIQD 正在写入 Claude Code 设置。"
             )
         : claudeManaged
           ? tx(
@@ -3202,8 +3103,8 @@ function renderClaudeStatuslineWaitingNotice(status) {
         <div class="settings-detail">
           ${escapeHtml(
             tx(
-              "Keep this dashboard open, then open Claude Code from a CLI/terminal session. The Claude desktop app does not send these statusline fields. If you saw 'Claude quota: waiting for rate limit data', you ran AIQD's internal receiver; run the Claude Code project command instead.",
-              "保持仪表盘打开，然后从 CLI/终端会话打开 Claude Code。普通 Claude 桌面应用不会发送这些 statusline 字段。如果你看到“Claude quota: waiting for rate limit data”，说明运行的是 AIQD 内部接收器；请改运行 Claude Code 项目命令。"
+              "Run the command shown in the current step. AIQD will receive data after Claude Code starts.",
+              "运行当前步骤里的命令。Claude Code 启动后，AIQD 会收到数据。"
             )
           )}
         </div>
@@ -3260,8 +3161,8 @@ function renderRealDataSteps(status) {
       title: tx("Local receiver", "本地额度接收器"),
       detail: status.statusLineManagedByApp
         ? tx(
-            "AIQD is installed as Claude Code's internal statusline receiver. Do not run claude-statusline.ps1 manually.",
-            "AIQD 已作为 Claude Code 的内部 statusline 接收器安装。不要手动运行 claude-statusline.ps1。"
+            "Ready. Claude Code will call it automatically.",
+            "已就绪。Claude Code 会自动调用它。"
           )
         : tx(
             "Use the first-run current step above to connect Claude Code.",
@@ -3279,8 +3180,8 @@ function renderRealDataSteps(status) {
           )
         : status.claudeCliAvailable
           ? tx(
-              "Copy this project command only. It opens Claude Code; AIQD's receiver runs in the background.",
-              "只复制这条项目命令。它会打开 Claude Code；AIQD 的接收器会在后台运行。"
+              "Paste the command into PowerShell or Windows Terminal.",
+              "把命令粘贴到 PowerShell 或 Windows Terminal。"
             )
           : tx(
               "AIQD cannot see the claude command yet. Install or open Claude Code from your normal terminal, then refresh.",
@@ -3305,8 +3206,8 @@ function renderRealDataSteps(status) {
             "已经收到新鲜的 Claude Code rate limits。"
           )
         : tx(
-            "After Claude Code shows a statusline once, AIQD will pick up the quota on refresh.",
-            "Claude Code 显示过一次 statusline 后，AIQD 刷新时就会读取额度。"
+            "After data arrives, this becomes done.",
+            "收到数据后，这里会变成完成。"
           ),
       state: status.readiness === "ready" ? "pass" : "info"
     }
