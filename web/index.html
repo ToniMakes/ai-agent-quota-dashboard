@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AI Agent Quota</title>
-    <link rel="stylesheet" href="/styles.css?v=20260811-claude-guidance-terminal" />
+    <link rel="stylesheet" href="/styles.css?v=20260811-onboarding-focus" />
   </head>
   <body>
     <main class="shell">
@@ -142,52 +142,60 @@
         </div>
         <div class="panel">
           <div class="panel-header">
-            <h2 data-i18n-en="Codex Quota Source" data-i18n-zh="Codex 额度来源">Codex Quota Source</h2>
+            <h2 data-i18n-en="Codex Connection" data-i18n-zh="Codex 连接状态">Codex Connection</h2>
           </div>
           <div id="codex-snapshot-content" class="settings-content"></div>
         </div>
         <div class="panel">
           <div class="panel-header">
-            <h2 data-i18n-en="Claude Code Statusline" data-i18n-zh="Claude Code 状态栏">Claude Code Statusline</h2>
+            <h2 data-i18n-en="Claude Connection" data-i18n-zh="Claude 连接状态">Claude Connection</h2>
           </div>
           <div id="settings-content" class="settings-content"></div>
         </div>
-        <div class="panel">
-          <div class="panel-header">
-            <h2 data-i18n-en="Local Data Paths" data-i18n-zh="本地数据路径">Local Data Paths</h2>
+        <details class="panel advanced-settings-panel">
+          <summary>
+            <span
+              data-i18n-en="Advanced settings"
+              data-i18n-zh="高级设置"
+            >Advanced settings</span>
+            <small
+              data-i18n-en="Paths, shortcuts, and export. Usually not needed for first setup."
+              data-i18n-zh="路径、快捷键和导出；首次设置通常不用看。"
+            >Paths, shortcuts, and export. Usually not needed for first setup.</small>
+          </summary>
+          <div class="advanced-settings-body">
+            <section class="advanced-settings-section">
+              <h2 data-i18n-en="Local Data Paths" data-i18n-zh="本地数据路径">Local Data Paths</h2>
+              <div id="paths-content" class="settings-content"></div>
+            </section>
+            <section class="advanced-settings-section">
+              <h2 data-i18n-en="Desktop Shortcuts" data-i18n-zh="桌面快捷键">Desktop Shortcuts</h2>
+              <div id="desktop-shortcuts-content" class="settings-content"></div>
+            </section>
+            <section class="advanced-settings-section">
+              <h2 data-i18n-en="Data Export" data-i18n-zh="数据导出">Data Export</h2>
+              <div class="export-actions">
+                <a
+                  class="button"
+                  href="/api/export?format=json"
+                  download
+                  data-i18n-en="Export JSON"
+                  data-i18n-zh="导出 JSON"
+                >Export JSON</a>
+                <a
+                  class="button"
+                  href="/api/export?format=csv"
+                  download
+                  data-i18n-en="Export CSV"
+                  data-i18n-zh="导出 CSV"
+                >Export CSV</a>
+              </div>
+            </section>
           </div>
-          <div id="paths-content" class="settings-content"></div>
-        </div>
-        <div class="panel">
-          <div class="panel-header">
-            <h2 data-i18n-en="Desktop Shortcuts" data-i18n-zh="桌面快捷键">Desktop Shortcuts</h2>
-          </div>
-          <div id="desktop-shortcuts-content" class="settings-content"></div>
-        </div>
-        <div class="panel">
-          <div class="panel-header">
-            <h2 data-i18n-en="Data Export" data-i18n-zh="数据导出">Data Export</h2>
-          </div>
-          <div class="export-actions">
-            <a
-              class="button"
-              href="/api/export?format=json"
-              download
-              data-i18n-en="Export JSON"
-              data-i18n-zh="导出 JSON"
-            >Export JSON</a>
-            <a
-              class="button"
-              href="/api/export?format=csv"
-              download
-              data-i18n-en="Export CSV"
-              data-i18n-zh="导出 CSV"
-            >Export CSV</a>
-          </div>
-        </div>
+        </details>
       </section>
     </main>
 
-    <script src="/app.js?v=20260811-claude-guidance-terminal" type="module"></script>
+    <script src="/app.js?v=20260811-onboarding-focus" type="module"></script>
   </body>
 </html>
