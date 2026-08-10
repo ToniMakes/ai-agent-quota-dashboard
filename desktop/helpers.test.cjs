@@ -4,6 +4,7 @@ const {
   buildTrayMenuTemplate,
   clampBoundsToWorkArea,
   dashboardPath,
+  firstRunGuideTarget,
   hasClaudeWaitingState,
   isSavedWidgetBounds,
   resolveDesktopShortcuts,
@@ -84,6 +85,76 @@ describe("desktop helpers", () => {
     );
     assert.equal(dashboardPath("unknown", "codex-snapshot-content"), "/");
     assert.equal(dashboardPath("settings", "../bad"), "/?view=settings");
+  });
+
+  it("chooses a first-run guide target for missing real-data setup", () => {
+    assert.deepEqual(firstRunGuideTarget([]), {
+      target: "real-data-content",
+      view: "settings"
+    });
+
+    assert.deepEqual(
+      firstRunGuideTarget([
+        {
+          agent: "codex",
+          emptyState: { reason: "no_supported_source" }
+        },
+        {
+          agent: "claude-code",
+          primarySnapshot: { remainingPercent: 80 }
+        }
+      ]),
+      {
+        target: "codex-snapshot-content",
+        view: "settings"
+      }
+    );
+
+    assert.deepEqual(
+      firstRunGuideTarget([
+        {
+          agent: "codex",
+          primarySnapshot: { remainingPercent: 40 }
+        },
+        {
+          agent: "claude-code",
+          emptyState: { reason: "no_supported_source" }
+        }
+      ]),
+      {
+        target: "settings-content",
+        view: "settings"
+      }
+    );
+  });
+
+  it("opens first-run guide failures in Doctor and skips ready agents", () => {
+    assert.deepEqual(
+      firstRunGuideTarget([
+        {
+          agent: "codex",
+          emptyState: { reason: "adapter_error" }
+        }
+      ]),
+      {
+        target: "doctor-list",
+        view: "doctor"
+      }
+    );
+
+    assert.equal(
+      firstRunGuideTarget([
+        {
+          agent: "codex",
+          primarySnapshot: { remainingPercent: 70 }
+        },
+        {
+          agent: "claude-code",
+          primarySnapshot: { remainingPercent: 64 }
+        }
+      ]),
+      undefined
+    );
   });
 
   it("summarizes compact agent status for tray text", () => {
