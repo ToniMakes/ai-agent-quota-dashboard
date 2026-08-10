@@ -168,6 +168,7 @@ async function runDoctorCommand(argv: string[]): Promise<void> {
   }
 
   const jsonOutput = argv.includes("--json");
+  const strict = argv.includes("--strict");
   const config = loadConfig(argv);
   const userConfig = await loadUserConfig(config.userConfigPath);
   const registry = createDefaultRegistry({
@@ -195,10 +196,16 @@ async function runDoctorCommand(argv: string[]): Promise<void> {
     console.log(
       jsonOutput
         ? JSON.stringify(buildDoctorJsonReport(report), null, 2)
-        : formatDoctorReport(report)
+        : formatDoctorReport(report, {
+            includeRealDataReadiness: strict
+          })
     );
 
-    if (hasDoctorFailures(report)) {
+    if (
+      hasDoctorFailures(report, {
+        requireRealData: strict
+      })
+    ) {
       process.exitCode = 1;
     }
   } finally {
@@ -345,7 +352,7 @@ function helpText(): string {
     "",
     "Commands:",
     "  ai-agent-quota [--demo] [--port 4317]       Start local dashboard",
-    "  ai-agent-quota doctor [--json]              Run one local scan and print diagnostics",
+    "  ai-agent-quota doctor [--json] [--strict]   Run one local scan and print diagnostics",
     "  ai-agent-quota export [--json|--csv]        Export normalized quota data",
     "  ai-agent-quota codex snapshot --remaining-percent <0-100> --reset-at <iso-time>",
     "                                             Record a visible Codex quota value",
@@ -368,8 +375,8 @@ function doctorHelpText(): string {
     "AI Agent Quota Doctor",
     "",
     "Usage:",
-    "  ai-agent-quota doctor [--demo] [--db <path>] [--config <path>]",
-    "  ai-agent-quota doctor --json [--demo] [--db <path>] [--config <path>]",
+    "  ai-agent-quota doctor [--strict] [--demo] [--db <path>] [--config <path>]",
+    "  ai-agent-quota doctor --json [--strict] [--demo] [--db <path>] [--config <path>]",
     "",
     "Runs one local scan, writes normalized results to SQLite, and prints agent",
     "status, Doctor checks, empty-state guidance, and refresh counts.",
@@ -378,7 +385,10 @@ function doctorHelpText(): string {
     "source references, raw content, and local paths excluded or redacted.",
     "",
     "Exit code is 1 only for blocking failures such as adapter errors or invalid",
-    "config. Missing quota sources are reported as warnings."
+    "config. Missing quota sources are reported as warnings.",
+    "",
+    "--strict also requires fresh non-demo quota snapshots for every configured",
+    "agent, which is useful before a real-data desktop trial."
   ].join("\n");
 }
 

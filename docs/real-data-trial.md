@@ -84,6 +84,7 @@ Then open Claude Code once so its statusline renders. AIQD will refresh when sup
 
 ```bash
 npm run doctor
+npm run trial:ready
 ```
 
 In the desktop app, check:
@@ -92,6 +93,8 @@ In the desktop app, check:
 - Mini panel shows the most constrained remaining quota and reported reset.
 - Doctor first-run checklist shows quota sources ready or gives a specific next action.
 - Refresh History has a recent run with snapshot and check counts.
+
+`npm run trial:ready` uses strict Doctor mode. It fails until every configured agent has a fresh non-demo quota snapshot, which is useful right before deciding whether the app is ready for a real-data experience.
 
 ## Notes
 

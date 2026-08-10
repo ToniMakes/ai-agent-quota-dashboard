@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  buildRealDataReadiness,
   buildDoctorJsonReport,
   formatDoctorReport,
   hasDoctorFailures,
@@ -120,6 +121,10 @@ describe("doctor report", () => {
   it("marks only blocking doctor issues as failures", () => {
     assert.equal(hasDoctorFailures(baseInput), false);
     assert.equal(
+      hasDoctorFailures(baseInput, { requireRealData: true }),
+      true
+    );
+    assert.equal(
       hasDoctorFailures({
         ...baseInput,
         checks: [{ ...baseCheck, status: "fail" }]
@@ -133,6 +138,69 @@ describe("doctor report", () => {
       }),
       true
     );
+  });
+
+  it("reports strict real-data readiness for missing quota snapshots", () => {
+    const readiness = buildRealDataReadiness(baseInput);
+    const report = formatDoctorReport(baseInput, {
+      includeRealDataReadiness: true
+    });
+
+    assert.equal(readiness.ok, false);
+    assert.equal(readiness.checks[0]?.status, "fail");
+    assert.match(readiness.checks[0]?.message ?? "", /no quota snapshot/);
+    assert.match(report, /Real-data readiness:/);
+    assert.match(report, /Overall: not ready/);
+    assert.match(report, /\[fail\] Codex/);
+  });
+
+  it("passes strict real-data readiness with fresh non-demo quota snapshots", () => {
+    const snapshot = withSnapshotFreshness({
+      provider: "openai",
+      agent: "codex",
+      windowType: "weekly",
+      unit: "percent",
+      remainingPercent: 72,
+      resetAt: "2026-08-15T13:00:00.000Z",
+      observedAt: "2026-08-09T00:00:00.000Z",
+      source: "manual",
+      confidence: "medium",
+      stale: false
+    });
+    const { emptyState: _emptyState, ...agentWithoutEmptyState } = baseAgent;
+    const readyInput: DoctorReportInput = {
+      ...baseInput,
+      agents: [
+        {
+          ...agentWithoutEmptyState,
+          status: "healthy",
+          doctorStatus: "pass",
+          primarySnapshot: snapshot,
+          snapshots: [snapshot],
+          lastObservedAt: snapshot.observedAt
+        }
+      ],
+      checks: [
+        {
+          ...baseCheck,
+          status: "pass",
+          message: "Parsed 1 quota snapshot(s)"
+        }
+      ],
+      refreshResult: {
+        ...baseInput.refreshResult,
+        snapshotsSaved: 1
+      }
+    };
+    const readiness = buildRealDataReadiness(readyInput);
+    const report = formatDoctorReport(readyInput, {
+      includeRealDataReadiness: true
+    });
+
+    assert.equal(readiness.ok, true);
+    assert.equal(hasDoctorFailures(readyInput, { requireRealData: true }), false);
+    assert.match(report, /Overall: ready/);
+    assert.match(report, /\[pass\] Codex: Weekly quota from manual/);
   });
 
   it("builds a shareable JSON report with private fields redacted", () => {
@@ -175,6 +243,7 @@ describe("doctor report", () => {
     assert.equal(report.schemaVersion, 1);
     assert.equal(report.reportKind, "doctor");
     assert.equal(report.privacy.localPaths, "redacted");
+    assert.equal(report.realDataReadiness.ok, false);
     assert.equal(report.storage.configPath, "<local-path>");
     assert.equal(report.checks[0]?.detail, "<local-path>");
     assert.equal(report.checks[0]?.id, "codex:path:<local-path>");

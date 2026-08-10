@@ -25,6 +25,7 @@
     "desktop:local": "npm run build && electron desktop/main.cjs",
     "desktop:smoke": "npm run build && electron --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process desktop/main.cjs --smoke",
     "doctor": "npm run build && node dist/index.js doctor",
+    "trial:ready": "npm run build && node dist/index.js doctor --strict",
     "claude:self-test": "npm run build && node dist/index.js claude-statusline-sink --self-test",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",

@@ -24,6 +24,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Desktop startup diagnostics with recovery guidance for backend failures
 - Desktop global shortcuts for AIQD mini panel, refresh, and widget actions
 - Local trial scripts for desktop launch, Doctor, and Claude statusline self-test
+- Strict real-data readiness check before desktop trials
 - Settings view status for desktop shortcut bindings and overrides
 - Tray tooltip/menu quota summaries for the desktop shell
 - Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
