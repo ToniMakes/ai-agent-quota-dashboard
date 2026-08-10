@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AI Agent Quota</title>
-    <link rel="stylesheet" href="/styles.css?v=20260810-statusline-self-test" />
+    <link rel="stylesheet" href="/styles.css?v=20260810-real-data-overview" />
   </head>
   <body>
     <main class="shell">
@@ -62,6 +62,16 @@
       <section id="settings-view" class="view">
         <div class="panel">
           <div class="panel-header">
+            <div>
+              <h2>Real Data Setup</h2>
+              <p class="panel-note">Local sources only; no prompts, cookies, or account identifiers.</p>
+            </div>
+            <span id="real-data-score" class="badge stale">--</span>
+          </div>
+          <div id="real-data-content" class="settings-content"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-header">
             <h2>Codex Manual Snapshot</h2>
           </div>
           <div id="codex-snapshot-content" class="settings-content"></div>
@@ -90,6 +100,6 @@
       </section>
     </main>
 
-    <script src="/app.js?v=20260810-codex-snapshot-form" type="module"></script>
+    <script src="/app.js?v=20260810-real-data-overview" type="module"></script>
   </body>
 </html>

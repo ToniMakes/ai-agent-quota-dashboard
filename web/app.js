@@ -17,6 +17,8 @@ const elements = {
   eventList: document.querySelector("#event-list"),
   lastRefresh: document.querySelector("#last-refresh"),
   pathsContent: document.querySelector("#paths-content"),
+  realDataContent: document.querySelector("#real-data-content"),
+  realDataScore: document.querySelector("#real-data-score"),
   refreshButton: document.querySelector("#refresh-button"),
   refreshRunList: document.querySelector("#refresh-run-list"),
   resetList: document.querySelector("#reset-list"),
@@ -66,18 +68,28 @@ document.addEventListener("click", async (event) => {
 
   const button = target.closest("[data-copy-text]");
 
-  if (!(button instanceof HTMLButtonElement)) {
+  if (button instanceof HTMLButtonElement) {
+    const text = button.dataset.copyText;
+
+    if (!text) {
+      return;
+    }
+
+    const result = await copyText(text, button);
+    showCopyState(button, result);
     return;
   }
 
-  const text = button.dataset.copyText;
+  const scrollButton = target.closest("[data-scroll-target]");
 
-  if (!text) {
+  if (!(scrollButton instanceof HTMLButtonElement)) {
     return;
   }
 
-  const result = await copyText(text, button);
-  showCopyState(button, result);
+  const selector = scrollButton.dataset.scrollTarget;
+  const scrollTarget = selector ? document.querySelector(selector) : undefined;
+
+  scrollTarget?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 document.addEventListener("submit", async (event) => {
@@ -138,6 +150,7 @@ function render() {
   renderEvents();
   renderDoctor();
   renderRefreshRuns();
+  renderRealDataOverview();
   renderCodexSnapshotSettings();
   renderSettings();
   renderPathSettings();
@@ -556,6 +569,183 @@ function renderCodexSnapshotSettings() {
       <span></span>
     </div>
   `;
+}
+
+function renderRealDataOverview() {
+  const items = buildRealDataOverviewItems();
+  const sourceItems = items.filter((item) => item.countsTowardReady);
+  const readyCount = sourceItems.filter((item) => item.state === "pass").length;
+  const totalCount = sourceItems.length;
+  const nextItem =
+    items.find((item) => item.state === "warn") ??
+    items.find((item) => item.state === "info") ??
+    items.find((item) => item.state === "stale");
+
+  if (elements.realDataScore) {
+    elements.realDataScore.textContent = `${readyCount}/${totalCount} ready`;
+    elements.realDataScore.className = `badge ${
+      readyCount === totalCount ? "healthy" : "warning"
+    }`;
+  }
+
+  if (!elements.realDataContent) {
+    return;
+  }
+
+  elements.realDataContent.innerHTML = `
+    <div class="real-data-summary">
+      <div class="setup-score">
+        <strong>${readyCount}/${totalCount}</strong>
+        <span>quota sources ready</span>
+      </div>
+      <div>
+        <strong>${escapeHtml(realDataSummaryTitle(readyCount, totalCount))}</strong>
+        <div class="settings-detail">${escapeHtml(
+          nextItem?.nextAction ?? "Both primary quota sources have usable local data."
+        )}</div>
+        ${nextItem?.command ? renderInlineCommand(nextItem.command) : ""}
+      </div>
+    </div>
+    <div class="setup-overview-list">
+      ${items.map(renderRealDataOverviewItem).join("")}
+    </div>
+  `;
+}
+
+function buildRealDataOverviewItems() {
+  return [
+    buildCodexOverviewItem(),
+    buildClaudeOverviewItem(),
+    buildPathOverviewItem()
+  ];
+}
+
+function buildCodexOverviewItem() {
+  const status = state.codexSnapshotStatus;
+  const ready = status?.readiness === "ready";
+  const needsAttention =
+    status?.readiness === "expired" || status?.readiness === "needs_attention";
+  const detailParts = [];
+
+  if (typeof status?.latestRemainingPercent === "number") {
+    detailParts.push(`${Math.round(status.latestRemainingPercent)}% remaining`);
+  }
+
+  if (status?.latestResetAt) {
+    detailParts.push(`reported reset ${formatRelative(status.latestResetAt)}`);
+  }
+
+  return {
+    actionLabel: "Codex details",
+    command: ready ? undefined : "/status",
+    countsTowardReady: true,
+    detail:
+      detailParts.length > 0
+        ? detailParts.join(" / ")
+        : "Save the visible Codex /status or Usage value in the form below.",
+    label: "Codex",
+    nextAction: ready
+      ? "Codex manual quota is ready for the dashboard."
+      : needsAttention
+        ? "Update the Codex manual snapshot with the currently visible quota value."
+        : "Open Codex /status, then save the visible remaining percent and reset time below.",
+    state: ready ? "pass" : needsAttention ? "warn" : "info",
+    status: status?.readinessLabel ?? "Waiting for visible quota",
+    target: "#codex-snapshot-content"
+  };
+}
+
+function buildClaudeOverviewItem() {
+  const status = state.setupStatus;
+  const ready = status?.readiness === "ready";
+  const waiting = status?.readiness === "waiting_for_data";
+  const detailParts = [];
+
+  if (status?.latestWindowTypes?.length > 0) {
+    detailParts.push(`windows ${status.latestWindowTypes.map(windowLabel).join(", ")}`);
+  }
+
+  if (typeof status?.latestAgeSeconds === "number") {
+    detailParts.push(`age ${formatDuration(status.latestAgeSeconds)}`);
+  }
+
+  return {
+    actionLabel: "Claude details",
+    command: ready || waiting ? undefined : status?.writeCommand,
+    countsTowardReady: true,
+    detail:
+      detailParts.length > 0
+        ? detailParts.join(" / ")
+        : status?.nextAction ?? "Install the statusline sink, then open Claude Code once.",
+    label: "Claude Code",
+    nextAction:
+      status?.nextAction ?? "Install the statusline sink, then open Claude Code once.",
+    state: ready ? "pass" : waiting ? "info" : "warn",
+    status: status?.readinessLabel ?? "Setup status unavailable",
+    target: "#settings-content"
+  };
+}
+
+function buildPathOverviewItem() {
+  const status = state.pathsStatus;
+  const hasLoadErrors = (status?.loadErrors?.length ?? 0) > 0;
+  const configuredCount = (status?.agents ?? []).reduce(
+    (count, agent) => count + (agent.configuredDataPaths?.length ?? 0),
+    0
+  );
+
+  return {
+    actionLabel: "Path details",
+    command: hasLoadErrors ? status?.listCommand : undefined,
+    countsTowardReady: false,
+    detail: hasLoadErrors
+      ? status?.loadErrors?.join("\n") ?? "Local path config has warnings."
+      : configuredCount > 0
+        ? `${configuredCount} configured scan root(s)`
+        : "Default local scan paths are active.",
+    label: "Local paths",
+    nextAction: hasLoadErrors
+      ? "Fix the local path config warning before relying on configured scan roots."
+      : "Path checks are available if a source needs a custom scan root.",
+    state: hasLoadErrors ? "warn" : "pass",
+    status: hasLoadErrors ? "Check config" : "Ready",
+    target: "#paths-content"
+  };
+}
+
+function renderRealDataOverviewItem(item) {
+  return `
+    <div class="setup-overview-row">
+      <div>
+        <strong>${escapeHtml(item.label)}</strong>
+        <div>${escapeHtml(item.status)}</div>
+        <div class="settings-detail">${escapeHtml(item.detail)}</div>
+        ${item.command ? renderInlineCommand(item.command) : ""}
+      </div>
+      <div class="setup-overview-actions">
+        <span class="badge ${doctorBadgeClass(item.state)}">${escapeHtml(
+          item.state
+        )}</span>
+        <button
+          class="copy-button"
+          type="button"
+          data-scroll-target="${escapeHtml(item.target)}"
+        >${escapeHtml(item.actionLabel)}</button>
+      </div>
+    </div>
+  `;
+}
+
+function realDataSummaryTitle(readyCount, totalCount) {
+  if (readyCount === totalCount) {
+    return "Primary quota sources are ready";
+  }
+
+  if (readyCount === 0) {
+    return "No primary quota source is ready yet";
+  }
+
+  return "One primary quota source is ready";
 }
 
 function renderCodexSnapshotForm(status) {
