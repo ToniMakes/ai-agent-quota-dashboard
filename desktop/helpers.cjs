@@ -8,6 +8,33 @@ function summarizeAgents(agents, options = {}) {
     .join(" | ");
 }
 
+function summarizeDesktopStatus(agents, readiness, options = {}) {
+  const readinessSummary = summarizeTrialReadiness(readiness);
+
+  return readinessSummary ?? summarizeAgents(agents, options);
+}
+
+function summarizeTrialReadiness(readiness) {
+  if (!readiness || readiness.ok) {
+    return undefined;
+  }
+
+  const checks = readiness.checks ?? [];
+  const total = checks.length;
+  const ready = checks.filter((check) => check.status === "pass").length;
+  const missing = checks
+    .filter((check) => check.status === "fail")
+    .map((check) => check.displayName)
+    .filter(Boolean)
+    .join(", ");
+
+  if (total === 0) {
+    return "Trial: not ready";
+  }
+
+  return `Trial: ${ready}/${total} ready${missing ? ` - ${missing}` : ""}`;
+}
+
 function buildTrayMenuTemplate(input) {
   const actions = input.actions ?? {};
   const shortcuts = input.shortcuts ?? {};
@@ -370,5 +397,6 @@ module.exports = {
   resolveDesktopShortcuts,
   shouldRefreshForClaudeStatusline,
   summarizeAgent,
+  summarizeDesktopStatus,
   summarizeAgents
 };

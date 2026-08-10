@@ -28,6 +28,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Strict real-data readiness check before desktop trials
 - Settings view status for desktop shortcut bindings and overrides
 - Tray tooltip/menu quota summaries for the desktop shell
+- Tray tooltip/menu strict readiness status before daily quota summaries
 - Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
 - Mini footer summary for the latest refresh result and warnings
 - Mini strict readiness progress text for first-run Codex and Claude Code onboarding

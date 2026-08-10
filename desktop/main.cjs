@@ -30,7 +30,7 @@ const {
   resolveDesktopShortcuts,
   resolveWidgetBounds: resolveSavedWidgetBounds,
   shouldRefreshForClaudeStatusline,
-  summarizeAgents
+  summarizeDesktopStatus
 } = require("./helpers.cjs");
 
 const projectRoot = path.resolve(__dirname, "..");
@@ -309,7 +309,13 @@ async function updateTrayStatus() {
       payload = await getJson(`${baseUrl}/api/agents`);
     }
 
-    trayStatus = summarizeAgents(payload.agents ?? []);
+    const readinessPayload = await getJson(`${baseUrl}/api/trial-readiness`).catch(
+      () => undefined
+    );
+    trayStatus = summarizeDesktopStatus(
+      payload.agents ?? [],
+      readinessPayload?.readiness
+    );
   } catch {
     trayStatus = "Local service unavailable";
   }
