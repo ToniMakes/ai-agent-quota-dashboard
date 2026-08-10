@@ -1,5 +1,6 @@
 import { constants, existsSync } from "node:fs";
 import { access, readFile, stat } from "node:fs/promises";
+import { homedir } from "node:os";
 import { delimiter, extname, join } from "node:path";
 import {
   defaultClaudeSettingsPath,
@@ -34,6 +35,7 @@ export type ClaudeStatuslineSetupStatus = {
   claudeCliExampleProjectOpenCommand: string;
   claudeCliExampleProjectPath: string;
   claudeCliInstallCommand: string;
+  claudeCliOnPath?: boolean;
   claudeCliOpenCommand: string;
   claudeCliPath?: string;
   settingsPath: string;
@@ -74,6 +76,8 @@ export type ClaudeStatuslineSetupStatusOptions = {
 
 type ClaudeCliStatus = {
   available: boolean;
+  command?: string;
+  onPath?: boolean;
   path?: string;
 };
 
@@ -104,13 +108,13 @@ export async function getClaudeStatuslineSetupStatus(
 
   const status: ClaudeStatuslineSetupStatus = {
     claudeCliAvailable: claudeCli.available,
-    claudeCliCommand: "claude",
+    claudeCliCommand: claudeCli.command ?? "claude",
     claudeCliDocsUrl: "https://docs.anthropic.com/en/docs/claude-code/quickstart",
     claudeCliExampleProjectOpenCommand:
-      claudeOpenCommandForProject(exampleProjectPath),
+      claudeOpenCommandForProject(exampleProjectPath, claudeCli.command),
     claudeCliExampleProjectPath: exampleProjectPath,
     claudeCliInstallCommand: claudeInstallCommand,
-    claudeCliOpenCommand: defaultClaudeOpenCommand(),
+    claudeCliOpenCommand: defaultClaudeOpenCommand(claudeCli.command),
     settingsPath,
     settingsExists: existsSync(settingsPath),
     statusLineConfigured: Boolean(statusLine),
@@ -156,6 +160,10 @@ export async function getClaudeStatuslineSetupStatus(
 
   if (claudeCli.path) {
     status.claudeCliPath = claudeCli.path;
+  }
+
+  if (claudeCli.onPath !== undefined) {
+    status.claudeCliOnPath = claudeCli.onPath;
   }
 
   if (latest.observedAt) {
@@ -287,11 +295,21 @@ function buildClaudeCliCheck(
       id: "claude-cli",
       label: "Claude Code CLI",
       status: "pass",
-      message: "claude command found"
+      message: status.claudeCliOnPath === false
+        ? "Claude Code CLI found outside PATH"
+        : "claude command found"
     };
 
     if (status.claudeCliPath) {
-      check.detail = status.claudeCliPath;
+      check.detail =
+        status.claudeCliOnPath === false
+          ? `${status.claudeCliPath} (not on PATH; AIQD will use the full path)`
+          : status.claudeCliPath;
+    }
+
+    if (status.claudeCliOnPath === false) {
+      check.action =
+        "Use the generated full-path command, or add the install directory to PATH and restart the terminal.";
     }
 
     return check;
@@ -614,11 +632,60 @@ function formatDuration(seconds: number): string {
 async function detectClaudeCli(): Promise<ClaudeCliStatus> {
   const path = await findCommandOnPath("claude");
 
-  if (!path) {
-    return { available: false };
+  if (path) {
+    return {
+      available: true,
+      command: "claude",
+      onPath: true,
+      path
+    };
   }
 
-  return { available: true, path };
+  const localInstall = await findLocalClaudeInstall();
+
+  if (localInstall) {
+    return {
+      available: true,
+      command: shellExecutableCommand(localInstall),
+      onPath: false,
+      path: localInstall
+    };
+  }
+
+  return { available: false };
+}
+
+async function findLocalClaudeInstall(): Promise<string | undefined> {
+  const candidates =
+    process.platform === "win32"
+      ? [
+          join(homedir(), ".local", "bin", "claude.exe"),
+          process.env.LOCALAPPDATA
+            ? join(process.env.LOCALAPPDATA, "Programs", "Claude", "claude.exe")
+            : undefined
+        ]
+      : [join(homedir(), ".local", "bin", "claude")];
+
+  for (const candidate of candidates.filter(isDefined)) {
+    try {
+      await access(candidate, constants.X_OK);
+      return candidate;
+    } catch {
+      // Try the next common install location.
+    }
+  }
+
+  return undefined;
+}
+
+function isDefined(value: string | undefined): value is string {
+  return value !== undefined;
+}
+
+function shellExecutableCommand(path: string): string {
+  return process.platform === "win32"
+    ? `& ${quotePowerShellLiteral(path)}`
+    : quotePosixShellLiteral(path);
 }
 
 async function findCommandOnPath(command: string): Promise<string | undefined> {
@@ -668,18 +735,18 @@ async function defaultClaudeInstallCommand(): Promise<string> {
   return "curl -fsSL https://claude.ai/install.sh | bash";
 }
 
-function defaultClaudeOpenCommand(): string {
+function defaultClaudeOpenCommand(command = "claude"): string {
   return process.platform === "win32"
-    ? "Set-Location -LiteralPath 'C:\\path\\to\\your-project'\nclaude"
-    : "cd /path/to/your-project\nclaude";
+    ? `Set-Location -LiteralPath 'C:\\path\\to\\your-project'\n${command}`
+    : `cd /path/to/your-project\n${command}`;
 }
 
-function claudeOpenCommandForProject(path: string): string {
+function claudeOpenCommandForProject(path: string, command = "claude"): string {
   if (process.platform === "win32") {
-    return `Set-Location -LiteralPath ${quotePowerShellLiteral(path)}\nclaude`;
+    return `Set-Location -LiteralPath ${quotePowerShellLiteral(path)}\n${command}`;
   }
 
-  return `cd ${quotePosixShellLiteral(path)}\nclaude`;
+  return `cd ${quotePosixShellLiteral(path)}\n${command}`;
 }
 
 function quotePowerShellLiteral(value: string): string {

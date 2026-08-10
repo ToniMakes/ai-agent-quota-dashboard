@@ -219,6 +219,43 @@ describe("getClaudeStatuslineSetupStatus", () => {
     }
   });
 
+  it("uses a full-path Claude command when the CLI is installed outside PATH", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-status-"));
+    const settingsPath = join(directory, ".claude", "settings.json");
+
+    try {
+      const status = await getClaudeStatuslineSetupStatus({
+        claudeCliLookup: async () => ({
+          available: true,
+          command: "& 'C:\\Users\\hitomi\\.local\\bin\\claude.exe'",
+          onPath: false,
+          path: "C:\\Users\\hitomi\\.local\\bin\\claude.exe"
+        }),
+        historyPath: join(directory, "history.jsonl"),
+        latestPath: join(directory, "latest.json"),
+        settingsPath,
+        shimPath: join(directory, "shim.ps1")
+      });
+      const cliCheck = status.checks.find((check) => check.id === "claude-cli");
+
+      assert.equal(status.claudeCliAvailable, true);
+      assert.equal(status.claudeCliOnPath, false);
+      assert.equal(
+        status.claudeCliCommand,
+        "& 'C:\\Users\\hitomi\\.local\\bin\\claude.exe'"
+      );
+      assert.match(
+        status.claudeCliExampleProjectOpenCommand,
+        /& 'C:\\Users\\hitomi\\.local\\bin\\claude\.exe'/
+      );
+      assert.equal(cliCheck?.status, "pass");
+      assert.match(cliCheck?.message ?? "", /outside PATH/);
+      assert.match(cliCheck?.action ?? "", /full-path command/);
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
   it("guides users to install Claude Code CLI when claude is missing", async () => {
     const directory = await mkdtemp(join(tmpdir(), "aiqd-status-"));
     const settingsPath = join(directory, ".claude", "settings.json");
