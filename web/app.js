@@ -442,8 +442,8 @@ async function runClaudeAutoSetup() {
   state.refreshStatus = {
     kind: "pending",
     message: tx(
-      "Connecting and configuring Claude Code.",
-      "正在接入并配置 Claude Code。"
+      "Connecting Claude Code. Keep this page open; this can take a minute.",
+      "正在接入 Claude Code。请保持页面打开，这可能需要一分钟。"
     )
   };
   render();
@@ -1433,12 +1433,12 @@ function buildInitialSetupModel(items, readiness) {
         detail: claudeCliAvailable
           ? claudeCliOnPath
             ? tx(
-                "AIQD found the claude command. Now copy the project command below, paste it into PowerShell, and press Enter.",
-                "AIQD 已找到 claude 命令。现在只需要复制下面的项目命令，粘贴到 PowerShell，然后按 Enter。"
+                "AIQD found the claude command. Copy only the highlighted project command below, paste it into PowerShell, and press Enter.",
+                "AIQD 已找到 claude 命令。只复制下面高亮的项目命令，粘贴到 PowerShell，然后按 Enter。"
               )
             : tx(
-                "AIQD found Claude Code in its local install folder, but that folder is not on PATH yet. Use the full-path project command below; it will work without editing PATH.",
-                "AIQD 已在本地安装目录找到 Claude Code，但这个目录还没有加入 PATH。请使用下面的完整路径项目命令；它不需要你先改 PATH。"
+                "AIQD found Claude Code in its local install folder, but that folder is not on PATH yet. Copy only the full-path project command below; it will work without editing PATH.",
+                "AIQD 已在本地安装目录找到 Claude Code，但这个目录还没有加入 PATH。只复制下面的完整路径项目命令；它不需要你先改 PATH。"
               )
           : tx(
               "AIQD did not find the claude command. Do only the highlighted install step first. After pressing Enter, the terminal can stay quiet for a while; wait for the installer to finish.",
@@ -1450,8 +1450,8 @@ function buildInitialSetupModel(items, readiness) {
                 {
                   steps: [
                     tx(
-                      "Click the highlighted copy button below.",
-                      "点击下面高亮的复制按钮。"
+                      "Click the highlighted copy button below; ignore internal statusline commands in technical details.",
+                      "点击下面高亮的复制按钮；不要复制技术细节里的内部 statusline 命令。"
                     ),
                     tx(
                       "Paste into PowerShell or Windows Terminal, then press Enter.",
@@ -1522,8 +1522,8 @@ function buildInitialSetupModel(items, readiness) {
         tip: claudeCliAvailable
           ? {
               text: tx(
-                "If PowerShell will not accept paste, its title may say Select Windows PowerShell. Press Esc once, then paste again.",
-                "如果 PowerShell 不接受粘贴，标题栏可能显示“选择 Windows PowerShell”。按一次 Esc，再重新粘贴。"
+                "If PowerShell will not accept paste, its title may say Select Windows PowerShell. Press Esc once, then paste again. If you ever see 'Claude quota: waiting for rate limit data', that was AIQD's internal receiver; run the highlighted Claude Code project command instead.",
+                "如果 PowerShell 不接受粘贴，标题栏可能显示“选择 Windows PowerShell”。按一次 Esc，再重新粘贴。如果你看到“Claude quota: waiting for rate limit data”，说明运行到了 AIQD 内部接收器；请改运行高亮的 Claude Code 项目命令。"
               ),
               title: tx("Paste not working?", "粘贴不进去？")
             }
@@ -1716,16 +1716,16 @@ function buildInitialSetupModel(items, readiness) {
         ? claudeCliAvailable
           ? [
               tx(
-                "Copy the highlighted project command below.",
-                "复制下面高亮的项目命令。"
+                "Copy only the highlighted project command below.",
+                "只复制下面高亮的项目命令。"
               ),
               tx(
                 "Paste it into PowerShell or Windows Terminal, then press Enter.",
                 "粘贴到 PowerShell 或 Windows Terminal，然后按 Enter。"
               ),
               tx(
-                "After Claude Code shows a statusline once, come back and click the check button.",
-                "等 Claude Code 显示过一次 statusline 后，回到这里点击检查按钮。"
+                "Do not run claude-statusline.ps1 yourself; after Claude Code shows a statusline once, come back and click the check button.",
+                "不要自己运行 claude-statusline.ps1；等 Claude Code 显示过一次 statusline 后，回到这里点击检查按钮。"
               )
             ]
           : [
@@ -1979,12 +1979,12 @@ function renderClaudeAutoSetupResult(result, pending) {
     return `
       <div class="auto-setup-result is-pending">
         <strong>${escapeHtml(
-          tx("AIQD is working", "AIQD 正在处理")
+          tx("AIQD is connecting Claude Code", "AIQD 正在接入 Claude Code")
         )}</strong>
         <p>${escapeHtml(
           tx(
-            "Keep this page open. Installing Claude Code may take a few minutes.",
-            "请保持页面打开。安装 Claude Code 可能需要几分钟。"
+            "Keep this page open. Writing the local statusline setting can take a little while.",
+            "请保持页面打开。写入本地 statusline 设置可能需要一点时间。"
           )
         )}</p>
       </div>
@@ -3154,8 +3154,7 @@ function renderSettings() {
                 ? tx("Managed by AIQD", "由 AIQD 管理")
                 : tx("Configured elsewhere", "由其他配置管理")
               : tx("Not configured", "未配置"),
-            status.statusLineCommand ??
-              tx("No statusLine command detected", "没有检测到 statusLine 命令"),
+            formatStatuslineCommandDetail(status),
             status.statusLineManagedByApp ? "healthy" : "warning"
           )}
           ${settingsRow(
@@ -3177,8 +3176,7 @@ function renderSettings() {
           ${renderSetupChecks(status.checks)}
         </div>
 
-        ${renderCommandBlock(tx("Preview command", "预览命令"), status.previewCommand)}
-        ${renderCommandBlock(tx("Install command", "安装命令"), status.writeCommand)}
+        ${renderClaudeMaintenanceCommands(status)}
 
         ${renderFieldPills(tx("Stored", "已保存"), status.savedFields, "healthy")}
         ${renderFieldPills(tx("Not stored", "未保存"), status.notSavedFields, "stale")}
@@ -3204,8 +3202,8 @@ function renderClaudeStatuslineWaitingNotice(status) {
         <div class="settings-detail">
           ${escapeHtml(
             tx(
-              "Keep this dashboard open, then open Claude Code from a CLI/terminal session. The Claude desktop app does not send these statusline fields.",
-              "保持仪表盘打开，然后从 CLI/终端会话打开 Claude Code。普通 Claude 桌面应用不会发送这些 statusline 字段。"
+              "Keep this dashboard open, then open Claude Code from a CLI/terminal session. The Claude desktop app does not send these statusline fields. If you saw 'Claude quota: waiting for rate limit data', you ran AIQD's internal receiver; run the Claude Code project command instead.",
+              "保持仪表盘打开，然后从 CLI/终端会话打开 Claude Code。普通 Claude 桌面应用不会发送这些 statusline 字段。如果你看到“Claude quota: waiting for rate limit data”，说明运行的是 AIQD 内部接收器；请改运行 Claude Code 项目命令。"
             )
           )}
         </div>
@@ -3215,58 +3213,101 @@ function renderClaudeStatuslineWaitingNotice(status) {
   `;
 }
 
+function formatStatuslineCommandDetail(status) {
+  if (status.statusLineManagedByApp) {
+    return tx(
+      "Internal AIQD receiver is installed for Claude Code. Do not copy or run the statusline command manually; open Claude Code from the project command instead.",
+      "AIQD 内部接收器已安装给 Claude Code 使用。不要手动复制或运行 statusline 命令；请改用项目命令打开 Claude Code。"
+    );
+  }
+
+  if (status.statusLineCommand) {
+    return status.statusLineCommand;
+  }
+
+  return tx("No statusLine command detected", "没有检测到 statusLine 命令");
+}
+
+function renderClaudeMaintenanceCommands(status) {
+  if (status.statusLineManagedByApp) {
+    return `
+      <div class="internal-command-note">
+        <strong>${escapeHtml(tx("Internal commands hidden", "已隐藏内部命令"))}</strong>
+        <p>${escapeHtml(
+          tx(
+            "AIQD has already written the statusline receiver for Claude Code. These receiver commands are for Claude Code to call automatically, not for manual setup.",
+            "AIQD 已经把 statusline 接收器写入 Claude Code 设置。这些接收器命令是给 Claude Code 自动调用的，不是给用户手动设置用的。"
+          )
+        )}</p>
+      </div>
+    `;
+  }
+
+  return `
+    ${renderCommandBlock(tx("Developer preview command", "开发者预览命令"), status.previewCommand)}
+    ${renderCommandBlock(tx("Developer setup command", "开发者设置命令"), status.writeCommand)}
+  `;
+}
+
 function renderRealDataSteps(status) {
+  const openCommand =
+    status.claudeCliExampleProjectOpenCommand ??
+    status.claudeCliOpenCommand ??
+    "Set-Location -LiteralPath 'C:\\path\\to\\your-project'\nclaude";
   const steps = [
     {
       badge: "1",
-      title: tx("Build CLI", "构建 CLI"),
-      detail: tx(
-        "Required before the installed statusline command can run.",
-        "安装后的 statusline 命令需要先完成构建。"
-      ),
-      command: "npm run build",
-      state: "info"
-    },
-    {
-      badge: "2",
-      title: tx("Test sink", "测试接收器"),
-      detail: tx(
-        "Uses temporary files and a fake rate_limits payload; no real Claude data is read.",
-        "只使用临时文件和假的 rate_limits 数据；不会读取真实 Claude 数据。"
-      ),
-      command:
-        status.selfTestCommand ??
-        "node dist/index.js claude-statusline-sink --self-test",
-      state: "info"
-    },
-    {
-      badge: "3",
-      title: tx("Install statusline", "安装状态栏"),
+      title: tx("Local receiver", "本地额度接收器"),
       detail: status.statusLineManagedByApp
         ? tx(
-            "Claude Code is configured to call the AIQD statusline sink.",
-            "Claude Code 已配置为调用 AIQD statusline sink。"
+            "AIQD is installed as Claude Code's internal statusline receiver. Do not run claude-statusline.ps1 manually.",
+            "AIQD 已作为 Claude Code 的内部 statusline 接收器安装。不要手动运行 claude-statusline.ps1。"
           )
         : tx(
-            "Writes the managed statusline command into Claude Code settings.",
-            "把托管的 statusline 命令写入 Claude Code 设置。"
+            "Use the first-run current step above to connect Claude Code.",
+            "请使用上方首次运行的当前步骤接入 Claude Code。"
           ),
-      command: status.writeCommand,
       state: status.statusLineManagedByApp ? "pass" : "warn"
     },
     {
-      badge: "4",
-      title: tx("Refresh real data", "刷新真实数据"),
+      badge: "2",
+      title: tx("Open Claude Code CLI", "打开 Claude Code CLI"),
+      detail: status.latestHasRateLimits
+        ? tx(
+            "Claude Code has already sent quota data.",
+            "Claude Code 已经发送过额度数据。"
+          )
+        : status.claudeCliAvailable
+          ? tx(
+              "Copy this project command only. It opens Claude Code; AIQD's receiver runs in the background.",
+              "只复制这条项目命令。它会打开 Claude Code；AIQD 的接收器会在后台运行。"
+            )
+          : tx(
+              "AIQD cannot see the claude command yet. Install or open Claude Code from your normal terminal, then refresh.",
+              "AIQD 还看不到 claude 命令。请先安装或从你平时的终端打开 Claude Code，然后刷新。"
+            ),
+      command:
+        !status.latestHasRateLimits && status.claudeCliAvailable
+          ? openCommand
+          : undefined,
+      state: status.latestHasRateLimits
+        ? "pass"
+        : status.claudeCliAvailable
+          ? "info"
+          : "warn"
+    },
+    {
+      badge: "3",
+      title: tx("Dashboard data", "仪表盘数据"),
       detail: status.readiness === "ready"
         ? tx(
             "Fresh Claude Code rate limits have been received.",
             "已经收到新鲜的 Claude Code rate limits。"
           )
         : tx(
-            "Open Claude Code from a CLI/terminal session, then refresh the dashboard or run Doctor.",
-            "从 CLI/终端会话打开 Claude Code，然后刷新仪表盘或运行诊断。"
+            "After Claude Code shows a statusline once, AIQD will pick up the quota on refresh.",
+            "Claude Code 显示过一次 statusline 后，AIQD 刷新时就会读取额度。"
           ),
-      command: "node dist/index.js doctor",
       state: status.readiness === "ready" ? "pass" : "info"
     }
   ];
@@ -3283,7 +3324,7 @@ function renderRealDataSteps(status) {
               <div>
                 <strong>${escapeHtml(step.title)}</strong>
                 <div class="settings-detail">${escapeHtml(step.detail)}</div>
-                ${renderInlineCommand(step.command)}
+                ${step.command ? renderInlineCommand(step.command) : ""}
               </div>
               <span class="badge ${doctorBadgeClass(step.state)}">${escapeHtml(
                 statusLabel(step.state)
@@ -3306,12 +3347,24 @@ function renderSetupChecks(checks) {
       settingsRow(
         check.label,
         check.message,
-        [check.detail, check.action].filter(Boolean).join("\n"),
+        formatSetupCheckDetail(check),
         doctorBadgeClass(check.status),
         statusLabel(check.status)
       )
     )
     .join("");
+}
+
+function formatSetupCheckDetail(check) {
+  const detail =
+    check.id === "statusline-command" && check.detail?.includes("claude-statusline")
+      ? tx(
+          "Internal AIQD receiver installed. Do not run this command manually; open Claude Code from a terminal instead.",
+          "AIQD 内部接收器已安装。不要手动运行这条命令；请改从终端打开 Claude Code。"
+        )
+      : check.detail;
+
+  return [detail, check.action].filter(Boolean).join("\n");
 }
 
 function formatLatestSnapshotStatus(status) {
