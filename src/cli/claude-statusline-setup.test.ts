@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { platform, tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, it } from "node:test";
@@ -25,7 +25,14 @@ describe("claude statusline setup", () => {
       assert.equal(result.wroteSettings, false);
       assert.equal(existsSync(result.shimPath), true);
       assert.equal(existsSync(settingsPath), false);
-      assert.match(await readFile(result.shimPath, "utf8"), /ReadToEnd/);
+      const shimContent = await readFile(result.shimPath, "utf8");
+
+      if (platform() === "win32") {
+        assert.match(shimContent, /ReadToEnd/);
+      } else {
+        assert.match(shimContent, /claude-statusline-sink/);
+      }
+
       assert.match(result.message, /No Claude settings were changed/);
       assert.match(result.message, /Real-data check/);
       assert.match(result.message, /npm run build/);
