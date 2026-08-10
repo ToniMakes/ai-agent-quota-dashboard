@@ -31,6 +31,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Mini panel page for tray-sized quota checks
 - Electron desktop shell with a tray mini panel and optional always-on-top widget
 - One-time desktop first-run guide that opens the exact setup or Doctor section
+- Desktop smoke coverage for the first-run guide deep-link and local state write
 - Desktop global shortcuts for AIQD mini panel, refresh, and widget actions
 - Settings view status for desktop shortcut bindings and overrides
 - Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
@@ -130,7 +131,7 @@ Desktop shortcuts do not approve or automate other apps. Override or disable the
 
 This is currently a development shell, not an installer. Auto-start, packaging, and signed releases are intentionally left for a later release.
 
-Use `npm run desktop:smoke` to verify that the desktop shell can start the local backend and exit cleanly.
+Use `npm run desktop:smoke` to verify that the desktop shell can start the local backend and exit cleanly. Use `npm run desktop:first-run-smoke` to verify the first-run guide deep-link and local state marker against isolated temporary data.
 
 ## Doctor CLI
 

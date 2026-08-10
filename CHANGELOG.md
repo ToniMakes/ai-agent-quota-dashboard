@@ -19,6 +19,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Environment overrides for Claude Code setup paths
 - Development desktop shell with a tray mini panel and optional always-on-top widget
 - One-time desktop first-run guide that opens the exact setup or Doctor section
+- Desktop smoke coverage for the first-run guide deep-link and local state write
 - Desktop global shortcuts for AIQD mini panel, refresh, and widget actions
 - Settings view status for desktop shortcut bindings and overrides
 - Tray tooltip/menu quota summaries for the desktop shell

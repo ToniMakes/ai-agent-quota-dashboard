@@ -38,3 +38,7 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      - name: Run desktop first-run guide smoke
+        if: runner.os == 'Windows'
+        run: npm run desktop:first-run-smoke
