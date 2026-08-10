@@ -260,7 +260,7 @@ function supportedSourceAction(agent: string): string {
   }
 
   if (agent === "codex") {
-    return "Record a visible Codex /status value: node dist/index.js codex snapshot --remaining-percent <0-100> --reset-at <iso-time>";
+    return "Use Codex once and refresh; if no local CLI rate_limits are found, record a visible fallback with node dist/index.js codex snapshot --remaining-percent <0-100> --reset-at <iso-time>";
   }
 
   return "Add a supported local quota source, then refresh.";

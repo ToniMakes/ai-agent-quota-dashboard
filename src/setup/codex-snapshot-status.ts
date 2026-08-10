@@ -70,7 +70,7 @@ export async function getCodexSnapshotSetupStatus(
     snapshotExists: existsSync(snapshotPath),
     latestHasQuota: Boolean(latest.snapshot),
     readiness: "not_recorded",
-    readinessLabel: "No Codex snapshot yet",
+    readinessLabel: "No Codex fallback yet",
     nextAction: writeCommand,
     checks: [],
     writeCommand,
@@ -161,7 +161,7 @@ function resolveReadiness(input: {
   if (!input.status.snapshotExists) {
     return {
       readiness: "not_recorded",
-      readinessLabel: "No Codex snapshot yet",
+      readinessLabel: "No Codex fallback yet",
       nextAction: input.status.writeCommand
     };
   }
@@ -184,8 +184,8 @@ function resolveReadiness(input: {
 
   return {
     readiness: "ready",
-    readinessLabel: "Ready for manual Codex quota data",
-    nextAction: "Refresh the dashboard to load the latest Codex snapshot."
+    readinessLabel: "Manual Codex fallback ready",
+    nextAction: "Refresh the dashboard to load the latest Codex fallback."
   };
 }
 

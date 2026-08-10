@@ -67,7 +67,128 @@ function extractCodexQuotaCandidates(document: Record<string, unknown>) {
     candidates.push({ ...weekly, window_type: "weekly" });
   }
 
+  candidates.push(...extractRateLimitCandidatesFromContainer(document));
+
+  const result = readRecord(document, ["result"]);
+
+  if (result) {
+    candidates.push(...extractRateLimitCandidatesFromContainer(result, document));
+  }
+
+  const params = readRecord(document, ["params"]);
+
+  if (params) {
+    candidates.push(...extractRateLimitCandidatesFromContainer(params, document));
+  }
+
+  const payload = readRecord(document, ["payload"]);
+
+  if (payload) {
+    candidates.push(...extractRateLimitCandidatesFromContainer(payload, document));
+  }
+
   return candidates;
+}
+
+function extractRateLimitCandidatesFromContainer(
+  container: Record<string, unknown>,
+  document: Record<string, unknown> = container
+): Record<string, unknown>[] {
+  const candidates: Record<string, unknown>[] = [];
+  const rateLimits = readRecord(container, ["rate_limits", "rateLimits"]);
+
+  if (rateLimits) {
+    candidates.push(...extractCodexRateLimitCandidates(rateLimits, document));
+  }
+
+  const rateLimitsByLimitId = readRecord(container, [
+    "rate_limits_by_limit_id",
+    "rateLimitsByLimitId"
+  ]);
+
+  if (rateLimitsByLimitId) {
+    for (const value of Object.values(rateLimitsByLimitId)) {
+      if (!isRecord(value)) {
+        continue;
+      }
+
+      candidates.push(...extractCodexRateLimitCandidates(value, document));
+    }
+  }
+
+  return candidates;
+}
+
+function extractCodexRateLimitCandidates(
+  rateLimits: Record<string, unknown>,
+  document: Record<string, unknown>
+): Record<string, unknown>[] {
+  const observedAt = readString(document, ["timestamp", "observed_at", "observedAt"]);
+  const limitId = readString(rateLimits, ["limit_id", "limitId"]);
+  const limitName = readString(rateLimits, ["limit_name", "limitName"]);
+  const planType = readString(rateLimits, ["plan_type", "planType"]);
+
+  return [
+    ["primary", readRecord(rateLimits, ["primary"])],
+    ["secondary", readRecord(rateLimits, ["secondary"])]
+  ].flatMap(([name, window]) => {
+    if (!isRecord(window)) {
+      return [];
+    }
+
+    const windowType = codexRateLimitWindowType(window);
+
+    if (!windowType) {
+      return [];
+    }
+
+    return [
+      {
+        ...window,
+        observed_at: observedAt,
+        plan_label:
+          [limitName ?? limitId, planType].filter(Boolean).join(" ") ||
+          undefined,
+        expires_at: readResetAt(window),
+        source: "official_cli",
+        unit: "percent",
+        window_type: windowType,
+        window_name: name
+      }
+    ];
+  });
+}
+
+function codexRateLimitWindowType(
+  window: Record<string, unknown>
+): QuotaWindowType | undefined {
+  const explicitWindow = mapWindowType(
+    readString(window, ["window_type", "windowType", "window"])
+  );
+
+  if (explicitWindow) {
+    return explicitWindow;
+  }
+
+  const windowMinutes = readNumber(window, [
+    "window_minutes",
+    "windowMinutes",
+    "window_duration_mins",
+    "windowDurationMins"
+  ]);
+
+  switch (windowMinutes) {
+    case 300:
+      return "session_5h";
+    case 1_440:
+      return "daily";
+    case 10_080:
+      return "weekly";
+    case 43_200:
+      return "monthly";
+    default:
+      return undefined;
+  }
 }
 
 function normalizeCodexQuotaCandidate(

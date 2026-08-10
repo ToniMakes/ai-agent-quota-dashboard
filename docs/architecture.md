@@ -28,11 +28,11 @@ Local Agent Scanner
 4. Reset event detection compares a new snapshot with the previous snapshot for the same provider, agent, and window.
 5. The dashboard and mini surfaces read `/api/agents`, `/api/quota`, `/api/doctor`, `/api/trial-readiness`, `/api/reset-events`, `/api/setup/codex-snapshot`, and `/api/setup/claude-statusline`.
 
-Candidate file scanning is deliberately narrow. Adapters look for small files whose names indicate quota, status, statusline, or limits data. Ordinary session transcripts are not parsed unless a later parser is backed by sanitized fixtures and a clear privacy review.
+Candidate file scanning is deliberately narrow. Adapters look for files whose names indicate quota, status, statusline, limits data, or known Codex `rollout-*.jsonl` session logs. Ordinary prompt/response transcript text is not parsed; Codex session logs are used only for structured `rate_limits` fields backed by sanitized fixtures and privacy review.
 
 Reset times are treated as current observations. The product should say "currently reported reset" rather than claiming a reset is guaranteed to happen at that time.
 
-Setup APIs are read-only unless exposed through an explicit CLI command or an explicit app-owned save action. The browser UI may show commands and paths, and the Codex manual snapshot form may write AIQD's own snapshot file, but it should not silently edit external tool configuration.
+Setup APIs are read-only unless exposed through an explicit CLI command or an explicit app-owned save action. The browser UI may show commands and paths, and the Codex fallback form may write AIQD's own snapshot file, but it should not silently edit external tool configuration.
 
 The desktop shell is presentation-only. It does not parse provider files directly; it starts the local service, loads static pages, exposes minimal window controls to those pages, and runs as a single tray instance.
 

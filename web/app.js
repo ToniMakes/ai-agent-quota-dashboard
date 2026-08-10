@@ -916,7 +916,7 @@ function buildDoctorCodexChecklistItem() {
     ...item,
     actionLabel: item.state === "pass" ? tx("Review", "查看") : tx("Settings", "设置"),
     actionView: "settings",
-    label: tx("Codex manual snapshot", "Codex 手动快照"),
+    label: tx("Codex quota source", "Codex 额度来源"),
     target: "#codex-snapshot-content"
   };
 }
@@ -1184,7 +1184,7 @@ function renderCodexSnapshotSettings() {
 
   if (!status) {
     elements.codexSnapshotContent.innerHTML = `<p class="empty">${escapeHtml(
-      tx("Codex snapshot status unavailable.", "Codex 快照状态不可用。")
+      tx("Codex quota source status unavailable.", "Codex 额度来源状态不可用。")
     )}</p>`;
     return;
   }
@@ -1194,6 +1194,7 @@ function renderCodexSnapshotSettings() {
   }
 
   elements.codexSnapshotContent.innerHTML = `
+    ${renderCodexAutoDetectionStatus(status)}
     ${renderCodexSnapshotSteps(status)}
     ${renderCodexSnapshotForm(status)}
 
@@ -1202,7 +1203,7 @@ function renderCodexSnapshotSettings() {
       `
         <div class="settings-list">
           ${settingsRow(
-            tx("Snapshot file", "快照文件"),
+            tx("Fallback file", "兜底文件"),
             status.snapshotExists ? tx("Found", "已找到") : tx("Not recorded", "未记录"),
             status.snapshotPath,
             status.snapshotExists ? "healthy" : "stale"
@@ -1217,14 +1218,14 @@ function renderCodexSnapshotSettings() {
             tx("Readiness", "就绪状态"),
             localizedReadinessLabel(status.readinessLabel) ?? tx("Unknown", "未知"),
             localizedNextAction(status.nextAction) ??
-              tx("Record a visible Codex quota value.", "记录一个可见的 Codex 额度值。"),
+              tx("Refresh to detect Codex CLI quota; use the fallback only if needed.", "刷新以检测 Codex CLI 额度；只有需要时才使用兜底。"),
             codexSnapshotBadgeClass(status.readiness),
             statusLabel(status.readiness ?? "unknown")
           )}
           ${renderSetupChecks(status.checks)}
         </div>
 
-        ${renderCommandBlock(tx("Record command", "记录命令"), status.writeCommand)}
+        ${renderCommandBlock(tx("Fallback command", "兜底命令"), status.writeCommand)}
         ${renderCommandBlock(tx("Help command", "帮助命令"), status.helpCommand)}
 
         ${renderFieldPills(
@@ -1239,6 +1240,50 @@ function renderCodexSnapshotSettings() {
         )}
       `
     )}
+  `;
+}
+
+function renderCodexAutoDetectionStatus(status) {
+  const snapshot = getCodexPrimarySnapshot();
+  const autoDetected = isAutoCodexSnapshot(snapshot);
+  const manualReady = status.readiness === "ready";
+  const badgeState = autoDetected ? "pass" : manualReady ? "warn" : "info";
+  const title = autoDetected
+    ? tx("Codex is being detected automatically", "Codex 正在自动检测")
+    : manualReady
+      ? tx("Manual fallback is currently active", "当前使用手动兜底")
+      : tx("Automatic Codex detection is waiting", "正在等待 Codex 自动检测");
+  const detail = autoDetected
+    ? tx(
+        "AIQD is reading Codex quota from local CLI rate_limits. You do not need to copy numbers by hand.",
+        "AIQD 正在从本地 CLI rate_limits 读取 Codex 额度；你不需要手动抄数字。"
+      )
+    : manualReady
+      ? tx(
+          "AIQD has a manual fallback value saved. Refresh after using Codex once; if CLI data appears, it will replace the fallback.",
+          "AIQD 已保存手动兜底值。使用 Codex 一次后刷新；如果出现 CLI 数据，它会替代兜底。"
+        )
+      : tx(
+          "After Codex CLI writes a supported rate_limits event, click Refresh. If this machine exposes no usable Codex quota data, use the fallback form below.",
+          "等 Codex CLI 写入支持的 rate_limits 事件后点击刷新。如果这台机器没有暴露可用 Codex 额度数据，再使用下面的兜底表单。"
+        );
+  const snapshotLine = snapshot ? formatSnapshotOverview(snapshot) : undefined;
+
+  return `
+    <div class="setup-watch-notice codex-source-notice">
+      <div>
+        <strong>${escapeHtml(title)}</strong>
+        <div class="settings-detail">${escapeHtml(detail)}</div>
+        ${snapshotLine ? `<div class="settings-detail">${escapeHtml(snapshotLine)}</div>` : ""}
+      </div>
+      <span class="badge ${doctorBadgeClass(badgeState)}">${escapeHtml(
+        autoDetected
+          ? tx("CLI", "CLI")
+          : manualReady
+            ? tx("Fallback", "兜底")
+            : tx("Waiting", "等待")
+      )}</span>
+    </div>
   `;
 }
 
@@ -1560,47 +1605,52 @@ function buildInitialSetupModel(items, readiness) {
     {
       actionLabel: codexComplete
         ? tx("Review Codex", "查看 Codex")
-        : tx("Go to Codex form", "去填写 Codex 表单"),
+        : tx("Refresh Codex", "刷新检测 Codex"),
       actionTitle: tx(
-        "Fill the Codex value you can see",
-        "填写你能看见的 Codex 额度"
+        "Detect Codex CLI quota automatically",
+        "自动检测 Codex CLI 额度"
       ),
       checklist: [
         tx(
-          "Open Codex /status or Settings > Usage.",
-          "打开 Codex 的 /status 或 Settings > Usage。"
+          "Use Codex once, or keep the current Codex CLI session active.",
+          "先使用一次 Codex，或保持当前 Codex CLI 会话打开。"
         ),
         tx(
-          "Copy the remaining percent into the Codex form below.",
-          "把剩余百分比填到下面的 Codex 表单。"
+          "Click Refresh so AIQD scans local Codex session rate_limits.",
+          "点击刷新，让 AIQD 扫描本地 Codex session rate_limits。"
         ),
         tx(
-          "Choose the reset date. Leave reset time blank if Codex only shows a date.",
-          "选择 reset 日期；如果 Codex 只显示日期，时间留空。"
+          "Use the manual fallback below only if no CLI quota can be detected.",
+          "只有检测不到 CLI 额度时，才使用下方手动兜底。"
         )
       ],
       complete: codexComplete,
       detail: tx(
-        "Copy the visible Codex remaining percent and reset date. Leave reset time blank if Codex only shows a date.",
-        "填写 Codex 显示的剩余百分比和 reset 日期；如果 Codex 只显示日期，时间可以留空。"
+        "AIQD reads supported rate_limits from local Codex CLI session logs. Manual entry is kept only as a fallback.",
+        "AIQD 会从本地 Codex CLI session 日志读取支持的 rate_limits；手动录入只作为兜底。"
       ),
       id: "codex",
       number: "1",
       outcome: tx(
-        "After saving, AIQD can use this Codex value and will move you to Claude Code.",
-        "保存后，AIQD 就能使用这条 Codex 额度，并带你进入 Claude Code 步骤。"
+        "If rate_limits are found, the dashboard will show Codex as Official CLI. If not, this page will explain the fallback.",
+        "如果读到 rate_limits，仪表盘会把 Codex 显示为官方 CLI；如果没有读到，这里会说明兜底方式。"
       ),
       progressDetail: codexComplete
         ? buildCodexDoneDetail(codex)
-        : tx("Not filled yet.", "还没有填写。"),
+        : tx("Waiting for Codex CLI quota detection.", "等待 Codex CLI 额度检测。"),
+      refreshAction: !codexComplete,
+      secondaryActionLabel: codexComplete
+        ? undefined
+        : tx("Manual fallback", "手动兜底"),
+      secondaryTarget: codexComplete ? undefined : "#codex-snapshot-content",
       status: codexComplete
         ? tx("Done", "已完成")
-        : codex?.status ?? tx("Waiting for visible quota", "等待可见额度"),
+        : codex?.status ?? tx("Waiting for Codex data", "等待 Codex 数据"),
       target: "#codex-snapshot-content",
-      title: tx("Codex snapshot", "Codex 快照"),
+      title: tx("Codex CLI detection", "Codex CLI 检测"),
       why: tx(
-        "Codex currently has no official local quota API, so AIQD needs one value you can see yourself.",
-        "Codex 目前没有官方本地额度 API，所以 AIQD 需要一条你自己能看见的额度值。"
+        "Automatic local detection avoids copying numbers by hand. The fallback remains clearly labeled when Codex does not expose usable data locally.",
+        "自动本地检测可以避免手抄数字；只有 Codex 本地没有暴露可用数据时，兜底才会出现并明确标注。"
       )
     },
     {
@@ -2252,8 +2302,8 @@ function localizedReadinessCheck(check) {
 
   if (check.agent === "codex" && check.status === "fail") {
     return {
-      action: "打开 Codex 的 /status 或 Settings > Usage，把可见剩余百分比和 reset 时间保存到 Codex 手动快照。",
-      message: "Codex 还没有可用于试用的真实额度快照。"
+      action: "使用 Codex 一次后刷新，让 AIQD 读取本地 Codex CLI rate_limits；如果仍没有数据，再使用设置页的手动兜底。",
+      message: "Codex 还没有可用于试用的真实本地额度数据。"
     };
   }
 
@@ -2285,14 +2335,77 @@ function buildRealDataOverviewItems() {
   ];
 }
 
+function findAgent(agentId) {
+  return state.agents.find((agent) => agent.agent === agentId);
+}
+
+function getCodexPrimarySnapshot() {
+  return findAgent("codex")?.primarySnapshot;
+}
+
+function isFreshRealSnapshot(snapshot) {
+  return Boolean(
+    snapshot &&
+      snapshot.source !== "demo" &&
+      snapshot.freshness?.status !== "stale"
+  );
+}
+
+function isAutoCodexSnapshot(snapshot) {
+  return Boolean(isFreshRealSnapshot(snapshot) && snapshot.source !== "manual");
+}
+
+function formatSnapshotOverview(snapshot) {
+  if (!snapshot) {
+    return undefined;
+  }
+
+  const parts = [];
+
+  if (typeof snapshot.remainingPercent === "number") {
+    parts.push(
+      tx("{percent}% remaining", "剩余 {percent}%", {
+        percent: Math.round(snapshot.remainingPercent)
+      })
+    );
+  }
+
+  if (snapshot.windowType) {
+    parts.push(windowLabel(snapshot.windowType));
+  }
+
+  if (snapshot.resetAt) {
+    parts.push(
+      tx("reset {time}", "reset：{time}", {
+        time: formatRelative(snapshot.resetAt)
+      })
+    );
+  }
+
+  if (snapshot.source) {
+    parts.push(sourceLabel(snapshot.source));
+  }
+
+  return parts.filter(Boolean).join(" / ");
+}
+
 function buildCodexOverviewItem() {
   const status = state.codexSnapshotStatus;
-  const ready = status?.readiness === "ready";
+  const snapshot = getCodexPrimarySnapshot();
+  const autoDetected = isAutoCodexSnapshot(snapshot);
+  const manualReady = status?.readiness === "ready";
+  const ready = autoDetected || manualReady;
   const needsAttention =
     status?.readiness === "expired" || status?.readiness === "needs_attention";
   const detailParts = [];
 
-  if (typeof status?.latestRemainingPercent === "number") {
+  if (snapshot) {
+    const snapshotDetail = formatSnapshotOverview(snapshot);
+
+    if (snapshotDetail) {
+      detailParts.push(snapshotDetail);
+    }
+  } else if (typeof status?.latestRemainingPercent === "number") {
     detailParts.push(
       tx("{percent}% remaining", "剩余 {percent}%", {
         percent: Math.round(status.latestRemainingPercent)
@@ -2310,34 +2423,42 @@ function buildCodexOverviewItem() {
 
   return {
     actionLabel: tx("Codex details", "Codex 详情"),
-    command: ready ? undefined : "/status",
+    autoDetected,
+    command: undefined,
     countsTowardReady: true,
     detail:
       detailParts.length > 0
         ? detailParts.join(" / ")
         : tx(
-            "Save the visible Codex /status or Usage value in the form below.",
-            "把 Codex /status 或 Usage 页面可见的额度值保存到下方表单。"
+            "AIQD checks local Codex CLI session rate_limits first. Manual entry below is only a fallback.",
+            "AIQD 会先检查本地 Codex CLI session rate_limits；下面的手动录入只是兜底。"
           ),
     id: "codex",
     label: "Codex",
     nextAction: ready
-      ? tx(
-          "Codex manual quota is ready for the dashboard.",
-          "Codex 手动额度已经可用于仪表盘。"
-        )
-      : needsAttention
+      ? autoDetected
         ? tx(
-            "Update the Codex manual snapshot with the currently visible quota value.",
-            "用当前可见的额度值更新 Codex 手动快照。"
+            "Codex CLI quota was detected automatically.",
+            "已自动检测到 Codex CLI 额度。"
           )
         : tx(
-            "Open Codex /status, then save the visible remaining percent and reset time below.",
-            "打开 Codex /status，然后把可见的剩余百分比和 reset 时间保存到下方。"
+            "Codex fallback quota is ready for the dashboard.",
+            "Codex 兜底额度已经可用于仪表盘。"
+          )
+      : needsAttention
+        ? tx(
+            "Refresh after using Codex once. If no CLI quota appears, update the manual fallback.",
+            "使用 Codex 一次后刷新；如果仍没有 CLI 额度，再更新手动兜底。"
+          )
+        : tx(
+            "Refresh to detect local Codex CLI quota. Use the manual form only if detection is unavailable.",
+            "刷新以检测本地 Codex CLI 额度；只有检测不可用时才使用手动表单。"
           ),
     state: ready ? "pass" : needsAttention ? "warn" : "info",
-    status: localizedReadinessLabel(status?.readinessLabel) ??
-      tx("Waiting for visible quota", "等待可见额度"),
+    status: autoDetected
+      ? tx("CLI detected", "CLI 已检测")
+      : localizedReadinessLabel(status?.readinessLabel) ??
+        tx("Waiting for Codex data", "等待 Codex 数据"),
     target: "#codex-snapshot-content"
   };
 }
@@ -2481,11 +2602,20 @@ function renderCodexSnapshotForm(status) {
     draft?.resetTime ??
     (status.latestResetAt ? toTimeLocalValue(status.latestResetAt) : "");
   const planLabelValue =
-    draft?.planLabel ?? tx("Codex visible status", "Codex 可见状态");
+    draft?.planLabel ?? tx("Codex manual fallback", "Codex 手动兜底");
   const saveStatus = state.codexSnapshotSaveStatus;
 
   return `
     <form id="codex-snapshot-form" class="settings-form">
+      <div>
+        <strong>${escapeHtml(tx("Manual fallback form", "手动兜底表单"))}</strong>
+        <div class="settings-detail">${escapeHtml(
+          tx(
+            "Use this only when automatic Codex CLI detection is unavailable on this machine.",
+            "只有这台机器无法自动检测 Codex CLI 额度时，才需要填写这里。"
+          )
+        )}</div>
+      </div>
       <div class="settings-form-grid codex-snapshot-grid">
         <label class="form-field">
           <span>${escapeHtml(tx("Remaining %", "剩余百分比"))}</span>
@@ -2772,14 +2902,14 @@ function buildResetDateFromForm(resetDateValue, resetTimeValue) {
 function codexSnapshotSaveMessage(refreshResult) {
   if ((refreshResult?.errors?.length ?? 0) > 0) {
     return tx(
-      "Snapshot saved; refresh completed with warnings.",
-      "快照已保存；刷新完成但有警告。"
+      "Fallback saved; refresh completed with warnings.",
+      "兜底已保存；刷新完成但有警告。"
     );
   }
 
   return tx(
-    "Snapshot saved; dashboard is ready to check.",
-    "快照已保存；现在可以检查仪表盘。"
+    "Fallback saved; dashboard is ready to check.",
+    "兜底已保存；现在可以检查仪表盘。"
   );
 }
 
@@ -2801,53 +2931,64 @@ function setCodexSnapshotFormStatus(form, message, kind) {
 }
 
 function renderCodexSnapshotSteps(status) {
+  const autoDetected = isAutoCodexSnapshot(getCodexPrimarySnapshot());
   const steps = [
     {
       badge: "1",
-      title: tx("Check visible status", "查看可见状态"),
+      title: tx("Auto-detect CLI quota", "自动检测 CLI 额度"),
       detail: tx(
-        "Use Codex CLI /status or Codex Settings > Usage.",
-        "使用 Codex CLI 的 /status，或打开 Codex Settings > Usage。"
+        "Use Codex once, then refresh. AIQD scans local Codex session rate_limits.",
+        "使用 Codex 一次后刷新。AIQD 会扫描本地 Codex session rate_limits。"
       ),
-      command: "/status",
-      state: status.latestHasQuota ? "pass" : "info"
+      command: undefined,
+      state: autoDetected ? "pass" : "info"
     },
     {
       badge: "2",
-      title: tx("Record snapshot", "记录快照"),
-      detail: status.latestHasQuota
+      title: tx("Manual fallback", "手动兜底"),
+      detail: autoDetected
         ? tx(
-            "A structured manual snapshot is available.",
-            "已经有结构化的手动快照。"
+            "CLI data is available, so this fallback is not needed right now.",
+            "已经有 CLI 数据，现在不需要使用兜底。"
           )
-        : tx(
-            "Write only the visible quota value and reported reset time.",
-            "只写入可见的额度值和报告的 reset 时间。"
-          ),
-      command: status.writeCommand,
-      state: status.latestHasQuota ? "pass" : "warn"
+        : status.latestHasQuota
+          ? tx(
+              "A fallback snapshot is available and clearly labeled manual.",
+              "已有兜底快照，并会明确标记为手动。"
+            )
+          : tx(
+              "If Codex exposes no usable CLI rate_limits, write only the visible quota value and reported reset time.",
+              "如果 Codex 没有暴露可用 CLI rate_limits，只写入可见额度值和报告的 reset 时间。"
+            ),
+      command: autoDetected ? undefined : status.writeCommand,
+      state: autoDetected || status.latestHasQuota ? "pass" : "warn"
     },
     {
       badge: "3",
       title: tx("Refresh dashboard", "刷新仪表盘"),
       detail:
-        status.readiness === "ready"
+        autoDetected
           ? tx(
-              "The next refresh can load the Codex snapshot.",
-              "下一次刷新可以读取 Codex 快照。"
+              "The dashboard is using detected Codex CLI quota data.",
+              "仪表盘正在使用检测到的 Codex CLI 额度数据。"
+            )
+          : status.readiness === "ready"
+          ? tx(
+              "The next refresh can load the Codex fallback snapshot.",
+              "下一次刷新可以读取 Codex 兜底快照。"
             )
           : tx(
-              "Refresh after recording a visible Codex quota value.",
-              "记录可见 Codex 额度值之后再刷新。"
+              "Refresh after Codex writes CLI rate_limits or after saving the fallback.",
+              "等 Codex 写入 CLI rate_limits，或保存兜底后再刷新。"
             ),
       command: "node dist/index.js doctor",
-      state: status.readiness === "ready" ? "pass" : "info"
+      state: autoDetected || status.readiness === "ready" ? "pass" : "info"
     }
   ];
 
   return `
     <div class="setup-flow" aria-label="${escapeHtml(
-      tx("Codex manual snapshot setup", "Codex 手动快照设置")
+      tx("Codex quota source setup", "Codex 额度来源设置")
     )}">
       ${steps
         .map(
@@ -3711,11 +3852,13 @@ function localizedReadinessLabel(label) {
     ["Unknown", "未知"],
     ["Setup status unavailable", "设置状态不可用"],
     ["Waiting for visible quota", "等待可见额度"],
-    ["No Codex snapshot yet", "还没有 Codex 快照"],
+    ["No Codex snapshot yet", "还没有 Codex 兜底"],
+    ["No Codex fallback yet", "还没有 Codex 兜底"],
+    ["Manual Codex fallback ready", "Codex 手动兜底已就绪"],
     ["Waiting for Claude Code data", "等待 Claude Code 数据"],
     ["Waiting for Claude Code CLI command", "等待 Claude Code CLI 命令"],
     ["Claude Code setup needed", "需要设置 Claude Code"],
-    ["Codex manual snapshot ready", "Codex 手动快照已就绪"],
+    ["Codex manual snapshot ready", "Codex 手动兜底已就绪"],
     ["Claude Code data ready", "Claude Code 数据已就绪"]
   ]);
 
@@ -3730,7 +3873,11 @@ function localizedNextAction(action) {
   const translations = [
     [
       "Open Codex /status",
-      "打开 Codex /status，然后把可见的剩余百分比和 reset 时间保存到下方。"
+      "先刷新检测本地 Codex CLI 额度；如果没有读到，再把可见的剩余百分比和 reset 时间保存到下方。"
+    ],
+    [
+      "Use Codex once and refresh",
+      "使用 Codex 一次后刷新；如果仍没有读到 CLI 额度，再使用手动兜底。"
     ],
     [
       "Install the statusline sink",
@@ -3750,7 +3897,7 @@ function localizedNextAction(action) {
     ],
     [
       "Record a visible Codex quota value",
-      "记录一个可见的 Codex 额度值。"
+      "只有自动检测不可用时，才记录可见的 Codex 额度值。"
     ]
   ];
 
@@ -3785,8 +3932,8 @@ function agentEmptyText(agent) {
 
   if (agent.agent === "codex") {
     return {
-      detail: "保存 Codex /status 或 Usage 中可见的额度和 reset 时间。",
-      title: "需要 Codex 手动快照"
+      detail: "AIQD 会先读取本地 Codex CLI session rate_limits。使用 Codex 一次后刷新；如果仍没有数据，再用设置页的手动兜底。",
+      title: "等待 Codex CLI 额度数据"
     };
   }
 

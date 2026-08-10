@@ -21,7 +21,7 @@ npm run desktop:local
 
 Expected first launch behavior:
 
-- If Codex has no usable snapshot, the app opens Settings at `Codex Manual Snapshot`.
+- If Codex has no usable local CLI quota data, the app opens Settings at `Codex Quota Source`.
 - If Claude Code setup or data is missing, the app opens Settings at `Claude Code Statusline`.
 - If an adapter has a blocking error, the app opens Doctor.
 - If primary sources are ready, the app opens the mini panel.
@@ -38,11 +38,11 @@ npm run doctor
 
 Startup failures should show recovery guidance with the backend error tail. The smoke command checks whether the desktop shell can launch its local backend without touching real Codex or Claude Code data.
 
-## 3. Record Codex
+## 3. Detect Codex
 
-Open Codex and check a visible quota value, such as `/status` or Codex Settings > Usage.
+Use Codex once, then click `Refresh` in AIQD. The app scans local Codex CLI session logs for supported `rate_limits` events.
 
-In AIQD Settings, fill:
+If automatic detection is unavailable on this machine or Codex version, use the manual fallback in AIQD Settings and fill:
 
 - `Remaining %`
 - `Reported reset`
@@ -57,7 +57,7 @@ npm run build
 node dist/index.js codex snapshot --remaining-percent 72 --reset-at 2026-08-16T03:00:00Z
 ```
 
-Manual Codex snapshots expire at their reported reset time. If Codex later changes the reset anchor, record a new visible value.
+Manual Codex fallback snapshots expire at their reported reset time. If Codex later changes the reset anchor, refresh first; if no CLI data appears, record a new visible fallback value.
 
 ## 4. Connect Claude Code
 

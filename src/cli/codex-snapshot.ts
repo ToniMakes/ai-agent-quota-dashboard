@@ -296,7 +296,7 @@ export function formatCodexManualSnapshotResult(
   const snapshot = result.snapshot.quota_snapshot;
 
   return [
-    "Codex manual quota snapshot saved.",
+    "Codex manual fallback snapshot saved.",
     `Path: ${result.outputPath}`,
     `Remaining: ${snapshot.remaining_percent}%`,
     `Reported reset: ${snapshot.reset_at}`,
@@ -313,7 +313,7 @@ export function codexSnapshotHelpText(): string {
     "  ai-agent-quota codex snapshot --used-percent <0-100> --reset-at <iso-time>",
     "",
     "Use values you can see in Codex /status or Codex Settings > Usage.",
-    "The command writes a structured manual snapshot into AIQD's local app data.",
+    "The command writes a structured manual fallback snapshot into AIQD's local app data.",
     "",
     "Options:",
     "  --plan-label <label>     Optional display label",

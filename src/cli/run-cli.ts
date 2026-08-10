@@ -417,7 +417,7 @@ function helpText(): string {
     "  ai-agent-quota trial preflight               Show next steps for real-data trial readiness",
     "  ai-agent-quota export [--json|--csv]        Export normalized quota data",
     "  ai-agent-quota codex snapshot --remaining-percent <0-100> --reset-at <iso-time>",
-    "                                             Record a visible Codex quota value",
+    "                                             Record a manual Codex fallback value",
     "  ai-agent-quota claude-statusline-sink       Read Claude statusline JSON from stdin",
     "  ai-agent-quota claude-statusline-sink --self-test",
     "                                             Test the local Claude statusline sink",
