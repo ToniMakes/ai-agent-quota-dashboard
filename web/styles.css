@@ -724,6 +724,26 @@ h2 {
   padding-top: 2px;
 }
 
+.step-helper-tip {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid rgba(246, 188, 87, 0.38);
+  border-radius: 8px;
+  background: rgba(246, 188, 87, 0.07);
+}
+
+.step-helper-tip strong {
+  color: var(--warning);
+  font-size: 0.82rem;
+}
+
+.step-helper-tip p {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
 .step-helper-secondary summary {
   cursor: pointer;
   color: var(--muted);
