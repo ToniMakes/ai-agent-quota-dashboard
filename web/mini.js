@@ -26,13 +26,43 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
-  const button = target.closest("[data-desktop-action]");
+  const control = target.closest("[data-desktop-action]");
 
-  if (!(button instanceof HTMLButtonElement)) {
+  if (!(control instanceof HTMLElement)) {
     return;
   }
 
-  const action = button.dataset.desktopAction;
+  await runDesktopAction(control);
+});
+
+document.addEventListener("keydown", async (event) => {
+  if (event.key === "Escape") {
+    await window.aiqdDesktop?.hideCurrentWindow();
+    return;
+  }
+
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const target = event.target;
+
+  if (!(target instanceof Element)) {
+    return;
+  }
+
+  const control = target.closest("[data-desktop-action]");
+
+  if (!(control instanceof HTMLElement) || control instanceof HTMLButtonElement) {
+    return;
+  }
+
+  event.preventDefault();
+  await runDesktopAction(control);
+});
+
+async function runDesktopAction(control) {
+  const action = control.dataset.desktopAction;
 
   if (action === "refresh") {
     await refreshNow();
@@ -41,9 +71,9 @@ document.addEventListener("click", async (event) => {
 
   if (action === "dashboard") {
     if (window.aiqdDesktop) {
-      await window.aiqdDesktop.openDashboard(button.dataset.dashboardView);
+      await window.aiqdDesktop.openDashboard(control.dataset.dashboardView);
     } else {
-      const view = button.dataset.dashboardView;
+      const view = control.dataset.dashboardView;
       window.location.href = view ? `/?view=${encodeURIComponent(view)}` : "/";
     }
   }
@@ -71,13 +101,7 @@ document.addEventListener("click", async (event) => {
   if (action === "hide") {
     await window.aiqdDesktop?.hideCurrentWindow();
   }
-});
-
-document.addEventListener("keydown", async (event) => {
-  if (event.key === "Escape") {
-    await window.aiqdDesktop?.hideCurrentWindow();
-  }
-});
+}
 
 await load();
 window.setInterval(load, refreshIntervalMs);
@@ -213,6 +237,18 @@ function renderFooter() {
     elements.footer.removeAttribute("title");
   }
 
+  if (footer.action) {
+    elements.footer.dataset.desktopAction = footer.action;
+    elements.footer.setAttribute("role", "button");
+    elements.footer.setAttribute("tabindex", "0");
+    elements.footer.setAttribute("aria-label", footer.ariaLabel ?? footer.text);
+  } else {
+    delete elements.footer.dataset.desktopAction;
+    elements.footer.removeAttribute("role");
+    elements.footer.removeAttribute("tabindex");
+    elements.footer.removeAttribute("aria-label");
+  }
+
   if (elements.refreshButton instanceof HTMLButtonElement) {
     elements.refreshButton.disabled = state.isRefreshing;
     elements.refreshButton.classList.toggle("is-spinning", state.isRefreshing);
@@ -238,8 +274,10 @@ function footerState() {
 
   if ((latestRun?.errors?.length ?? 0) > 0) {
     return {
+      action: "doctor",
+      ariaLabel: "Open Doctor for refresh warning",
       kind: "warning",
-      text: "Refresh warning · open Doctor",
+      text: "Refresh warning - open Doctor",
       title: refreshRunTitle(latestRun)
     };
   }
@@ -248,12 +286,14 @@ function footerState() {
     if (latestRun && latestRun.snapshotsSaved > 0) {
       return {
         kind: "info",
-        text: `${snapshotCountText(latestRun.snapshotsSaved)} · Claude waiting`,
+        text: `${snapshotCountText(latestRun.snapshotsSaved)} - Claude waiting`,
         title: refreshRunTitle(latestRun)
       };
     }
 
     return {
+      action: state.setupStatus?.statusLineManagedByApp ? undefined : "settings",
+      ariaLabel: "Open Settings for Claude Code setup",
       kind: "info",
       text: state.setupStatus?.statusLineManagedByApp
         ? "Watching Claude Code for rate_limits"
@@ -265,13 +305,17 @@ function footerState() {
   if (needsRealDataSetup(state.agents)) {
     if (latestRun && latestRun.snapshotsSaved > 0) {
       return {
+        action: "settings",
+        ariaLabel: "Open Settings to finish real data setup",
         kind: "info",
-        text: `${snapshotCountText(latestRun.snapshotsSaved)} · setup left`,
+        text: `${snapshotCountText(latestRun.snapshotsSaved)} - setup left`,
         title: refreshRunTitle(latestRun)
       };
     }
 
     return {
+      action: "settings",
+      ariaLabel: "Open Settings to set up real data",
       kind: "info",
       text: "Open Settings to set up real data",
       title: latestRun ? refreshRunTitle(latestRun) : undefined
@@ -281,7 +325,7 @@ function footerState() {
   if (latestRun) {
     return {
       kind: "success",
-      text: `${snapshotCountText(latestRun.snapshotsSaved)} · updated ${formatRelative(
+      text: `${snapshotCountText(latestRun.snapshotsSaved)} - updated ${formatRelative(
         latestRun.observedAt
       )}`,
       title: refreshRunTitle(latestRun)

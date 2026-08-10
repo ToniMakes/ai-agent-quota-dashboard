@@ -426,6 +426,21 @@ button {
   color: var(--muted);
 }
 
+.mini-footer[data-desktop-action] {
+  cursor: pointer;
+}
+
+.mini-footer[data-desktop-action]:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.mini-footer[data-desktop-action]:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid rgb(79 212 167 / 62%);
+  outline-offset: 2px;
+}
+
 .mini-shell[data-mode="widget"] .mini-footer {
   margin-top: 6px;
 }
