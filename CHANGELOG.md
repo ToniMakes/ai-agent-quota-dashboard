@@ -26,6 +26,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Mini setup progress text for first-run Codex and Claude Code onboarding
 - Clickable mini footer actions for refresh warnings and setup guidance
 - Mini and tray first-run actions that open Settings or Doctor directly
+- Mini first-run actions deep-link to the exact Settings or Doctor section
 - Compact mini-surface quota rows with manual refresh and reset/observed summaries
 - Single-instance desktop shell behavior that focuses the existing mini panel on repeat launch
 - Tray status refreshes when the first Claude Code statusline snapshot arrives

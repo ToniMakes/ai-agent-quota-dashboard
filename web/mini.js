@@ -63,6 +63,7 @@ document.addEventListener("keydown", async (event) => {
 
 async function runDesktopAction(control) {
   const action = control.dataset.desktopAction;
+  const target = control.dataset.dashboardTarget;
 
   if (action === "refresh") {
     await refreshNow();
@@ -70,28 +71,15 @@ async function runDesktopAction(control) {
   }
 
   if (action === "dashboard") {
-    if (window.aiqdDesktop) {
-      await window.aiqdDesktop.openDashboard(control.dataset.dashboardView);
-    } else {
-      const view = control.dataset.dashboardView;
-      window.location.href = view ? `/?view=${encodeURIComponent(view)}` : "/";
-    }
+    await openDashboardTarget(control.dataset.dashboardView ?? "dashboard", target);
   }
 
   if (action === "settings") {
-    if (window.aiqdDesktop) {
-      await window.aiqdDesktop.openDashboard("settings");
-    } else {
-      window.location.href = "/?view=settings";
-    }
+    await openDashboardTarget("settings", target);
   }
 
   if (action === "doctor") {
-    if (window.aiqdDesktop) {
-      await window.aiqdDesktop.openDashboard("doctor");
-    } else {
-      window.location.href = "/?view=doctor";
-    }
+    await openDashboardTarget("doctor", target);
   }
 
   if (action === "widget") {
@@ -101,6 +89,21 @@ async function runDesktopAction(control) {
   if (action === "hide") {
     await window.aiqdDesktop?.hideCurrentWindow();
   }
+}
+
+async function openDashboardTarget(view, target) {
+  if (window.aiqdDesktop) {
+    await window.aiqdDesktop.openDashboard(view, target);
+    return;
+  }
+
+  window.location.href = dashboardHref(view, target);
+}
+
+function dashboardHref(view, target) {
+  const hash = target ? `#${encodeURIComponent(target)}` : "";
+
+  return `/?view=${encodeURIComponent(view)}${hash}`;
 }
 
 await load();
@@ -239,11 +242,17 @@ function renderFooter() {
 
   if (footer.action) {
     elements.footer.dataset.desktopAction = footer.action;
+    if (footer.target) {
+      elements.footer.dataset.dashboardTarget = footer.target;
+    } else {
+      delete elements.footer.dataset.dashboardTarget;
+    }
     elements.footer.setAttribute("role", "button");
     elements.footer.setAttribute("tabindex", "0");
     elements.footer.setAttribute("aria-label", footer.ariaLabel ?? footer.text);
   } else {
     delete elements.footer.dataset.desktopAction;
+    delete elements.footer.dataset.dashboardTarget;
     elements.footer.removeAttribute("role");
     elements.footer.removeAttribute("tabindex");
     elements.footer.removeAttribute("aria-label");
@@ -277,6 +286,7 @@ function footerState() {
       action: "doctor",
       ariaLabel: "Open Doctor for refresh warning",
       kind: "warning",
+      target: "refresh-run-list",
       text: "Refresh warning - open Doctor",
       title: refreshRunTitle(latestRun)
     };
@@ -290,6 +300,7 @@ function footerState() {
         action: "settings",
         ariaLabel: "Open Settings to finish real data setup",
         kind: "info",
+        target: setup.target,
         text: `${setup.ready}/${setup.total} ready - finish ${setup.missingText}`,
         title: [setup.title, refreshRunTitle(latestRun)].join("\n")
       };
@@ -299,6 +310,7 @@ function footerState() {
       action: "settings",
       ariaLabel: "Open Settings to set up real data",
       kind: "info",
+      target: setup.target,
       text: `${setup.ready}/${setup.total} ready - finish ${setup.missingText}`,
       title: latestRun ? [setup.title, refreshRunTitle(latestRun)].join("\n") : setup.title
     };
@@ -309,6 +321,7 @@ function footerState() {
       action: state.setupStatus?.statusLineManagedByApp ? undefined : "settings",
       ariaLabel: "Open Settings for Claude Code setup",
       kind: "info",
+      target: "settings-content",
       text: state.setupStatus?.statusLineManagedByApp
         ? "Watching Claude Code for rate_limits"
         : "Claude Code setup needed",
@@ -369,6 +382,7 @@ function renderWindowRows(agent) {
           class="mini-action"
           type="button"
           data-desktop-action="${escapeHtml(guidance.action)}"
+          ${guidance.target ? `data-dashboard-target="${escapeHtml(guidance.target)}"` : ""}
         >${escapeHtml(guidance.actionLabel)}</button>
       </div>
     `;
@@ -442,10 +456,12 @@ function setupProgress(agents) {
   const ready = Math.max(total - missing.length, 0);
   const missingNames = missing.map((agent) => setupAgentName(agent)).filter(Boolean);
   const missingText = missingNames.length > 0 ? missingNames.join(", ") : "real data";
+  const target = missing[0] ? setupAgentTarget(missing[0]) : undefined;
 
   return {
     missingText,
     ready,
+    target,
     title: `${ready}/${total} quota sources ready. Missing: ${missingText}.`,
     total
   };
@@ -467,6 +483,18 @@ function setupAgentName(agent) {
   return agent.shortName ?? agent.displayName ?? agent.agent;
 }
 
+function setupAgentTarget(agent) {
+  if (agent.agent === "codex") {
+    return "codex-snapshot-content";
+  }
+
+  if (agent.agent === "claude-code") {
+    return "settings-content";
+  }
+
+  return "real-data-content";
+}
+
 function emptyStateGuidance(agent) {
   if (agent.emptyState?.reason === "waiting_for_statusline_data") {
     return {
@@ -474,6 +502,7 @@ function emptyStateGuidance(agent) {
       actionLabel: "Settings",
       detail: "Open Claude Code once",
       label: "waiting",
+      target: "settings-content",
       title: "Claude listening"
     };
   }
@@ -484,6 +513,7 @@ function emptyStateGuidance(agent) {
       actionLabel: "Doctor",
       detail: "Check the failing adapter",
       label: "check",
+      target: "doctor-list",
       title: "Scan failed"
     };
   }
@@ -494,6 +524,7 @@ function emptyStateGuidance(agent) {
       actionLabel: "Save /status",
       detail: "Paste visible quota + reset",
       label: "setup 1",
+      target: "codex-snapshot-content",
       title: "Codex /status needed"
     };
   }
@@ -504,6 +535,7 @@ function emptyStateGuidance(agent) {
       actionLabel: "Install setup",
       detail: "Add local statusline sink",
       label: "setup 2",
+      target: "settings-content",
       title: "Claude statusline needed"
     };
   }
@@ -513,6 +545,7 @@ function emptyStateGuidance(agent) {
     actionLabel: "Doctor",
     detail: agent.emptyState?.detail ?? "No quota data yet",
     label: "unavailable",
+    target: "doctor-list",
     title: agent.emptyState?.title ?? "No quota data"
   };
 }

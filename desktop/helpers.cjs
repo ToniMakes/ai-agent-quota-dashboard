@@ -41,6 +41,18 @@ function buildTrayMenuTemplate(input) {
   ];
 }
 
+function dashboardPath(view, target) {
+  const allowedViews = new Set(["dashboard", "doctor", "settings"]);
+
+  if (!allowedViews.has(view)) {
+    return "/";
+  }
+
+  const hash = normalizeDashboardTarget(target);
+
+  return `/?view=${encodeURIComponent(view)}${hash ? `#${hash}` : ""}`;
+}
+
 function summarizeAgent(agent, options = {}) {
   const snapshot = agent.primarySnapshot;
   const name = agent.shortName ?? agent.displayName ?? agent.agent;
@@ -155,6 +167,20 @@ function resolveShortcutValue(value, fallback) {
   return normalized;
 }
 
+function normalizeDashboardTarget(target) {
+  if (typeof target !== "string") {
+    return "";
+  }
+
+  const normalized = target.trim().replace(/^#/, "");
+
+  if (!/^[A-Za-z][A-Za-z0-9_-]*$/.test(normalized)) {
+    return "";
+  }
+
+  return encodeURIComponent(normalized);
+}
+
 function resolveWidgetBounds(input) {
   const { savedBounds, widgetSize, workArea } = input;
   const clampToWorkArea = input.clampToWorkArea ?? true;
@@ -197,6 +223,7 @@ function clamp(value, min, max) {
 module.exports = {
   buildTrayMenuTemplate,
   clampBoundsToWorkArea,
+  dashboardPath,
   formatResetDistance,
   hasClaudeWaitingState,
   isSavedWidgetBounds,

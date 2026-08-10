@@ -3,6 +3,7 @@ const { describe, it } = require("node:test");
 const {
   buildTrayMenuTemplate,
   clampBoundsToWorkArea,
+  dashboardPath,
   hasClaudeWaitingState,
   isSavedWidgetBounds,
   resolveDesktopShortcuts,
@@ -70,6 +71,19 @@ describe("desktop helpers", () => {
     const refreshItem = template.find((item) => item.label === "Refreshing");
 
     assert.equal(refreshItem?.enabled, false);
+  });
+
+  it("builds safe dashboard deep links", () => {
+    assert.equal(
+      dashboardPath("settings", "codex-snapshot-content"),
+      "/?view=settings#codex-snapshot-content"
+    );
+    assert.equal(
+      dashboardPath("doctor", "#refresh-run-list"),
+      "/?view=doctor#refresh-run-list"
+    );
+    assert.equal(dashboardPath("unknown", "codex-snapshot-content"), "/");
+    assert.equal(dashboardPath("settings", "../bad"), "/?view=settings");
   });
 
   it("summarizes compact agent status for tray text", () => {
