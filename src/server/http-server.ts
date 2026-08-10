@@ -18,6 +18,7 @@ import {
 } from "../core/export-data.js";
 import { getCodexSnapshotSetupStatus } from "../setup/codex-snapshot-status.js";
 import { getClaudeStatuslineSetupStatus } from "../setup/claude-statusline-status.js";
+import { getDesktopShortcutsStatus } from "../setup/desktop-shortcuts-status.js";
 import { getLocalPathsSetupStatus } from "../setup/local-paths-status.js";
 
 export type ServerContext = {
@@ -223,6 +224,14 @@ async function handleApiRequest(
     sendJson(response, 200, {
       generatedAt: new Date().toISOString(),
       status: await getLocalPathsSetupStatus(context.config.userConfigPath)
+    });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/setup/desktop-shortcuts") {
+    sendJson(response, 200, {
+      generatedAt: new Date().toISOString(),
+      status: getDesktopShortcutsStatus()
     });
     return;
   }
