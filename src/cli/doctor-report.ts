@@ -24,6 +24,28 @@ export type DoctorReportInput = {
   refreshResult: RefreshResult;
 };
 
+export type DoctorReportFormatOptions = {
+  includeRealDataReadiness?: boolean;
+};
+
+export type DoctorFailureOptions = {
+  requireRealData?: boolean;
+};
+
+export type RealDataReadiness = {
+  ok: boolean;
+  checks: RealDataReadinessCheck[];
+};
+
+export type RealDataReadinessCheck = {
+  provider: string;
+  agent: string;
+  displayName: string;
+  status: "pass" | "fail";
+  message: string;
+  action?: string;
+};
+
 export type DoctorJsonReport = {
   schemaVersion: 1;
   reportKind: "doctor";
@@ -43,6 +65,7 @@ export type DoctorJsonReport = {
   refresh: Omit<RefreshResult, "errors"> & {
     errors: string[];
   };
+  realDataReadiness: RealDataReadiness;
   agents: DoctorJsonAgent[];
   checks: DoctorJsonCheck[];
 };
@@ -71,7 +94,10 @@ export type DoctorJsonCheck = {
   observedAt: string;
 };
 
-export function formatDoctorReport(input: DoctorReportInput): string {
+export function formatDoctorReport(
+  input: DoctorReportInput,
+  options: DoctorReportFormatOptions = {}
+): string {
   const lines = [
     "AI Agent Quota Doctor",
     "",
@@ -90,6 +116,11 @@ export function formatDoctorReport(input: DoctorReportInput): string {
 
   lines.push(formatRefreshResult(input.refreshResult));
   lines.push("");
+
+  if (options.includeRealDataReadiness) {
+    lines.push(formatRealDataReadiness(input));
+    lines.push("");
+  }
 
   for (const agent of input.agents) {
     lines.push(...formatAgent(agent, input.checks));
@@ -125,17 +156,133 @@ export function buildDoctorJsonReport(input: DoctorReportInput): DoctorJsonRepor
       adapterCount: input.refreshResult.adapterCount,
       errors: input.refreshResult.errors.map(redactLocalPaths)
     },
+    realDataReadiness: sanitizeRealDataReadiness(buildRealDataReadiness(input)),
     agents: input.agents.map(sanitizeAgent),
     checks: input.checks.map(sanitizeDoctorCheck)
   };
 }
 
-export function hasDoctorFailures(input: DoctorReportInput): boolean {
+export function hasDoctorFailures(
+  input: DoctorReportInput,
+  options: DoctorFailureOptions = {}
+): boolean {
+  if (hasBlockingDoctorFailures(input)) {
+    return true;
+  }
+
+  if (options.requireRealData && !buildRealDataReadiness(input).ok) {
+    return true;
+  }
+
+  return false;
+}
+
+export function buildRealDataReadiness(input: DoctorReportInput): RealDataReadiness {
+  const checks: RealDataReadinessCheck[] = [];
+
+  if (hasBlockingDoctorFailures(input)) {
+    checks.push({
+      provider: "local",
+      agent: "doctor",
+      displayName: "Doctor",
+      status: "fail",
+      message: "Blocking diagnostics must pass before a real-data trial.",
+      action: "Run the normal doctor command and fix any failed checks first."
+    });
+  }
+
+  if (input.demoMode) {
+    checks.push({
+      provider: "local",
+      agent: "mode",
+      displayName: "Mode",
+      status: "fail",
+      message: "Demo mode is enabled.",
+      action: "Run without --demo so AIQD reads only local real-data sources."
+    });
+  }
+
+  for (const agent of input.agents) {
+    const snapshot = agent.primarySnapshot;
+
+    if (!snapshot) {
+      checks.push({
+        provider: agent.provider,
+        agent: agent.agent,
+        displayName: agent.displayName,
+        status: "fail",
+        message: `${agent.displayName} has no quota snapshot yet.`,
+        action: agent.emptyState?.action ?? "Finish setup, then refresh real data."
+      });
+      continue;
+    }
+
+    if (snapshot.source === "demo") {
+      checks.push({
+        provider: agent.provider,
+        agent: agent.agent,
+        displayName: agent.displayName,
+        status: "fail",
+        message: `${agent.displayName} is showing demo quota data.`,
+        action: "Run without --demo and refresh real data."
+      });
+      continue;
+    }
+
+    if (snapshot.freshness.status !== "fresh") {
+      checks.push({
+        provider: agent.provider,
+        agent: agent.agent,
+        displayName: agent.displayName,
+        status: "fail",
+        message: `${agent.displayName} quota data is stale: ${snapshot.freshness.label}.`,
+        action: "Refresh the source or record a new visible quota value."
+      });
+      continue;
+    }
+
+    checks.push({
+      provider: agent.provider,
+      agent: agent.agent,
+      displayName: agent.displayName,
+      status: "pass",
+      message: `${windowLabel(snapshot.windowType)} quota from ${snapshot.source}, observed ${snapshot.observedAt}.`
+    });
+  }
+
+  return {
+    checks,
+    ok: checks.every((check) => check.status === "pass")
+  };
+}
+
+function hasBlockingDoctorFailures(input: DoctorReportInput): boolean {
   return (
     input.configErrors.length > 0 ||
     input.refreshResult.errors.length > 0 ||
     input.checks.some((check) => check.status === "fail")
   );
+}
+
+function sanitizeRealDataReadiness(readiness: RealDataReadiness): RealDataReadiness {
+  return {
+    ok: readiness.ok,
+    checks: readiness.checks.map((check) => {
+      const sanitized: RealDataReadinessCheck = {
+        provider: check.provider,
+        agent: check.agent,
+        displayName: check.displayName,
+        status: check.status,
+        message: redactLocalPaths(check.message)
+      };
+
+      if (check.action) {
+        sanitized.action = redactLocalPaths(check.action);
+      }
+
+      return sanitized;
+    })
+  };
 }
 
 function sanitizeAgent(agent: AgentSummary): DoctorJsonAgent {
@@ -192,6 +339,24 @@ function formatRefreshResult(result: RefreshResult): string {
   if (result.errors.length > 0) {
     lines.push("  Errors:");
     lines.push(...result.errors.map((error) => `    - ${error}`));
+  }
+
+  return lines.join("\n");
+}
+
+function formatRealDataReadiness(input: DoctorReportInput): string {
+  const readiness = buildRealDataReadiness(input);
+  const lines = [
+    "Real-data readiness:",
+    `  Overall: ${readiness.ok ? "ready" : "not ready"}`
+  ];
+
+  for (const check of readiness.checks) {
+    lines.push(`  - [${check.status}] ${check.displayName}: ${check.message}`);
+
+    if (check.action) {
+      lines.push(`    Next: ${check.action}`);
+    }
   }
 
   return lines.join("\n");
