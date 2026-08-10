@@ -20,6 +20,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - A conservative Codex parser for explicit structured quota snapshots
 - Manual Codex snapshot command and Settings form for visible `/status` or Usage values
 - Settings view status for Codex manual snapshots
+- Settings real-data overview for first-run Codex and Claude Code setup
 - Claude Code statusline setup helper with explicit opt-in
 - Reset event timeline for changed reset anchors and sharp replenishment
 - Dashboard reset display with relative and absolute reported reset times

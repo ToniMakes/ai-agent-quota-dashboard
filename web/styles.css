@@ -474,6 +474,62 @@ h2 {
   margin-top: 14px;
 }
 
+.real-data-summary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.setup-score {
+  display: grid;
+  min-width: 96px;
+  padding-right: 14px;
+  border-right: 1px solid var(--border);
+}
+
+.setup-score strong {
+  font-size: 1.45rem;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.setup-score span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.setup-overview-list {
+  display: grid;
+  gap: 0;
+}
+
+.setup-overview-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.setup-overview-row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.setup-overview-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 8px;
+}
+
 .settings-form {
   display: grid;
   gap: 12px;
@@ -676,7 +732,9 @@ h2 {
   .doctor-row,
   .event-row,
   .refresh-run-row,
+  .real-data-summary,
   .settings-row,
+  .setup-overview-row,
   .setup-step {
     grid-template-columns: 1fr;
     gap: 4px;
@@ -699,5 +757,9 @@ h2 {
 
   .settings-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .setup-overview-actions {
+    justify-content: start;
   }
 }
