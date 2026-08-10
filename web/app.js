@@ -1431,12 +1431,12 @@ function buildInitialSetupModel(items, readiness) {
         detail: claudeCliAvailable
           ? claudeCliOnPath
             ? tx(
-                "It starts Claude Code. Finish any Claude prompts first.",
-                "它会启动 Claude Code。请先完成 Claude 里的提示。"
+                "It starts Claude Code. First-run prompts do not send quota data yet.",
+                "它会启动 Claude Code。首次设置提示还不会发送额度数据。"
               )
             : tx(
-                "It starts Claude Code. Finish any Claude prompts first; no PATH change is needed.",
-                "它会启动 Claude Code。请先完成 Claude 里的提示；不用改 PATH。"
+                "It starts Claude Code. First-run prompts do not send quota data yet; no PATH change is needed.",
+                "它会启动 Claude Code。首次设置提示还不会发送额度数据；不用改 PATH。"
               )
           : tx(
               "Install first. A short quiet wait in the terminal can be normal.",
@@ -1602,6 +1602,10 @@ function buildInitialSetupModel(items, readiness) {
               tx(
                 "Open PowerShell or Windows Terminal; paste and press Enter.",
                 "打开 PowerShell 或 Windows Terminal，粘贴后按 Enter。"
+              ),
+              tx(
+                "If Claude asks for theme, login, or project trust, finish those prompts first.",
+                "如果 Claude 要你选主题、登录或信任项目，先按提示完成。"
               ),
               tx(
                 "When Claude lets you type a message, click check here.",
@@ -3099,8 +3103,8 @@ function renderClaudeStatuslineWaitingNotice(status) {
         <div class="settings-detail">
           ${escapeHtml(
             tx(
-              "Finish Claude's setup prompts first. AIQD receives data after the normal message prompt appears.",
-              "先完成 Claude 的设置提示。出现可输入消息的界面后，AIQD 才会收到数据。"
+              "Theme, login, and project-trust prompts come first. AIQD receives data after the normal message prompt appears.",
+              "主题、登录、信任项目这些提示要先完成。出现可输入消息的界面后，AIQD 才会收到数据。"
             )
           )}
         </div>
