@@ -2,6 +2,10 @@ import { homedir, platform } from "node:os";
 import { join } from "node:path";
 
 export function defaultAppDataDir(): string {
+  if (process.env.AIQD_APP_DATA_DIR) {
+    return process.env.AIQD_APP_DATA_DIR;
+  }
+
   return join(homedir(), ".ai-agent-quota-dashboard");
 }
 

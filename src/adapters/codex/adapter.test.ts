@@ -8,14 +8,22 @@ import { createCodexAdapter, resolveCodexDataPaths } from "./adapter.js";
 describe("Codex adapter paths", () => {
   it("includes the app-owned manual snapshot path", async () => {
     const directory = await mkdtemp(join(tmpdir(), "aiqd-codex-paths-"));
+    const previousAppDataDir = process.env.AIQD_APP_DATA_DIR;
     const previousSnapshotPath = process.env.AIQD_CODEX_MANUAL_SNAPSHOT_PATH;
 
     try {
       const snapshotPath = join(directory, "codex-quota-snapshot.json");
+      process.env.AIQD_APP_DATA_DIR = directory;
       process.env.AIQD_CODEX_MANUAL_SNAPSHOT_PATH = snapshotPath;
 
       assert.ok(resolveCodexDataPaths().includes(snapshotPath));
     } finally {
+      if (previousAppDataDir === undefined) {
+        delete process.env.AIQD_APP_DATA_DIR;
+      } else {
+        process.env.AIQD_APP_DATA_DIR = previousAppDataDir;
+      }
+
       if (previousSnapshotPath === undefined) {
         delete process.env.AIQD_CODEX_MANUAL_SNAPSHOT_PATH;
       } else {
@@ -28,10 +36,12 @@ describe("Codex adapter paths", () => {
 
   it("parses app-owned manual snapshot files after browser saves", async () => {
     const directory = await mkdtemp(join(tmpdir(), "aiqd-codex-paths-"));
+    const previousAppDataDir = process.env.AIQD_APP_DATA_DIR;
     const previousSnapshotPath = process.env.AIQD_CODEX_MANUAL_SNAPSHOT_PATH;
 
     try {
       const snapshotPath = join(directory, "codex-manual-snapshot.jsonl");
+      process.env.AIQD_APP_DATA_DIR = directory;
       process.env.AIQD_CODEX_MANUAL_SNAPSHOT_PATH = snapshotPath;
       await writeFile(
         snapshotPath,
@@ -68,6 +78,12 @@ describe("Codex adapter paths", () => {
         "pass"
       );
     } finally {
+      if (previousAppDataDir === undefined) {
+        delete process.env.AIQD_APP_DATA_DIR;
+      } else {
+        process.env.AIQD_APP_DATA_DIR = previousAppDataDir;
+      }
+
       if (previousSnapshotPath === undefined) {
         delete process.env.AIQD_CODEX_MANUAL_SNAPSHOT_PATH;
       } else {
