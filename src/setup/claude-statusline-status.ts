@@ -353,18 +353,14 @@ function buildStatusLineCommandCheck(
   status: ClaudeStatuslineSetupStatus
 ): ClaudeStatuslineSetupCheck {
   if (status.statusLineManagedByApp) {
-    const check: ClaudeStatuslineSetupCheck = {
+    return {
+      detail:
+        "Internal AIQD receiver is installed for Claude Code. Do not run the statusline command manually; open Claude Code from a terminal instead.",
       id: "statusline-command",
       label: "Statusline command",
       status: "pass",
       message: "Managed by AIQD"
     };
-
-    if (status.statusLineCommand !== undefined) {
-      check.detail = status.statusLineCommand;
-    }
-
-    return check;
   }
 
   if (status.statusLineConfigured) {
