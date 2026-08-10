@@ -413,6 +413,19 @@ button {
   white-space: nowrap;
 }
 
+.mini-footer.success {
+  color: var(--accent-strong);
+}
+
+.mini-footer.warning {
+  color: var(--warning);
+}
+
+.mini-footer.info,
+.mini-footer.pending {
+  color: var(--muted);
+}
+
 .mini-shell[data-mode="widget"] .mini-footer {
   margin-top: 6px;
 }

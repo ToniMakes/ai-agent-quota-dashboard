@@ -31,6 +31,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Mini panel page for tray-sized quota checks
 - Electron desktop shell with a tray mini panel and optional always-on-top widget
 - Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
+- Mini footer summary for the latest refresh result and warnings
 - Mini and tray first-run actions that open Settings or Doctor directly
 - Dashboard guidance for missing quota data
 - CLI `doctor` command for one-shot local diagnostics

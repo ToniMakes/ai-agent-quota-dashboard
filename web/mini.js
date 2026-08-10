@@ -3,6 +3,7 @@ const state = {
   generatedAt: undefined,
   isRefreshing: false,
   lastError: undefined,
+  refreshRuns: [],
   setupStatus: undefined
 };
 
@@ -91,14 +92,16 @@ async function load(options = {}) {
   const allowRefresh = options.allowRefresh ?? true;
 
   try {
-    const [agentsPayload, setupPayload] = await Promise.all([
+    const [agentsPayload, refreshRunsPayload, setupPayload] = await Promise.all([
       fetchJson("/api/agents"),
+      fetchJson("/api/refresh-runs"),
       fetchJson("/api/setup/claude-statusline")
     ]);
 
     state.agents = agentsPayload.agents ?? [];
     state.generatedAt = agentsPayload.generatedAt;
     state.lastError = undefined;
+    state.refreshRuns = refreshRunsPayload.runs ?? [];
     state.setupStatus = setupPayload.status;
 
     if (
@@ -200,7 +203,15 @@ function renderError() {
 }
 
 function renderFooter() {
-  elements.footer.textContent = footerText();
+  const footer = footerState();
+  elements.footer.textContent = footer.text;
+  elements.footer.className = `mini-footer ${footer.kind}`;
+
+  if (footer.title) {
+    elements.footer.title = footer.title;
+  } else {
+    elements.footer.removeAttribute("title");
+  }
 
   if (elements.refreshButton instanceof HTMLButtonElement) {
     elements.refreshButton.disabled = state.isRefreshing;
@@ -208,26 +219,102 @@ function renderFooter() {
   }
 }
 
-function footerText() {
+function footerState() {
   if (state.isRefreshing) {
-    return "Refreshing now";
+    return {
+      kind: "pending",
+      text: "Refreshing now"
+    };
   }
 
   if (state.lastError) {
-    return state.lastError;
+    return {
+      kind: "warning",
+      text: state.lastError
+    };
+  }
+
+  const latestRun = latestRefreshRun();
+
+  if ((latestRun?.errors?.length ?? 0) > 0) {
+    return {
+      kind: "warning",
+      text: "Refresh warning · open Doctor",
+      title: refreshRunTitle(latestRun)
+    };
   }
 
   if (hasClaudeWaitingState(state.agents)) {
-    return state.setupStatus?.statusLineManagedByApp
-      ? "Watching Claude Code for rate_limits"
-      : "Claude Code setup needed";
+    if (latestRun && latestRun.snapshotsSaved > 0) {
+      return {
+        kind: "info",
+        text: `${snapshotCountText(latestRun.snapshotsSaved)} · Claude waiting`,
+        title: refreshRunTitle(latestRun)
+      };
+    }
+
+    return {
+      kind: "info",
+      text: state.setupStatus?.statusLineManagedByApp
+        ? "Watching Claude Code for rate_limits"
+        : "Claude Code setup needed",
+      title: latestRun ? refreshRunTitle(latestRun) : undefined
+    };
   }
 
   if (needsRealDataSetup(state.agents)) {
-    return "Open Settings to set up real data";
+    if (latestRun && latestRun.snapshotsSaved > 0) {
+      return {
+        kind: "info",
+        text: `${snapshotCountText(latestRun.snapshotsSaved)} · setup left`,
+        title: refreshRunTitle(latestRun)
+      };
+    }
+
+    return {
+      kind: "info",
+      text: "Open Settings to set up real data",
+      title: latestRun ? refreshRunTitle(latestRun) : undefined
+    };
   }
 
-  return `Updated ${formatRelative(state.generatedAt)}`;
+  if (latestRun) {
+    return {
+      kind: "success",
+      text: `${snapshotCountText(latestRun.snapshotsSaved)} · updated ${formatRelative(
+        latestRun.observedAt
+      )}`,
+      title: refreshRunTitle(latestRun)
+    };
+  }
+
+  return {
+    kind: "success",
+    text: `Updated ${formatRelative(state.generatedAt)}`
+  };
+}
+
+function latestRefreshRun() {
+  return state.refreshRuns
+    .slice()
+    .sort((left, right) => Date.parse(right.observedAt) - Date.parse(left.observedAt))[0];
+}
+
+function snapshotCountText(count) {
+  return `${count} snapshot${count === 1 ? "" : "s"}`;
+}
+
+function refreshRunTitle(run) {
+  const lines = [
+    `Last refresh ${formatRelative(run.observedAt)}`,
+    `${run.snapshotsSaved} snapshots / ${run.usageEventsSaved} usage events / ${run.doctorChecksSaved} doctor checks / ${run.resetEventsSaved} reset events`
+  ];
+
+  if (run.errors?.length > 0) {
+    lines.push(...run.errors);
+  }
+
+  return lines.join("\n");
 }
 
 function renderWindowRows(agent) {
