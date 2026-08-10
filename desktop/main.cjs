@@ -567,7 +567,13 @@ async function resolveFirstRunGuide() {
   }
 
   const payload = await getJson(`${baseUrl}/api/agents`);
-  const guideTarget = firstRunGuideTarget(payload.agents ?? []);
+  const readinessPayload = await getJson(`${baseUrl}/api/trial-readiness`).catch(
+    () => undefined
+  );
+  const guideTarget = firstRunGuideTarget(
+    payload.agents ?? [],
+    readinessPayload?.readiness
+  );
 
   writeDesktopState({
     ...readDesktopState(),

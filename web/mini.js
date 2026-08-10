@@ -4,7 +4,8 @@ const state = {
   isRefreshing: false,
   lastError: undefined,
   refreshRuns: [],
-  setupStatus: undefined
+  setupStatus: undefined,
+  trialReadiness: undefined
 };
 
 const elements = {
@@ -119,10 +120,16 @@ async function load(options = {}) {
   const allowRefresh = options.allowRefresh ?? true;
 
   try {
-    const [agentsPayload, refreshRunsPayload, setupPayload] = await Promise.all([
+    const [
+      agentsPayload,
+      refreshRunsPayload,
+      setupPayload,
+      trialReadinessPayload
+    ] = await Promise.all([
       fetchJson("/api/agents"),
       fetchJson("/api/refresh-runs"),
-      fetchJson("/api/setup/claude-statusline")
+      fetchJson("/api/setup/claude-statusline"),
+      fetchJson("/api/trial-readiness")
     ]);
 
     state.agents = agentsPayload.agents ?? [];
@@ -130,6 +137,7 @@ async function load(options = {}) {
     state.lastError = undefined;
     state.refreshRuns = refreshRunsPayload.runs ?? [];
     state.setupStatus = setupPayload.status;
+    state.trialReadiness = trialReadinessPayload.readiness;
 
     if (
       allowRefresh &&
@@ -292,19 +300,32 @@ function footerState() {
     };
   }
 
-  if (needsRealDataSetup(state.agents)) {
-    const setup = setupProgress(state.agents);
+  if (needsStrictReadinessSetup()) {
+    const setup = strictReadinessProgress();
 
     if (latestRun && latestRun.snapshotsSaved > 0) {
       return {
-        action: "settings",
-        ariaLabel: "Open Settings to finish real data setup",
+        action: setup.action,
+        ariaLabel: readinessActionLabel(setup.action, "finish real data setup"),
         kind: "info",
         target: setup.target,
         text: `${setup.ready}/${setup.total} ready - finish ${setup.missingText}`,
         title: [setup.title, refreshRunTitle(latestRun)].join("\n")
       };
     }
+
+    return {
+      action: setup.action,
+      ariaLabel: readinessActionLabel(setup.action, "set up real data"),
+      kind: "info",
+      target: setup.target,
+      text: `${setup.ready}/${setup.total} ready - finish ${setup.missingText}`,
+      title: latestRun ? [setup.title, refreshRunTitle(latestRun)].join("\n") : setup.title
+    };
+  }
+
+  if (!state.trialReadiness && needsRealDataSetup(state.agents)) {
+    const setup = setupProgress(state.agents);
 
     return {
       action: "settings",
@@ -343,6 +364,10 @@ function footerState() {
     kind: "success",
     text: `Updated ${formatRelative(state.generatedAt)}`
   };
+}
+
+function readinessActionLabel(action, reason) {
+  return action === "doctor" ? `Open Doctor to ${reason}` : `Open Settings to ${reason}`;
 }
 
 function latestRefreshRun() {
@@ -445,6 +470,59 @@ function hasClaudeWaitingState(agents) {
 
 function needsRealDataSetup(agents) {
   return agents.some((agent) => !agent.primarySnapshot);
+}
+
+function needsStrictReadinessSetup() {
+  return state.trialReadiness && !state.trialReadiness.ok;
+}
+
+function strictReadinessProgress() {
+  const checks = state.trialReadiness?.checks ?? [];
+  const failedChecks = checks.filter((check) => check.status === "fail");
+  const firstFailedCheck = failedChecks[0];
+  const total = checks.length || state.agents.length;
+  const ready = checks.filter((check) => check.status === "pass").length;
+  const missingText =
+    failedChecks.map((check) => check.displayName).filter(Boolean).join(", ") ||
+    "real data";
+  const target = readinessCheckTarget(firstFailedCheck);
+
+  return {
+    action: target.action,
+    missingText,
+    ready,
+    target: target.target,
+    title: `${ready}/${total} strict trial checks ready. Missing: ${missingText}.`,
+    total
+  };
+}
+
+function readinessCheckTarget(check) {
+  if (check?.agent === "doctor") {
+    return {
+      action: "doctor",
+      target: "doctor-list"
+    };
+  }
+
+  if (check?.agent === "codex") {
+    return {
+      action: "settings",
+      target: "codex-snapshot-content"
+    };
+  }
+
+  if (check?.agent === "claude-code") {
+    return {
+      action: "settings",
+      target: "settings-content"
+    };
+  }
+
+  return {
+    action: "settings",
+    target: "real-data-content"
+  };
 }
 
 function setupProgress(agents) {
