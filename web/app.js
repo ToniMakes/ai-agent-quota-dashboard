@@ -1424,10 +1424,6 @@ function buildInitialSetupModel(items, readiness) {
   const claudeCliInstallCommand =
     state.setupStatus?.claudeCliInstallCommand ??
     "winget install Anthropic.ClaudeCode";
-  const claudeCliPasteTarget = tx(
-    "PowerShell or Windows Terminal",
-    "PowerShell 或 Windows Terminal"
-  );
   const claudeCliHelper = claudeWaiting
     ? {
         autoSetupPending: claudeAutoSetupPending,
@@ -1435,50 +1431,31 @@ function buildInitialSetupModel(items, readiness) {
         detail: claudeCliAvailable
           ? claudeCliOnPath
             ? tx(
-                "Copy the command below into {target}, then press Enter.",
-                "把下面的命令复制到 {target}，然后按 Enter。",
-                { target: claudeCliPasteTarget }
+                "This command enters the AIQD project folder, then starts Claude Code CLI.",
+                "这条命令会进入 AIQD 项目文件夹，然后启动 Claude Code CLI。"
               )
             : tx(
-                "Copy the full-path command below into {target}; no PATH change is needed.",
-                "把下面的完整路径命令复制到 {target}；不用改 PATH。",
-                { target: claudeCliPasteTarget }
+                "This command uses the full Claude Code path; no PATH change is needed.",
+                "这条命令会用完整路径启动 Claude Code；不用改 PATH。"
               )
           : tx(
-              "Copy the install command into {target}, press Enter, then wait for the prompt to return.",
-              "把安装命令复制到 {target}，按 Enter，然后等提示符回来。",
-              { target: claudeCliPasteTarget }
+              "Install first. A short quiet wait in the terminal can be normal.",
+              "先安装。终端短暂没输出是正常的。"
             ),
         primaryCommand: claudeCliAvailable
           ? {
               command: claudeCliExampleProjectOpenCommand,
               copyLabel: tx("Copy command", "复制命令"),
-              detail: tx(
-                "Meaning: enter the AIQD project folder, then start Claude Code CLI.",
-                "命令作用：进入 AIQD 项目文件夹，然后启动 Claude Code CLI。"
-              ),
-              eyebrow: tx(
-                "Paste into {target}",
-                "复制到 {target}",
-                { target: claudeCliPasteTarget }
-              ),
-              title: tx("Run this command", "运行这条命令")
+              eyebrow: tx("Command to copy", "要复制的命令"),
+              title: tx("Terminal command", "终端命令")
             }
           : {
               command: claudeCliInstallCommand,
               copyLabel: tx("Copy command", "复制命令"),
-              detail: tx(
-                "Meaning: install Claude Code CLI. Quiet waiting during install can be normal.",
-                "命令作用：安装 Claude Code CLI。安装时短暂没输出是正常的。"
-              ),
-              eyebrow: tx(
-                "Paste into {target}",
-                "复制到 {target}",
-                { target: claudeCliPasteTarget }
-              ),
-              title: tx("Run this command", "运行这条命令")
+              eyebrow: tx("Command to copy", "要复制的命令"),
+              title: tx("Install command", "安装命令")
             },
-        title: tx("Where do I paste it?", "复制到哪里？")
+        title: tx("What does this command do?", "这条命令做什么？")
       }
     : undefined;
   const claudeAutoSetupHelper =
@@ -1505,8 +1482,8 @@ function buildInitialSetupModel(items, readiness) {
           message: claudeCliAvailable
             ? claudeCliOnPath
               ? tx(
-                  "No Claude data yet. Paste the command below into PowerShell or Windows Terminal.",
-                  "还没收到 Claude 数据。把下面命令粘贴到 PowerShell 或 Windows Terminal。"
+                  "No Claude data yet.",
+                  "还没收到 Claude 数据。"
                 )
               : tx(
                   "No Claude data yet. Use the full-path command below.",
@@ -1594,8 +1571,8 @@ function buildInitialSetupModel(items, readiness) {
           )
         : claudeManaged
         ? tx(
-            "Run the Claude Code command once",
-            "运行一次 Claude Code 命令"
+            "Paste the command into a terminal",
+            "把命令粘贴到终端"
           )
         : tx("Turn on Claude Code data capture", "启用 Claude Code 数据接入"),
       checklist: canAutoSetupClaude
@@ -1621,12 +1598,12 @@ function buildInitialSetupModel(items, readiness) {
                 "点击下面的“复制命令”。"
               ),
               tx(
-                "Paste into PowerShell or Windows Terminal, then press Enter.",
-                "粘贴到 PowerShell 或 Windows Terminal，然后按 Enter。"
+                "Open PowerShell or Windows Terminal; paste and press Enter.",
+                "打开 PowerShell 或 Windows Terminal，粘贴后按 Enter。"
               ),
               tx(
-                "When Claude Code appears, come back and click check.",
-                "Claude Code 出现后，回到这里点检查。"
+                "When Claude Code appears, click check here.",
+                "Claude Code 出现后，在这里点检查。"
               )
             ]
           : [
@@ -1635,8 +1612,8 @@ function buildInitialSetupModel(items, readiness) {
                 "点击下面的“复制命令”。"
               ),
               tx(
-                "Paste into PowerShell or Windows Terminal, then press Enter.",
-                "粘贴到 PowerShell 或 Windows Terminal，然后按 Enter。"
+                "Open PowerShell or Windows Terminal; paste and press Enter.",
+                "打开 PowerShell 或 Windows Terminal，粘贴后按 Enter。"
               ),
               tx(
                 "When the prompt returns, come back and click check.",
@@ -1665,8 +1642,8 @@ function buildInitialSetupModel(items, readiness) {
           )
         : claudeManaged
         ? tx(
-            "Run the command below once; AIQD will listen for Claude Code quota data.",
-            "运行下面的命令一次；AIQD 会等待 Claude Code 发来额度数据。"
+            "Run the terminal command below. AIQD will wait for Claude data.",
+            "运行下面的终端命令。AIQD 会等待 Claude 数据。"
           )
         : tx(
             "Review the generated command, then install the local statusline hook only if you approve it.",
@@ -2043,7 +2020,7 @@ function renderStepHelperPrimaryCommand(command) {
     <div class="step-helper-primary-command">
       <span>${escapeHtml(command.eyebrow)}</span>
       <strong>${escapeHtml(command.title)}</strong>
-      <p>${escapeHtml(command.detail)}</p>
+      ${command.detail ? `<p>${escapeHtml(command.detail)}</p>` : ""}
       <div class="step-helper-command">
         <code>${escapeHtml(command.command)}</code>
         ${renderCopyButton(command.command, command.copyLabel)}
@@ -3180,8 +3157,8 @@ function renderRealDataSteps(status) {
           )
         : status.claudeCliAvailable
           ? tx(
-              "Paste the command into PowerShell or Windows Terminal.",
-              "把命令粘贴到 PowerShell 或 Windows Terminal。"
+              "Run the command from the current step.",
+              "运行当前步骤里的命令。"
             )
           : tx(
               "AIQD cannot see the claude command yet. Install or open Claude Code from your normal terminal, then refresh.",
