@@ -1431,12 +1431,12 @@ function buildInitialSetupModel(items, readiness) {
         detail: claudeCliAvailable
           ? claudeCliOnPath
             ? tx(
-                "It starts Claude Code so AIQD can receive quota data.",
-                "它会启动 Claude Code，让 AIQD 接收额度数据。"
+                "It starts Claude Code. Finish any Claude prompts first.",
+                "它会启动 Claude Code。请先完成 Claude 里的提示。"
               )
             : tx(
-                "It starts Claude Code so AIQD can receive quota data. No PATH change is needed.",
-                "它会启动 Claude Code，让 AIQD 接收额度数据；不用改 PATH。"
+                "It starts Claude Code. Finish any Claude prompts first; no PATH change is needed.",
+                "它会启动 Claude Code。请先完成 Claude 里的提示；不用改 PATH。"
               )
           : tx(
               "Install first. A short quiet wait in the terminal can be normal.",
@@ -1604,8 +1604,8 @@ function buildInitialSetupModel(items, readiness) {
                 "打开 PowerShell 或 Windows Terminal，粘贴后按 Enter。"
               ),
               tx(
-                "When Claude Code appears, click check here.",
-                "Claude Code 出现后，在这里点检查。"
+                "When Claude lets you type a message, click check here.",
+                "看到可以输入消息的界面后，在这里点检查。"
               )
             ]
           : [
@@ -1644,8 +1644,8 @@ function buildInitialSetupModel(items, readiness) {
           )
         : claudeManaged
         ? tx(
-            "Run the terminal command below. AIQD will wait for Claude data.",
-            "运行下面的终端命令。AIQD 会等待 Claude 数据。"
+            "Run the terminal command below. Finish Claude's prompts before checking.",
+            "运行下面的终端命令。先完成 Claude 的提示，再检查。"
           )
         : tx(
             "Review the generated command, then install the local statusline hook only if you approve it.",
@@ -3099,8 +3099,8 @@ function renderClaudeStatuslineWaitingNotice(status) {
         <div class="settings-detail">
           ${escapeHtml(
             tx(
-              "Run the command shown in the current step. AIQD will receive data after Claude Code starts.",
-              "运行当前步骤里的命令。Claude Code 启动后，AIQD 会收到数据。"
+              "Finish Claude's setup prompts first. AIQD receives data after the normal message prompt appears.",
+              "先完成 Claude 的设置提示。出现可输入消息的界面后，AIQD 才会收到数据。"
             )
           )}
         </div>
