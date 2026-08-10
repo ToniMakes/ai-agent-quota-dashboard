@@ -17,6 +17,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Real-data desktop trial guide for Codex and Claude Code setup
 - Doctor first-run checklist for real-data readiness
 - Setup refresh feedback for Codex saves, Claude Code waiting state, and manual refreshes
+- Settings view strict real-data trial readiness from the same checks as `trial:ready`
 - Environment overrides for Claude Code setup paths
 - Development desktop shell with a tray mini panel and optional always-on-top widget
 - One-time desktop first-run guide that opens the exact setup or Doctor section

@@ -24,6 +24,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Real-data desktop trial guide for Codex and Claude Code setup
 - Doctor first-run checklist for real-data readiness
 - Setup refresh feedback for Codex saves, Claude Code waiting state, and manual refreshes
+- Settings view strict real-data trial readiness from the same checks as `trial:ready`
 - Claude Code statusline setup helper with explicit opt-in
 - Reset event timeline for changed reset anchors and sharp replenishment
 - Dashboard reset display with relative and absolute reported reset times
@@ -168,7 +169,7 @@ node dist/index.js doctor --strict
 
 The command prints refresh counts, each agent's quota or empty-state guidance, and the underlying Doctor checks. It exits with code `1` only for blocking failures such as adapter errors or invalid config. Missing quota sources are warnings because a freshly installed app may simply need setup.
 
-Use `npm run trial:ready` or `doctor --strict` before a real-data desktop trial. Strict mode also requires fresh non-demo quota snapshots for every configured agent, so it fails when Codex or Claude Code still needs setup.
+Use `npm run trial:ready` or `doctor --strict` before a real-data desktop trial. Strict mode also requires fresh non-demo quota snapshots for every configured agent, so it fails when Codex or Claude Code still needs setup. The Settings real-data overview shows the same strict readiness result through `/api/trial-readiness`.
 
 `--json` prints a machine-readable report that excludes account identifiers, raw source references, and raw content, redacts local paths, and includes per-snapshot freshness reasons. The plain text report is meant for local troubleshooting and can include local filesystem paths.
 

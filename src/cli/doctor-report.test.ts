@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  buildRealDataReadiness,
   buildDoctorJsonReport,
   formatDoctorReport,
   hasDoctorFailures,
   type DoctorReportInput
 } from "./doctor-report.js";
+import { buildRealDataReadiness } from "../core/real-data-readiness.js";
 import type { AgentSummary, DoctorCheck } from "../core/types.js";
 import { withSnapshotFreshness } from "../core/quota-state.js";
 

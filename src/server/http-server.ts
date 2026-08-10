@@ -16,6 +16,7 @@ import {
   sanitizeAgentSummary,
   sanitizeQuotaSnapshot
 } from "../core/export-data.js";
+import { buildRealDataReadiness } from "../core/real-data-readiness.js";
 import { getCodexSnapshotSetupStatus } from "../setup/codex-snapshot-status.js";
 import { getClaudeStatuslineSetupStatus } from "../setup/claude-statusline-status.js";
 import { getDesktopShortcutsStatus } from "../setup/desktop-shortcuts-status.js";
@@ -23,6 +24,7 @@ import { getLocalPathsSetupStatus } from "../setup/local-paths-status.js";
 
 export type ServerContext = {
   config: AppConfig;
+  configErrors?: readonly string[];
   service: AgentQuotaService;
   staticDir: string;
   store: SqliteStore;
@@ -101,6 +103,20 @@ async function handleApiRequest(
     sendJson(response, 200, {
       generatedAt: new Date().toISOString(),
       checks: context.service.listDoctorChecks()
+    });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/trial-readiness") {
+    sendJson(response, 200, {
+      generatedAt: new Date().toISOString(),
+      readiness: buildRealDataReadiness({
+        agents: context.service.listAgents(),
+        checks: context.service.listDoctorChecks(),
+        configErrors: context.configErrors ?? [],
+        demoMode: context.config.demoMode,
+        refreshResult: latestRefreshResult(context)
+      })
     });
     return;
   }
@@ -243,6 +259,14 @@ async function handleApiRequest(
   }
 
   sendJson(response, 404, { error: "Not found" });
+}
+
+function latestRefreshResult(context: ServerContext): { errors: string[] } {
+  const latestRun = context.service.listRefreshRuns(1)[0];
+
+  return {
+    errors: latestRun?.errors ?? []
+  };
 }
 
 class HttpRequestError extends Error {
