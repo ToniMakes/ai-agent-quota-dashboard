@@ -40,9 +40,26 @@ document.addEventListener("click", async (event) => {
 
   if (action === "dashboard") {
     if (window.aiqdDesktop) {
-      await window.aiqdDesktop.openDashboard();
+      await window.aiqdDesktop.openDashboard(button.dataset.dashboardView);
     } else {
-      window.location.href = "/";
+      const view = button.dataset.dashboardView;
+      window.location.href = view ? `/?view=${encodeURIComponent(view)}` : "/";
+    }
+  }
+
+  if (action === "settings") {
+    if (window.aiqdDesktop) {
+      await window.aiqdDesktop.openDashboard("settings");
+    } else {
+      window.location.href = "/?view=settings";
+    }
+  }
+
+  if (action === "doctor") {
+    if (window.aiqdDesktop) {
+      await window.aiqdDesktop.openDashboard("doctor");
+    } else {
+      window.location.href = "/?view=doctor";
     }
   }
 
@@ -115,10 +132,11 @@ function render() {
 function renderAgent(agent) {
   const primary = agent.primarySnapshot;
   const status = agent.status ?? "unknown";
-  const detail = primary ? snapshotDetail(primary) : emptyStateDetail(agent);
+  const guidance = primary ? undefined : emptyStateGuidance(agent);
+  const detail = primary ? snapshotDetail(primary) : guidance.detail;
   const label = primary
     ? `${windowLabel(primary.windowType)} left`
-    : emptyStateLabel(agent);
+    : guidance.label;
 
   return `
     <article class="mini-agent ${escapeHtml(status)}" title="${escapeHtml(detail)}">
@@ -205,6 +223,10 @@ function footerText() {
       : "Claude Code setup needed";
   }
 
+  if (needsRealDataSetup(state.agents)) {
+    return "Open Settings to set up real data";
+  }
+
   return `Updated ${formatRelative(state.generatedAt)}`;
 }
 
@@ -212,10 +234,17 @@ function renderWindowRows(agent) {
   const snapshots = prioritizeSnapshots(agent.snapshots ?? [], agent.primarySnapshot);
 
   if (snapshots.length === 0) {
+    const guidance = emptyStateGuidance(agent);
+
     return `
       <div class="mini-empty-state">
-        <strong>${escapeHtml(agent.emptyState?.title ?? "No quota data")}</strong>
-        <span>${escapeHtml(emptyStateAction(agent))}</span>
+        <strong>${escapeHtml(guidance.title)}</strong>
+        <span>${escapeHtml(guidance.detail)}</span>
+        <button
+          class="mini-action"
+          type="button"
+          data-desktop-action="${escapeHtml(guidance.action)}"
+        >${escapeHtml(guidance.actionLabel)}</button>
       </div>
     `;
   }
@@ -275,38 +304,58 @@ function hasClaudeWaitingState(agents) {
   );
 }
 
-function emptyStateDetail(agent) {
-  if (agent.emptyState?.reason === "waiting_for_statusline_data") {
-    return "Open Claude Code once; AIQD will refresh when data arrives.";
-  }
-
-  if (agent.emptyState?.reason === "no_supported_source") {
-    return "No supported source";
-  }
-
-  return "Unavailable";
+function needsRealDataSetup(agents) {
+  return agents.some((agent) => !agent.primarySnapshot);
 }
 
-function emptyStateLabel(agent) {
+function emptyStateGuidance(agent) {
   if (agent.emptyState?.reason === "waiting_for_statusline_data") {
-    return "waiting";
+    return {
+      action: "settings",
+      actionLabel: "Settings",
+      detail: "Open Claude Code once",
+      label: "waiting",
+      title: "Waiting for Claude Code"
+    };
   }
 
-  return agent.emptyState?.reason === "no_supported_source"
-    ? "unsupported"
-    : "unavailable";
-}
-
-function emptyStateAction(agent) {
-  if (agent.emptyState?.reason === "waiting_for_statusline_data") {
-    return "Open Claude Code";
+  if (agent.emptyState?.reason === "adapter_error") {
+    return {
+      action: "doctor",
+      actionLabel: "Doctor",
+      detail: "Check the failing adapter",
+      label: "check",
+      title: "Scan failed"
+    };
   }
 
-  if (agent.emptyState?.reason === "no_readable_paths") {
-    return "Check data paths";
+  if (agent.agent === "codex") {
+    return {
+      action: "settings",
+      actionLabel: "Settings",
+      detail: "Save Codex /status",
+      label: "setup needed",
+      title: "Codex needs setup"
+    };
   }
 
-  return "Open Doctor";
+  if (agent.agent === "claude-code") {
+    return {
+      action: "settings",
+      actionLabel: "Settings",
+      detail: "Set up statusline",
+      label: "setup needed",
+      title: "Claude needs setup"
+    };
+  }
+
+  return {
+    action: "doctor",
+    actionLabel: "Doctor",
+    detail: agent.emptyState?.detail ?? "No quota data yet",
+    label: "unavailable",
+    title: agent.emptyState?.title ?? "No quota data"
+  };
 }
 
 function sortAgents(agents) {

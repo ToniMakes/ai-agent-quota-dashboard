@@ -16,6 +16,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Settings real-data overview for first-run Codex and Claude Code setup
 - Development desktop shell with a tray mini panel and optional always-on-top widget
 - Tray tooltip/menu quota summaries for the desktop shell
+- Mini and tray first-run actions that open Settings or Doctor directly
 - Compact mini-surface quota rows with manual refresh and reset/observed summaries
 - Single-instance desktop shell behavior that focuses the existing mini panel on repeat launch
 - Tray status refreshes when the first Claude Code statusline snapshot arrives

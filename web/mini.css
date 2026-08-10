@@ -359,6 +359,28 @@ button {
   line-height: 1.15;
 }
 
+.mini-action {
+  justify-self: start;
+  min-height: 24px;
+  max-width: 100%;
+  margin-top: 2px;
+  padding: 0 8px;
+  overflow: hidden;
+  border: 1px solid rgb(79 212 167 / 38%);
+  border-radius: 8px;
+  background: rgb(79 212 167 / 10%);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-action:hover {
+  background: rgb(79 212 167 / 18%);
+}
+
 .mini-detail {
   margin-top: 6px;
   overflow: hidden;

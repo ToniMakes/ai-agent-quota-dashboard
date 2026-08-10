@@ -47,15 +47,7 @@ elements.refreshButton.addEventListener("click", async () => {
 
 for (const tab of elements.tabs) {
   tab.addEventListener("click", () => {
-    const viewName = tab.dataset.view;
-
-    for (const item of elements.tabs) {
-      item.classList.toggle("is-active", item === tab);
-    }
-
-    for (const view of elements.views) {
-      view.classList.toggle("is-active", view.id === `${viewName}-view`);
-    }
+    activateView(tab.dataset.view, { updateUrl: true });
   });
 }
 
@@ -103,7 +95,44 @@ document.addEventListener("submit", async (event) => {
   await saveCodexSnapshotForm(target);
 });
 
+activateView(requestedViewName());
+
 await load();
+
+function activateView(viewName, options = {}) {
+  if (!viewName || !isKnownView(viewName)) {
+    return;
+  }
+
+  for (const item of elements.tabs) {
+    item.classList.toggle("is-active", item.dataset.view === viewName);
+  }
+
+  for (const view of elements.views) {
+    view.classList.toggle("is-active", view.id === `${viewName}-view`);
+  }
+
+  if (options.updateUrl) {
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", viewName);
+    window.history.replaceState({}, "", url);
+  }
+}
+
+function requestedViewName() {
+  const params = new URLSearchParams(window.location.search);
+  const queryView = params.get("view");
+
+  if (queryView) {
+    return queryView;
+  }
+
+  return window.location.hash.replace("#", "");
+}
+
+function isKnownView(viewName) {
+  return [...elements.tabs].some((tab) => tab.dataset.view === viewName);
+}
 
 async function load() {
   const [

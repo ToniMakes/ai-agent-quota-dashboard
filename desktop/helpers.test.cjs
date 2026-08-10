@@ -37,6 +37,27 @@ describe("desktop helpers", () => {
     assert.equal(summary, "Codex: 42% 2h left | Claude: waiting");
   });
 
+  it("summarizes first-run empty states for tray text", () => {
+    const summary = summarizeAgents([
+      {
+        agent: "codex",
+        shortName: "Codex",
+        emptyState: {
+          reason: "no_supported_source"
+        }
+      },
+      {
+        agent: "claude-code",
+        shortName: "Claude",
+        emptyState: {
+          reason: "adapter_error"
+        }
+      }
+    ]);
+
+    assert.equal(summary, "Codex: setup | Claude: check");
+  });
+
   it("detects when Claude waiting state should refresh after rate limits arrive", () => {
     const agents = [
       {
