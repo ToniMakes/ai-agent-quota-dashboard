@@ -1291,88 +1291,122 @@ function buildInitialSetupModel(items, readiness) {
     "irm https://claude.ai/install.ps1 | iex";
   const claudeCliHelper = claudeWaiting
     ? {
-        commands: [
-          ...(claudeCliAvailable
-            ? []
-            : [
-                {
-                  command: claudeCliInstallCommand,
-                  label: tx(
-                    "If not installed, run this in PowerShell",
-                    "如果未安装，在 PowerShell 里运行"
-                  )
-                }
-              ]),
-          {
-            command: "claude --version",
-            label: tx("Check the CLI command", "检查 CLI 命令是否可用")
-          },
-          {
-            command: claudeCliExampleProjectOpenCommand,
-            label: tx("Try with this project", "用当前项目试一次")
-          },
-          {
-            command: "claude",
-            label: tx(
-              "Run when terminal is already in a project",
-              "终端已经在项目里时运行"
-            )
-          }
-        ],
         detail: claudeCliAvailable
           ? tx(
-              "A project folder is the folder Claude Code will work inside. Choose any code folder you are comfortable letting Claude read, then open a terminal in that folder and run claude.",
-              "项目文件夹就是 Claude Code 将要工作的文件夹。选择一个你愿意让 Claude 读取的代码文件夹，在这个文件夹里打开终端，然后运行 claude。"
+              "AIQD found the claude command. Now copy the project command below, paste it into PowerShell, and press Enter.",
+              "AIQD 已找到 claude 命令。现在只需要复制下面的项目命令，粘贴到 PowerShell，然后按 Enter。"
             )
           : tx(
-              "AIQD did not find the claude command on PATH. Install Claude Code CLI first, then open a terminal in a project folder and run claude.",
-              "AIQD 没有在 PATH 里找到 claude 命令。先安装 Claude Code CLI，然后在项目文件夹里打开终端并运行 claude。"
+              "AIQD did not find the claude command. Do only the highlighted step first: copy the install command, paste it into PowerShell, and press Enter.",
+              "AIQD 没有找到 claude 命令。现在只做高亮的这一步：复制安装命令，粘贴到 PowerShell，然后按 Enter。"
             ),
         methods: [
-          {
-            steps: [
-              tx(
-                "Open the project folder in File Explorer.",
-                "在资源管理器里打开你的项目文件夹。"
-              ),
-              tx(
-                "Click the address bar, type powershell, then press Enter.",
-                "点击顶部地址栏，输入 powershell，然后按 Enter。"
-              ),
-              tx(
-                "The terminal opens inside that folder. Type claude and press Enter.",
-                "新终端会自动进入这个文件夹；输入 claude 并回车。"
-              )
-            ],
-            title: tx(
-              "Easiest: open terminal from the folder",
-              "最简单：从文件夹打开终端"
-            )
-          },
-          {
-            steps: [
-              tx(
-                "Open PowerShell or Windows Terminal.",
-                "打开 PowerShell 或 Windows Terminal。"
-              ),
-              tx(
-                "Paste the project command below to enter a folder.",
-                "粘贴下面的项目命令，进入一个项目文件夹。"
-              ),
-              tx(
-                "When the prompt changes to that folder, run claude.",
-                "看到提示符路径变成该文件夹后，运行 claude。"
-              )
-            ],
-            title: tx(
-              "Alternative: enter the folder from terminal",
-              "另一种：从终端进入文件夹"
-            )
-          }
+          ...(claudeCliAvailable
+            ? [
+                {
+                  steps: [
+                    tx(
+                      "Click the highlighted copy button below.",
+                      "点击下面高亮的复制按钮。"
+                    ),
+                    tx(
+                      "Paste into PowerShell or Windows Terminal, then press Enter.",
+                      "粘贴到 PowerShell 或 Windows Terminal，然后按 Enter。"
+                    ),
+                    tx(
+                      "When Claude Code opens, wait for its statusline once, then return here and check.",
+                      "Claude Code 打开后，等它显示一次 statusline，再回到这里检查。"
+                    )
+                  ],
+                  title: tx(
+                    "Now: open Claude Code in this project",
+                    "现在：在当前项目里打开 Claude Code"
+                  )
+                }
+              ]
+            : [
+                {
+                  steps: [
+                    tx(
+                      "Open PowerShell or Windows Terminal.",
+                      "打开 PowerShell 或 Windows Terminal。"
+                    ),
+                    tx(
+                      "Click the highlighted copy button below.",
+                      "点击下面高亮的复制按钮。"
+                    ),
+                    tx(
+                      "Paste into PowerShell, press Enter, and wait for installation to finish.",
+                      "粘贴到 PowerShell，按 Enter，等待安装完成。"
+                    )
+                  ],
+                  title: tx(
+                    "Now: install Claude Code CLI",
+                    "现在：安装 Claude Code CLI"
+                  )
+                }
+              ])
         ],
+        primaryCommand: claudeCliAvailable
+          ? {
+              command: claudeCliExampleProjectOpenCommand,
+              copyLabel: tx("Copy project command", "复制项目命令"),
+              detail: tx(
+                "This command first enters the current AIQD project folder, then runs claude.",
+                "这条命令会先进入当前 AIQD 项目文件夹，然后运行 claude。"
+              ),
+              eyebrow: tx("Copy this one now", "现在复制这一条"),
+              title: tx(
+                "Open Claude Code in this project",
+                "在当前项目里打开 Claude Code"
+              )
+            }
+          : {
+              command: claudeCliInstallCommand,
+              copyLabel: tx("Copy install command", "复制安装命令"),
+              detail: tx(
+                "Run this in PowerShell first. After installation, come back and click the check button.",
+                "先在 PowerShell 里运行这条。安装完成后，回到这里点击检查按钮。"
+              ),
+              eyebrow: tx("Copy this one now", "现在复制这一条"),
+              title: tx("Install Claude Code CLI", "安装 Claude Code CLI")
+            },
+        secondaryCommands: claudeCliAvailable
+          ? [
+              {
+                command: "claude --version",
+                label: tx("Optional: check the CLI version", "可选：检查 CLI 版本")
+              },
+              {
+                command: "claude",
+                label: tx(
+                  "Optional: run when terminal is already in a project",
+                  "可选：终端已经在项目里时运行"
+                )
+              }
+            ]
+          : [
+              {
+                command: "claude --version",
+                label: tx(
+                  "After install: check whether claude works",
+                  "安装后：检查 claude 是否可用"
+                )
+              },
+              {
+                command: claudeCliExampleProjectOpenCommand,
+                label: tx(
+                  "After install: open Claude Code in this project",
+                  "安装后：在当前项目里打开 Claude Code"
+                )
+              }
+            ],
+        secondarySummary: claudeCliAvailable
+          ? tx("Optional commands", "可选命令")
+          : tx("Do not copy these yet: after install", "现在先别复制：安装完成后再看"),
         title: tx(
-          "How do I open Claude Code CLI?",
-          "怎么打开 Claude Code CLI？"
+          "Which command should I copy?",
+          "我现在该复制哪一条？"
         )
       }
     : undefined;
@@ -1457,20 +1491,35 @@ function buildInitialSetupModel(items, readiness) {
           )
         : tx("Turn on Claude Code data capture", "启用 Claude Code 数据接入"),
       checklist: claudeManaged
-        ? [
-            tx(
-              "Open PowerShell, Windows Terminal, or VS Code Terminal.",
-              "打开 PowerShell、Windows Terminal 或 VS Code 终端。"
-            ),
-            tx(
-              "Enter a project folder and run claude. This opens Claude Code CLI.",
-              "进入一个项目文件夹并运行 claude，这才是打开 Claude Code CLI。"
-            ),
-            tx(
-              "After Claude Code shows a statusline once, come back and click the check button.",
-              "等 Claude Code 显示过一次 statusline 后，回到这里点击检查按钮。"
-            )
-          ]
+        ? claudeCliAvailable
+          ? [
+              tx(
+                "Copy the highlighted project command below.",
+                "复制下面高亮的项目命令。"
+              ),
+              tx(
+                "Paste it into PowerShell or Windows Terminal, then press Enter.",
+                "粘贴到 PowerShell 或 Windows Terminal，然后按 Enter。"
+              ),
+              tx(
+                "After Claude Code shows a statusline once, come back and click the check button.",
+                "等 Claude Code 显示过一次 statusline 后，回到这里点击检查按钮。"
+              )
+            ]
+          : [
+              tx(
+                "Copy the highlighted install command below.",
+                "复制下面高亮的安装命令。"
+              ),
+              tx(
+                "Paste it into PowerShell, press Enter, and wait for installation to finish.",
+                "粘贴到 PowerShell，按 Enter，等待安装完成。"
+              ),
+              tx(
+                "Come back here and click the check button; AIQD will then show the project command.",
+                "回到这里点击检查按钮；AIQD 接着会显示项目命令。"
+              )
+            ]
         : [
             tx(
               "Open the Claude Code setup section below.",
@@ -1677,11 +1726,46 @@ function renderStepHelper(helper) {
       <strong>${escapeHtml(helper.title)}</strong>
       <p>${escapeHtml(helper.detail)}</p>
       ${renderStepHelperMethods(helper.methods)}
+      ${renderStepHelperPrimaryCommand(helper.primaryCommand)}
+      ${renderStepHelperSecondaryCommands(
+        helper.secondaryCommands,
+        helper.secondarySummary
+      )}
+    </div>
+  `;
+}
+
+function renderStepHelperPrimaryCommand(command) {
+  if (!command) {
+    return "";
+  }
+
+  return `
+    <div class="step-helper-primary-command">
+      <span>${escapeHtml(command.eyebrow)}</span>
+      <strong>${escapeHtml(command.title)}</strong>
+      <p>${escapeHtml(command.detail)}</p>
+      <div class="step-helper-command">
+        <code>${escapeHtml(command.command)}</code>
+        ${renderCopyButton(command.command, command.copyLabel)}
+      </div>
+    </div>
+  `;
+}
+
+function renderStepHelperSecondaryCommands(commands = [], summary) {
+  if (!commands.length) {
+    return "";
+  }
+
+  return `
+    <details class="step-helper-secondary">
+      <summary>${escapeHtml(summary ?? tx("More commands", "更多命令"))}</summary>
       <div class="step-helper-commands">
-        ${helper.commands
+        ${commands
           .map(
             (item) => `
-              <div class="step-helper-command">
+              <div class="step-helper-command has-label">
                 <span>${escapeHtml(item.label)}</span>
                 <code>${escapeHtml(item.command)}</code>
                 ${renderCopyButton(item.command)}
@@ -1690,7 +1774,7 @@ function renderStepHelper(helper) {
           )
           .join("")}
       </div>
-    </div>
+    </details>
   `;
 }
 
@@ -2949,7 +3033,9 @@ function renderInlineCommand(command) {
   `;
 }
 
-function renderCopyButton(text) {
+function renderCopyButton(text, label) {
+  const buttonLabel = label ?? tx("Copy", "复制");
+
   return `
     <button
       class="copy-button"
@@ -2957,7 +3043,7 @@ function renderCopyButton(text) {
       data-copy-text="${escapeHtml(text)}"
       title="${escapeHtml(tx("Copy command", "复制命令"))}"
       aria-label="${escapeHtml(tx("Copy command", "复制命令"))}"
-    >${escapeHtml(tx("Copy", "复制"))}</button>
+    >${escapeHtml(buttonLabel)}</button>
   `;
 }
 
@@ -2992,7 +3078,9 @@ async function copyText(text, button) {
 }
 
 function selectCommandText(button) {
-  const container = button.closest(".command-block, .inline-command");
+  const container = button.closest(
+    ".command-block, .inline-command, .step-helper-command"
+  );
   const code = container?.querySelector("code");
   const selection = window.getSelection();
 

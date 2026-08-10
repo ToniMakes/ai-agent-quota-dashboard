@@ -697,6 +697,44 @@ h2 {
   line-height: 1.4;
 }
 
+.step-helper-primary-command {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: rgba(126, 231, 183, 0.06);
+}
+
+.step-helper-primary-command > span {
+  width: fit-content;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(126, 231, 183, 0.11);
+  color: var(--accent-strong);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.step-helper-primary-command > strong {
+  font-size: 0.96rem;
+}
+
+.step-helper-secondary {
+  padding-top: 2px;
+}
+
+.step-helper-secondary summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 760;
+}
+
+.step-helper-secondary[open] summary {
+  margin-bottom: 8px;
+}
+
 .step-helper-commands {
   display: grid;
   gap: 8px;
@@ -704,12 +742,16 @@ h2 {
 
 .step-helper-command {
   display: grid;
-  grid-template-columns: minmax(120px, 0.34fr) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   align-items: center;
 }
 
-.step-helper-command span {
+.step-helper-command.has-label {
+  grid-template-columns: minmax(120px, 0.34fr) minmax(0, 1fr) auto;
+}
+
+.step-helper-command.has-label span {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 740;
