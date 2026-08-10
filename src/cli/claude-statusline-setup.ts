@@ -121,7 +121,7 @@ function buildShim(entryPoint: string, appDataDir: string): {
     const shimPath = join(appDataDir, "claude-statusline.ps1");
     const content = [
       "$ErrorActionPreference = 'SilentlyContinue'",
-      "$inputJson = $input | Out-String",
+      "$inputJson = [Console]::In.ReadToEnd()",
       `$node = ${toPowerShellString(process.execPath)}`,
       `$entry = ${toPowerShellString(entryPoint)}`,
       "$inputJson | & $node $entry claude-statusline-sink"

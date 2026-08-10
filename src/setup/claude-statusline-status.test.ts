@@ -182,9 +182,9 @@ describe("getClaudeStatuslineSetupStatus", () => {
       );
 
       assert.equal(status.readiness, "waiting_for_data");
-      assert.match(status.nextAction, /\/status/);
+      assert.match(status.nextAction, /short message/);
       assert.doesNotMatch(status.nextAction, /after installing/);
-      assert.match(latestCheck?.action ?? "", /\/status/);
+      assert.match(latestCheck?.action ?? "", /short message/);
       assert.doesNotMatch(latestCheck?.action ?? "", /after installing/);
     } finally {
       await rm(directory, { force: true, recursive: true });
@@ -442,7 +442,56 @@ describe("getClaudeStatuslineSetupStatus", () => {
       assert.equal(status.latestIssueCode, "missing_rate_limits");
       assert.equal(status.readiness, "waiting_for_data");
       assert.match(latestCheck?.message ?? "", /no quota fields/);
-      assert.match(latestCheck?.action ?? "", /\/status/);
+      assert.match(latestCheck?.action ?? "", /short message/);
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("reports when the receiver runs without Claude statusline JSON", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-status-"));
+    const settingsPath = join(directory, ".claude", "settings.json");
+    const latestPath = join(directory, "latest.json");
+    const shimPath = join(directory, "claude-statusline.ps1");
+
+    try {
+      await mkdir(dirname(settingsPath), { recursive: true });
+      await writeFile(shimPath, "");
+      await writeFile(
+        settingsPath,
+        JSON.stringify({
+          statusLine: {
+            type: "command",
+            command: "powershell -File claude-statusline.ps1"
+          }
+        })
+      );
+      await writeFile(
+        latestPath,
+        JSON.stringify({
+          type: "claude_code_statusline_input_issue",
+          observed_at: "2026-08-09T00:00:00.000Z",
+          issue: "empty_input"
+        })
+      );
+
+      const status = await getClaudeStatuslineSetupStatus({
+        historyPath: join(directory, "history.jsonl"),
+        latestPath,
+        now: new Date("2026-08-09T01:00:00.000Z"),
+        settingsPath,
+        shimPath
+      });
+      const latestCheck = status.checks.find(
+        (check) => check.id === "latest-snapshot"
+      );
+
+      assert.equal(status.latestExists, true);
+      assert.equal(status.latestHasRateLimits, false);
+      assert.equal(status.latestIssueCode, "empty_input");
+      assert.equal(status.readiness, "waiting_for_data");
+      assert.match(latestCheck?.message ?? "", /without Claude session JSON/);
+      assert.match(latestCheck?.action ?? "", /short message/);
     } finally {
       await rm(directory, { force: true, recursive: true });
     }
