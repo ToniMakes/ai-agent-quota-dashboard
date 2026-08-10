@@ -1288,7 +1288,7 @@ function buildInitialSetupModel(items, readiness) {
     claudeCliOpenCommand;
   const claudeCliInstallCommand =
     state.setupStatus?.claudeCliInstallCommand ??
-    "irm https://claude.ai/install.ps1 | iex";
+    "winget install Anthropic.ClaudeCode";
   const claudeCliHelper = claudeWaiting
     ? {
         detail: claudeCliAvailable
@@ -1328,16 +1328,16 @@ function buildInitialSetupModel(items, readiness) {
                 {
                   steps: [
                     tx(
-                      "Open PowerShell or Windows Terminal.",
-                      "打开 PowerShell 或 Windows Terminal。"
+                      "Open a normal PowerShell or Windows Terminal. Administrator mode is not needed.",
+                      "打开普通 PowerShell 或 Windows Terminal，不需要管理员模式。"
                     ),
                     tx(
                       "Click the highlighted copy button below.",
                       "点击下面高亮的复制按钮。"
                     ),
                     tx(
-                      "Paste into PowerShell, press Enter, and wait for installation to finish.",
-                      "粘贴到 PowerShell，按 Enter，等待安装完成。"
+                      "Paste into PowerShell, press Enter, then wait until a new PS ...> prompt appears.",
+                      "粘贴到 PowerShell，按 Enter，然后等新的 PS ...> 提示符出现。"
                     )
                   ],
                   title: tx(
@@ -1365,8 +1365,8 @@ function buildInitialSetupModel(items, readiness) {
               command: claudeCliInstallCommand,
               copyLabel: tx("Copy install command", "复制安装命令"),
               detail: tx(
-                "Run this in PowerShell first. After installation, come back and click the check button.",
-                "先在 PowerShell 里运行这条。安装完成后，回到这里点击检查按钮。"
+                "Run this in PowerShell first. If prompted by WinGet, type Y to continue. After installation, come back and click the check button.",
+                "先在 PowerShell 里运行这条。如果 WinGet 询问是否同意，输入 Y 继续。安装完成后，回到这里点击检查按钮。"
               ),
               eyebrow: tx("Copy this one now", "现在复制这一条"),
               title: tx("Install Claude Code CLI", "安装 Claude Code CLI")
@@ -1381,8 +1381,8 @@ function buildInitialSetupModel(items, readiness) {
             }
           : {
               text: tx(
-                "If the title says Select Windows PowerShell, press Esc. While the install command is running, do not paste claude --version; wait until a new PS ...> prompt appears.",
-                "如果标题栏显示“选择 Windows PowerShell”，按 Esc。安装命令运行期间不要粘贴 claude --version；等重新出现新的 PS ...> 提示符后再检查。"
+                "If there is no output for more than 2 minutes, press Ctrl+C to cancel and try the install command again in a normal non-admin PowerShell. While installing, do not paste claude --version; wait until a new PS ...> prompt appears.",
+                "如果超过 2 分钟完全没输出，按 Ctrl+C 取消，换普通非管理员 PowerShell 再试安装命令。安装期间不要粘贴 claude --version；等重新出现新的 PS ...> 提示符后再检查。"
               ),
               title: tx("If PowerShell looks stuck", "如果 PowerShell 看起来卡住")
             },

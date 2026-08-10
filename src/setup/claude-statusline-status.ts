@@ -99,6 +99,7 @@ export async function getClaudeStatuslineSetupStatus(
     latestAgeSeconds !== undefined &&
     latestAgeSeconds <= freshStatuslineSnapshotSeconds;
   const claudeCli = await (options.claudeCliLookup?.() ?? detectClaudeCli());
+  const claudeInstallCommand = await defaultClaudeInstallCommand();
   const exampleProjectPath = process.cwd();
 
   const status: ClaudeStatuslineSetupStatus = {
@@ -108,7 +109,7 @@ export async function getClaudeStatuslineSetupStatus(
     claudeCliExampleProjectOpenCommand:
       claudeOpenCommandForProject(exampleProjectPath),
     claudeCliExampleProjectPath: exampleProjectPath,
-    claudeCliInstallCommand: defaultClaudeInstallCommand(),
+    claudeCliInstallCommand: claudeInstallCommand,
     claudeCliOpenCommand: defaultClaudeOpenCommand(),
     settingsPath,
     settingsExists: existsSync(settingsPath),
@@ -652,8 +653,14 @@ function commandNames(command: string): string[] {
   return [command, ...extensions.map((extension) => `${command}${extension}`)];
 }
 
-function defaultClaudeInstallCommand(): string {
+async function defaultClaudeInstallCommand(): Promise<string> {
   if (process.platform === "win32") {
+    const wingetPath = await findCommandOnPath("winget");
+
+    if (wingetPath) {
+      return "winget install Anthropic.ClaudeCode";
+    }
+
     return "irm https://claude.ai/install.ps1 | iex";
   }
 
