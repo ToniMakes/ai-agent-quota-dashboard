@@ -2,6 +2,7 @@ const state = {
   agents: [],
   codexSnapshotSaveStatus: undefined,
   codexSnapshotStatus: undefined,
+  desktopShortcutsStatus: undefined,
   doctorChecks: [],
   pathsStatus: undefined,
   refreshRuns: [],
@@ -14,6 +15,7 @@ const state = {
 const elements = {
   agentGrid: document.querySelector("#agent-grid"),
   codexSnapshotContent: document.querySelector("#codex-snapshot-content"),
+  desktopShortcutsContent: document.querySelector("#desktop-shortcuts-content"),
   doctorChecklist: document.querySelector("#doctor-checklist"),
   doctorChecklistScore: document.querySelector("#doctor-checklist-score"),
   doctorList: document.querySelector("#doctor-list"),
@@ -152,6 +154,7 @@ async function load() {
   const [
     agentsResponse,
     codexSnapshotResponse,
+    desktopShortcutsResponse,
     doctorResponse,
     eventsResponse,
     pathsResponse,
@@ -160,6 +163,7 @@ async function load() {
   ] = await Promise.all([
     fetch("/api/agents"),
     fetch("/api/setup/codex-snapshot"),
+    fetch("/api/setup/desktop-shortcuts"),
     fetch("/api/doctor"),
     fetch("/api/reset-events"),
     fetch("/api/setup/local-paths"),
@@ -168,6 +172,7 @@ async function load() {
   ]);
   const agentsPayload = await agentsResponse.json();
   const codexSnapshotPayload = await codexSnapshotResponse.json();
+  const desktopShortcutsPayload = await desktopShortcutsResponse.json();
   const doctorPayload = await doctorResponse.json();
   const eventsPayload = await eventsResponse.json();
   const pathsPayload = await pathsResponse.json();
@@ -176,6 +181,7 @@ async function load() {
 
   state.agents = agentsPayload.agents ?? [];
   state.codexSnapshotStatus = codexSnapshotPayload.status;
+  state.desktopShortcutsStatus = desktopShortcutsPayload.status;
   state.doctorChecks = doctorPayload.checks ?? [];
   state.resetEvents = eventsPayload.events ?? [];
   state.pathsStatus = pathsPayload.status;
@@ -199,6 +205,7 @@ function render() {
   renderCodexSnapshotSettings();
   renderSettings();
   renderPathSettings();
+  renderDesktopShortcutsSettings();
   scheduleStatuslineWatch();
 }
 
@@ -1583,6 +1590,55 @@ function renderPathSettings() {
         : ""
     }
   `;
+}
+
+function renderDesktopShortcutsSettings() {
+  const status = state.desktopShortcutsStatus;
+
+  if (!elements.desktopShortcutsContent) {
+    return;
+  }
+
+  if (!status) {
+    elements.desktopShortcutsContent.innerHTML = `<p class="empty">Desktop shortcut status unavailable.</p>`;
+    return;
+  }
+
+  const shortcutRows = (status.shortcuts ?? [])
+    .map((shortcut) =>
+      settingsRow(
+        shortcut.description,
+        shortcut.enabled ? formatShortcutValue(shortcut.value) : "Disabled",
+        `${shortcut.envVar} - default ${shortcut.defaultValue}`,
+        shortcut.enabled ? "healthy" : "stale",
+        shortcut.enabled ? "enabled" : "off"
+      )
+    )
+    .join("");
+
+  elements.desktopShortcutsContent.innerHTML = `
+    <div class="setup-watch-notice">
+      <div>
+        <strong>AIQD-only shortcuts</strong>
+        <div class="settings-detail">${escapeHtml(status.privacy?.note ?? "")}</div>
+      </div>
+      <span class="badge healthy">safe</span>
+    </div>
+    <div class="settings-list">
+      ${shortcutRows}
+      ${settingsRow(
+        "Disable a shortcut",
+        status.disableValue ?? "off",
+        "Set any desktop shortcut environment variable to this value before launching the desktop app.",
+        "stale",
+        "optional"
+      )}
+    </div>
+  `;
+}
+
+function formatShortcutValue(value) {
+  return value ? value.replaceAll("CommandOrControl", "Ctrl/Cmd") : "Disabled";
 }
 
 function renderActionHint(action) {
