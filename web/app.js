@@ -1413,6 +1413,8 @@ function buildInitialSetupModel(items, readiness) {
   const claudeCliAvailable = Boolean(state.setupStatus?.claudeCliAvailable);
   const claudeCliOnPath = state.setupStatus?.claudeCliOnPath !== false;
   const claudeAutoSetupPending = Boolean(state.claudeAutoSetupPending);
+  const claudeMissingRateLimits =
+    state.setupStatus?.latestIssueCode === "missing_rate_limits";
   const canAutoSetupClaude =
     !claudeComplete && (!claudeManaged || !claudeCliAvailable);
   const claudeCliOpenCommand =
@@ -1431,12 +1433,12 @@ function buildInitialSetupModel(items, readiness) {
         detail: claudeCliAvailable
           ? claudeCliOnPath
             ? tx(
-                "It starts Claude Code. First-run prompts do not send quota data yet.",
-                "它会启动 Claude Code。首次设置提示还不会发送额度数据。"
+                "Use this one button. It opens Claude Code from PowerShell or Windows Terminal.",
+                "只用这个复制按钮。它会从 PowerShell 或 Windows Terminal 打开 Claude Code。"
               )
             : tx(
-                "It starts Claude Code. First-run prompts do not send quota data yet; no PATH change is needed.",
-                "它会启动 Claude Code。首次设置提示还不会发送额度数据；不用改 PATH。"
+                "Use this one button. It opens your installed Claude Code by full path, so you do not need to change PATH.",
+                "只用这个复制按钮。它会用完整路径打开已安装的 Claude Code，不需要你改 PATH。"
               )
           : tx(
               "Install first. A short quiet wait in the terminal can be normal.",
@@ -1456,8 +1458,8 @@ function buildInitialSetupModel(items, readiness) {
               eyebrow: tx("Command to copy", "要复制的命令"),
               hideCommandText: true,
               title: tx("Install command", "安装命令")
-            },
-        title: tx("What does this command do?", "这条命令做什么？")
+        },
+        title: tx("Which command should I copy?", "复制哪一个？")
       }
     : undefined;
   const claudeAutoSetupHelper =
@@ -1475,14 +1477,42 @@ function buildInitialSetupModel(items, readiness) {
           )
         }
       : undefined;
+  const claudeMissingRateLimitsHelper =
+    claudeMissingRateLimits
+      ? {
+          detail: tx(
+            "Claude is connected to AIQD, but this status update did not include quota fields.",
+            "Claude 已经连到 AIQD，但这次状态更新里没有额度字段。"
+          ),
+          title: tx("What should I do now?", "现在做什么？")
+        }
+      : undefined;
   const claudeWaitingNotice =
     state.claudeCheckFeedback ??
     (claudeWaiting
       ? {
-          detail: state.setupStatus?.latestPath,
+          detail: claudeMissingRateLimits
+            ? tx(
+                "Claude already called AIQD, but did not include quota fields in this update.",
+                "Claude 已经调用 AIQD，但这次更新里没有包含额度字段。"
+              )
+            : claudeCliAvailable
+            ? tx(
+                "If Claude is already open and the bottom line says waiting for rate limit data, type /status in Claude or send one short message.",
+                "如果 Claude 已经打开，且底部显示 waiting for rate limit data，请在 Claude 里输入 /status，或发一条简短消息。"
+              )
+            : tx(
+                "Install Claude Code first, then come back to this step.",
+                "先安装 Claude Code，然后回到这一步。"
+              ),
           kind: "warning",
           message: claudeCliAvailable
-            ? claudeCliOnPath
+            ? claudeMissingRateLimits
+              ? tx(
+                  "Claude is connected, but no quota fields were included yet.",
+                  "Claude 已连接，但还没有额度字段。"
+                )
+              : claudeCliOnPath
               ? tx(
                   "No Claude data yet.",
                   "还没收到 Claude 数据。"
@@ -1573,8 +1603,12 @@ function buildInitialSetupModel(items, readiness) {
           )
         : claudeManaged
         ? tx(
-            "Paste the command into a terminal",
-            "把命令粘贴到终端"
+            claudeMissingRateLimits
+              ? "Ask Claude to refresh quota status"
+              : "Paste the command into a terminal",
+            claudeMissingRateLimits
+              ? "让 Claude 刷新额度状态"
+              : "把命令粘贴到终端"
           )
         : tx("Turn on Claude Code data capture", "启用 Claude Code 数据接入"),
       checklist: canAutoSetupClaude
@@ -1593,23 +1627,42 @@ function buildInitialSetupModel(items, readiness) {
             )
           ]
         : claudeManaged
-        ? claudeCliAvailable
+        ? claudeMissingRateLimits
           ? [
               tx(
-                "Click Copy command below.",
-                "点击下面的“复制命令”。"
+                "Keep the current Claude window open.",
+                "保持当前 Claude 窗口打开。"
               ),
               tx(
-                "Open PowerShell or Windows Terminal; paste and press Enter.",
-                "打开 PowerShell 或 Windows Terminal，粘贴后按 Enter。"
+                "Type /status or send one short message.",
+                "输入 /status，或发一条简短消息。"
               ),
               tx(
-                "If Claude asks for theme, login, or project trust, finish those prompts first.",
-                "如果 Claude 要你选主题、登录或信任项目，先按提示完成。"
+                "Come back here and click check.",
+                "回到这里点检查。"
+              )
+            ]
+          : claudeCliAvailable
+          ? [
+              tx(
+                "Click the Copy command button below.",
+                "点击下面的“复制命令”按钮。"
               ),
               tx(
-                "When Claude lets you type a message, click check here.",
-                "看到可以输入消息的界面后，在这里点检查。"
+                "Paste it into PowerShell or Windows Terminal, then press Enter.",
+                "粘贴到 PowerShell 或 Windows Terminal，然后按 Enter。"
+              ),
+              tx(
+                "Finish Claude's own prompts, such as theme, login, or project trust.",
+                "先完成 Claude 自己的提示，比如主题、登录或信任项目。"
+              ),
+              tx(
+                "If the bottom line says waiting for rate limit data, type /status in Claude or send one short message.",
+                "如果底部显示 waiting for rate limit data，在 Claude 里输入 /status，或发一条简短消息。"
+              ),
+              tx(
+                "Come back here and click check.",
+                "回到这里点检查。"
               )
             ]
           : [
@@ -1648,15 +1701,19 @@ function buildInitialSetupModel(items, readiness) {
           )
         : claudeManaged
         ? tx(
-            "Run the terminal command below. Finish Claude's prompts before checking.",
-            "运行下面的终端命令。先完成 Claude 的提示，再检查。"
+            claudeMissingRateLimits
+              ? "Claude is connected. Ask it for status once, then check again."
+              : "Open Claude from the terminal. After Claude is ready for input, trigger /status or one short message, then check.",
+            claudeMissingRateLimits
+              ? "Claude 已连接。让它刷新一次状态，再检查。"
+              : "从终端打开 Claude。等 Claude 可以输入后，用 /status 或一条短消息触发状态，再检查。"
           )
         : tx(
             "Review the generated command, then install the local statusline hook only if you approve it.",
             "先检查生成的命令；只有你确认后才安装本地 statusline hook。"
       ),
       id: "claude-code",
-      helper: claudeAutoSetupHelper ?? claudeCliHelper,
+      helper: claudeAutoSetupHelper ?? claudeMissingRateLimitsHelper ?? claudeCliHelper,
       number: "2",
       outcome: tx(
         "When data is received, this step becomes done and the next step verifies the dashboard.",
@@ -1671,8 +1728,12 @@ function buildInitialSetupModel(items, readiness) {
             )
         : claudeManaged
           ? tx(
-              "Waiting for Claude data.",
-              "正在等待 Claude 数据。"
+              claudeMissingRateLimits
+                ? "Claude connected; waiting for quota fields."
+                : "Waiting for Claude to send quota fields.",
+              claudeMissingRateLimits
+                ? "Claude 已连接，等待额度字段。"
+                : "等待 Claude 发送额度字段。"
             )
           : tx("Setup is not enabled yet.", "尚未启用设置。"),
       claudeAutoSetupAction: canAutoSetupClaude,
@@ -3091,21 +3152,33 @@ function renderClaudeStatuslineWaitingNotice(status) {
     return "";
   }
 
+  const missingRateLimits = status.latestIssueCode === "missing_rate_limits";
+
   return `
     <div class="setup-watch-notice">
       <div>
         <strong>${escapeHtml(
-          tx(
-            "Waiting for Claude quota data",
-            "等待 Claude 额度数据"
-          )
+          missingRateLimits
+            ? tx(
+                "Claude is connected; quota fields are not available yet",
+                "Claude 已连接；额度字段暂时不可用"
+              )
+            : tx(
+                "Waiting for Claude quota data",
+                "等待 Claude 额度数据"
+              )
         )}</strong>
         <div class="settings-detail">
           ${escapeHtml(
-            tx(
-              "Theme, login, and project-trust prompts come first. AIQD receives data after the normal message prompt appears.",
-              "主题、登录、信任项目这些提示要先完成。出现可输入消息的界面后，AIQD 才会收到数据。"
-            )
+            missingRateLimits
+              ? tx(
+                  "In Claude, run /status or send one short message, then check again.",
+                  "在 Claude 里输入 /status，或发一条简短消息，然后再检查。"
+                )
+              : tx(
+                  "If Claude is already open and shows 'waiting for rate limit data', type /status in Claude or send one short message, then check again.",
+                  "如果 Claude 已经打开，并显示 waiting for rate limit data，请在 Claude 里输入 /status，或发一条简短消息，然后再检查。"
+                )
           )}
         </div>
       </div>
@@ -3853,6 +3926,10 @@ function localizedNextAction(action) {
     [
       "Install Claude Code CLI",
       "先安装 Claude Code CLI，然后在项目文件夹里打开终端并运行 claude。"
+    ],
+    [
+      "If it already shows 'Claude quota: waiting for rate limit data'",
+      "从终端打开 Claude Code；如果底部已经显示 waiting for rate limit data，请在 Claude 里输入 /status，或发一条简短消息，然后再检查。"
     ],
     [
       "Open Claude Code",

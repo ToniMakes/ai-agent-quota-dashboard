@@ -40,6 +40,10 @@ type SanitizedClaudeStatuslineRecord = {
   type: "claude_code_statusline_rate_limits";
   observed_at: string;
   rate_limits: Record<string, unknown>;
+} | {
+  type: "claude_code_statusline_no_rate_limits";
+  observed_at: string;
+  issue: "missing_rate_limits";
 };
 
 export async function runClaudeStatuslineSink(
@@ -51,15 +55,6 @@ export async function runClaudeStatuslineSink(
     rawSourceRef: options.latestPath ?? defaultClaudeStatuslineLatestPath()
   });
   const statusText = formatClaudeStatusline(snapshots);
-
-  if (snapshots.length === 0) {
-    return {
-      snapshots,
-      statusText,
-      wroteSnapshot: false
-    };
-  }
-
   const sanitizedRecord = buildSanitizedClaudeStatuslineRecord(
     options.input,
     now
@@ -79,7 +74,10 @@ export async function runClaudeStatuslineSink(
 
   await mkdir(dirname(latestPath), { recursive: true });
   await writeFile(latestPath, JSON.stringify(sanitizedRecord, null, 2));
-  await appendFile(historyPath, serialized);
+
+  if (snapshots.length > 0) {
+    await appendFile(historyPath, serialized);
+  }
 
   return {
     snapshots,
@@ -161,8 +159,16 @@ export function buildSanitizedClaudeStatuslineRecord(
     return undefined;
   }
 
-  if (!isRecord(payload) || !isRecord(payload.rate_limits)) {
+  if (!isRecord(payload)) {
     return undefined;
+  }
+
+  if (!isRecord(payload.rate_limits)) {
+    return {
+      type: "claude_code_statusline_no_rate_limits",
+      observed_at: now.toISOString(),
+      issue: "missing_rate_limits"
+    };
   }
 
   return {

@@ -182,9 +182,9 @@ describe("getClaudeStatuslineSetupStatus", () => {
       );
 
       assert.equal(status.readiness, "waiting_for_data");
-      assert.match(status.nextAction, /let the statusline render once/);
+      assert.match(status.nextAction, /\/status/);
       assert.doesNotMatch(status.nextAction, /after installing/);
-      assert.match(latestCheck?.action ?? "", /let the statusline render once/);
+      assert.match(latestCheck?.action ?? "", /\/status/);
       assert.doesNotMatch(latestCheck?.action ?? "", /after installing/);
     } finally {
       await rm(directory, { force: true, recursive: true });
@@ -394,6 +394,55 @@ describe("getClaudeStatuslineSetupStatus", () => {
       assert.equal(status.latestHasRateLimits, false);
       assert.deepEqual(status.latestWindowTypes, []);
       assert.equal(status.readiness, "waiting_for_data");
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("reports when Claude calls AIQD without quota fields", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-status-"));
+    const settingsPath = join(directory, ".claude", "settings.json");
+    const latestPath = join(directory, "latest.json");
+    const shimPath = join(directory, "claude-statusline.ps1");
+
+    try {
+      await mkdir(dirname(settingsPath), { recursive: true });
+      await writeFile(shimPath, "");
+      await writeFile(
+        settingsPath,
+        JSON.stringify({
+          statusLine: {
+            type: "command",
+            command: "powershell -File claude-statusline.ps1"
+          }
+        })
+      );
+      await writeFile(
+        latestPath,
+        JSON.stringify({
+          type: "claude_code_statusline_no_rate_limits",
+          observed_at: "2026-08-09T00:00:00.000Z",
+          issue: "missing_rate_limits"
+        })
+      );
+
+      const status = await getClaudeStatuslineSetupStatus({
+        historyPath: join(directory, "history.jsonl"),
+        latestPath,
+        now: new Date("2026-08-09T01:00:00.000Z"),
+        settingsPath,
+        shimPath
+      });
+      const latestCheck = status.checks.find(
+        (check) => check.id === "latest-snapshot"
+      );
+
+      assert.equal(status.latestExists, true);
+      assert.equal(status.latestHasRateLimits, false);
+      assert.equal(status.latestIssueCode, "missing_rate_limits");
+      assert.equal(status.readiness, "waiting_for_data");
+      assert.match(latestCheck?.message ?? "", /no quota fields/);
+      assert.match(latestCheck?.action ?? "", /\/status/);
     } finally {
       await rm(directory, { force: true, recursive: true });
     }

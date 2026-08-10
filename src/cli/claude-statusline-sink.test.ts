@@ -76,24 +76,34 @@ describe("claude statusline sink", () => {
     }
   });
 
-  it("does not write snapshots when rate limit data is missing", async () => {
+  it("writes a safe marker when Claude calls without rate limit data", async () => {
     const directory = await mkdtemp(join(tmpdir(), "aiqd-statusline-"));
+    const latestPath = join(directory, "latest.json");
+    const historyPath = join(directory, "history.jsonl");
 
     try {
       const result = await runClaudeStatuslineSink({
         input: JSON.stringify({
+          session_id: "do-not-store",
+          transcript_path: "do-not-store",
           context_window: {
             used_percentage: 10
           }
         }),
         now: observedAt,
-        latestPath: join(directory, "latest.json"),
-        historyPath: join(directory, "history.jsonl")
+        latestPath,
+        historyPath
       });
 
-      assert.equal(result.wroteSnapshot, false);
+      assert.equal(result.wroteSnapshot, true);
       assert.equal(result.snapshots.length, 0);
       assert.equal(result.statusText, "Claude quota: waiting for rate limit data");
+      assert.deepEqual(JSON.parse(await readFile(latestPath, "utf8")), {
+        type: "claude_code_statusline_no_rate_limits",
+        observed_at: "2026-08-09T00:00:00.000Z",
+        issue: "missing_rate_limits"
+      });
+      await assert.rejects(readFile(historyPath, "utf8"));
     } finally {
       await rm(directory, { force: true, recursive: true });
     }
@@ -105,6 +115,8 @@ describe("claude statusline sink", () => {
       observedAt
     );
 
+    assert.equal(record?.type, "claude_code_statusline_rate_limits");
+    assert.ok(record && "rate_limits" in record);
     assert.equal(record?.rate_limits.five_hour !== undefined, true);
     assert.equal(record?.rate_limits.seven_day !== undefined, true);
     assert.equal(JSON.stringify(record).includes("self-test-do-not-store"), false);
