@@ -649,6 +649,23 @@ h2 {
   border-top: 1px solid var(--border);
 }
 
+.step-notice {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.step-notice.warning {
+  border-color: rgba(246, 188, 87, 0.42);
+  color: var(--warning);
+}
+
+.step-notice.success {
+  border-color: rgba(126, 231, 183, 0.42);
+  color: var(--healthy);
+}
+
 .current-step-actions {
   display: grid;
   gap: 8px;
