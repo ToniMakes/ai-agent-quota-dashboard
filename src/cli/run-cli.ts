@@ -13,6 +13,8 @@ import {
   getLocalPathsSetupStatus,
   type LocalPathsSetupStatus
 } from "../setup/local-paths-status.js";
+import { getCodexSnapshotSetupStatus } from "../setup/codex-snapshot-status.js";
+import { getClaudeStatuslineSetupStatus } from "../setup/claude-statusline-status.js";
 import { SqliteStore } from "../storage/sqlite-store.js";
 import {
   runClaudeStatuslineSink,
@@ -35,6 +37,11 @@ import {
   parseCliExportOptions
 } from "./export-command.js";
 import { readStdin } from "./stdin.js";
+import {
+  formatTrialPreflightReport,
+  isTrialPreflightReady,
+  trialPreflightHelpText
+} from "./trial-preflight.js";
 
 export async function runCli(argv: string[], entryPointUrl: string): Promise<void> {
   const [command, subcommand, ...rest] = argv;
@@ -113,6 +120,16 @@ export async function runCli(argv: string[], entryPointUrl: string): Promise<voi
     return;
   }
 
+  if (command === "trial" && subcommand === "preflight") {
+    await runTrialPreflightCommand(argv);
+    return;
+  }
+
+  if (command === "trial") {
+    console.log(trialPreflightHelpText());
+    return;
+  }
+
   if (command === "help" || command === "--help" || command === "-h") {
     console.log(helpText());
     return;
@@ -155,6 +172,48 @@ async function runExportCommand(argv: string[]): Promise<void> {
 
     for (const error of userConfig.errors) {
       process.stderr.write(`Config warning: ${error}\n`);
+    }
+  } finally {
+    store.close();
+  }
+}
+
+async function runTrialPreflightCommand(argv: string[]): Promise<void> {
+  if (argv.includes("--help") || argv.includes("-h")) {
+    console.log(trialPreflightHelpText());
+    return;
+  }
+
+  const config = loadConfig(argv);
+  const userConfig = await loadUserConfig(config.userConfigPath);
+  const registry = createDefaultRegistry({
+    demoMode: config.demoMode,
+    userConfig: userConfig.config
+  });
+  const store = new SqliteStore(config.dbPath);
+
+  try {
+    const service = new AgentQuotaService(registry, store, {
+      includeDemoSnapshots: config.demoMode
+    });
+    const refreshResult = await service.initialize();
+    const input = {
+      agents: service.listAgents(),
+      checks: service.listDoctorChecks(),
+      claudeStatus: await getClaudeStatuslineSetupStatus(),
+      codexStatus: await getCodexSnapshotSetupStatus(),
+      configErrors: userConfig.errors,
+      configPath: userConfig.path,
+      dbPath: store.path,
+      demoMode: config.demoMode,
+      generatedAt: refreshResult.observedAt,
+      refreshResult
+    };
+
+    console.log(formatTrialPreflightReport(input));
+
+    if (!isTrialPreflightReady(input)) {
+      process.exitCode = 1;
     }
   } finally {
     store.close();
@@ -354,6 +413,7 @@ function helpText(): string {
     "Commands:",
     "  ai-agent-quota [--demo] [--port 4317]       Start local dashboard",
     "  ai-agent-quota doctor [--json] [--strict]   Run one local scan and print diagnostics",
+    "  ai-agent-quota trial preflight               Show next steps for real-data trial readiness",
     "  ai-agent-quota export [--json|--csv]        Export normalized quota data",
     "  ai-agent-quota codex snapshot --remaining-percent <0-100> --reset-at <iso-time>",
     "                                             Record a visible Codex quota value",
