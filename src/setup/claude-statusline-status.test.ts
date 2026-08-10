@@ -251,7 +251,10 @@ describe("getClaudeStatuslineSetupStatus", () => {
       assert.equal(status.readinessLabel, "Waiting for Claude Code CLI command");
       assert.match(status.nextAction, /Install Claude Code CLI/);
       assert.equal(cliCheck?.status, "warn");
-      assert.match(cliCheck?.action ?? "", /claude\.ai\/install/);
+      assert.match(
+        cliCheck?.action ?? "",
+        /Anthropic\.ClaudeCode|claude\.ai\/install/
+      );
     } finally {
       await rm(directory, { force: true, recursive: true });
     }
