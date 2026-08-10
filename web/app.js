@@ -1105,7 +1105,9 @@ function renderRealDataOverview() {
   elements.realDataContent.innerHTML = `
     <div class="onboarding-guide">
       <div class="guide-copy">
-        <span class="guide-kicker">${escapeHtml(tx("Start here", "从这里开始"))}</span>
+        <span class="guide-kicker">${escapeHtml(
+          tx("Initial setup", "初始配置")
+        )}</span>
         <strong>${escapeHtml(guide.title)}</strong>
         <p>${escapeHtml(guide.detail)}</p>
       </div>
@@ -1114,6 +1116,8 @@ function renderRealDataOverview() {
         ${guide.command ? renderInlineCommand(guide.command) : ""}
       </div>
     </div>
+
+    ${renderInitialSetupFlow(items, readiness)}
 
     <div class="source-card-grid">
       ${items.map(renderSourceCard).join("")}
@@ -1191,21 +1195,20 @@ function buildRealDataGuide(readiness, items, readyCount, totalCount) {
   }
 
   return {
-    actionLabel: nextItem?.actionLabel ?? tx("Review setup", "查看设置"),
+    actionLabel:
+      nextItem?.actionLabel ?? tx("Review setup", "查看设置"),
     actionView: targetViewForSelector(nextItem?.target),
     command: nextItem?.command,
-    detail:
-      nextItem?.nextAction ??
-      tx(
-        "Set up one trusted local quota source first; the dashboard will stay conservative until real data arrives.",
-        "先设置一个可信的本地额度来源；在真实数据到达前，仪表盘会保持保守状态。"
-      ),
+    detail: tx(
+      "This is not an account login. AIQD needs one visible Codex quota snapshot and one Claude Code statusline payload before it can show real numbers.",
+      "这不是账号登录。AIQD 需要一份你能看见的 Codex 额度快照，以及一份 Claude Code statusline 数据，之后才会显示真实额度。"
+    ),
     state: nextItem?.state ?? "info",
     target: nextItem?.target,
     title: readiness
       ? tx(
-          "Real-data trial is not ready yet",
-          "真实数据试用还没有准备好"
+          "Connect real local quota data first",
+          "先接入真实本地额度数据"
         )
       : realDataSummaryTitle(readyCount, totalCount)
   };
@@ -1281,6 +1284,111 @@ function renderSourceCard(item) {
       </div>
       <div class="source-card-status">${escapeHtml(item.status)}</div>
       <p>${escapeHtml(item.detail)}</p>
+      <div class="source-card-actions">
+        <button
+          class="copy-button"
+          type="button"
+          data-scroll-target="${escapeHtml(item.target)}"
+        >${escapeHtml(item.actionLabel)}</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderInitialSetupFlow(items, readiness) {
+  const codex = items.find((item) => item.id === "codex");
+  const claude = items.find((item) => item.id === "claude-code");
+  const steps = [
+    {
+      actionLabel: codex?.state === "pass"
+        ? tx("Review Codex", "查看 Codex")
+        : tx("Fill Codex snapshot", "填写 Codex 快照"),
+      detail: tx(
+        "Open Codex /status or Settings > Usage. Copy only the visible remaining percent and reported reset time into AIQD.",
+        "打开 Codex 的 /status 或 Settings > Usage。只把可见的剩余百分比和报告的 reset 时间填进 AIQD。"
+      ),
+      number: "1",
+      state: codex?.state ?? "info",
+      status: codex?.status ?? tx("Waiting for visible quota", "等待可见额度"),
+      target: "#codex-snapshot-content",
+      title: tx("Codex: enter the visible quota", "Codex：填写可见额度")
+    },
+    {
+      actionLabel: claude?.state === "pass"
+        ? tx("Review Claude", "查看 Claude")
+        : state.setupStatus?.statusLineManagedByApp
+          ? tx("Open Claude Code once", "打开 Claude Code 一次")
+          : tx("Open Claude setup", "打开 Claude 设置"),
+      detail: state.setupStatus?.statusLineManagedByApp
+        ? tx(
+            "The local statusline hook is already installed. Open Claude Code once and wait for it to send supported rate_limits.",
+            "本地 statusline hook 已经安装好。打开 Claude Code 一次，等待它发送支持的 rate_limits。"
+          )
+        : tx(
+            "Review the generated command, then install the local statusline hook only if you approve it.",
+            "先检查生成的命令；只有你确认后才安装本地 statusline hook。"
+          ),
+      number: "2",
+      state: claude?.state ?? "info",
+      status: claude?.status ?? tx("Waiting for Claude Code data", "等待 Claude Code 数据"),
+      target: "#settings-content",
+      title: tx("Claude Code: receive statusline quota", "Claude Code：接收状态栏额度")
+    },
+    {
+      actionLabel: tx("Run preflight", "运行预检"),
+      detail: tx(
+        "After Codex and Claude Code both show ready, run trial:ready. Until then, preflight tells you the shortest next step.",
+        "当 Codex 和 Claude Code 都显示就绪后，再运行 trial:ready。在此之前，preflight 会告诉你最短下一步。"
+      ),
+      number: "3",
+      state: readiness?.ok ? "pass" : "info",
+      status: readiness?.ok
+        ? tx("Ready for trial", "可以开始试用")
+        : tx("Use npm run trial:preflight", "使用 npm run trial:preflight"),
+      target: "#real-data-content",
+      title: tx("Verify real-data readiness", "验证真实数据就绪")
+    }
+  ];
+
+  return `
+    <div class="initial-setup-flow" aria-label="${escapeHtml(
+      tx("Initial real-data setup steps", "真实数据初始配置步骤")
+    )}">
+      <div class="setup-flow-intro">
+        <strong>${escapeHtml(
+          tx("What you are connecting", "你正在接入什么")
+        )}</strong>
+        <p>${escapeHtml(
+          tx(
+            "AIQD connects to local evidence, not your accounts: a value you can see in Codex, and official Claude Code statusline rate-limit fields.",
+            "AIQD 接入的是本地证据，不是你的账号：一个你能在 Codex 里看见的额度值，以及 Claude Code 官方 statusline 的 rate-limit 字段。"
+          )
+        )}</p>
+      </div>
+      <div class="setup-step-grid">
+        ${steps.map(renderInitialSetupStep).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderInitialSetupStep(step) {
+  return `
+    <article class="initial-step ${doctorBadgeClass(step.state)}">
+      <div class="initial-step-header">
+        <span class="step-marker">${escapeHtml(step.number)}</span>
+        <span class="badge ${doctorBadgeClass(step.state)}">${escapeHtml(
+          statusLabel(step.state)
+        )}</span>
+      </div>
+      <strong>${escapeHtml(step.title)}</strong>
+      <div class="source-card-status">${escapeHtml(step.status)}</div>
+      <p>${escapeHtml(step.detail)}</p>
+      <button
+        class="copy-button"
+        type="button"
+        data-scroll-target="${escapeHtml(step.target)}"
+      >${escapeHtml(step.actionLabel)}</button>
     </article>
   `;
 }
