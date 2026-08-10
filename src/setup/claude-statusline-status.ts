@@ -1,6 +1,6 @@
 import { constants, existsSync } from "node:fs";
 import { access, readFile, stat } from "node:fs/promises";
-import { homedir } from "node:os";
+import { homedir, platform } from "node:os";
 import { delimiter, extname, join } from "node:path";
 import {
   defaultClaudeSettingsPath,
@@ -63,6 +63,7 @@ export type ClaudeStatuslineSetupStatus = {
   selfTestCommand: string;
   writeCommand: string;
   forceWriteCommand: string;
+  hostPlatform?: NodeJS.Platform;
   savedFields: string[];
   notSavedFields: string[];
 };
@@ -140,6 +141,7 @@ export async function getClaudeStatuslineSetupStatus(
     writeCommand: "node dist/index.js setup claude-statusline --write",
     forceWriteCommand:
       "node dist/index.js setup claude-statusline --write --force",
+    hostPlatform: platform(),
     savedFields: [
       "rate_limits.five_hour.used_percentage",
       "rate_limits.five_hour.resets_at",
