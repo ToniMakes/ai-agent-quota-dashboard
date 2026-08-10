@@ -32,7 +32,7 @@ const baseAgent: AgentSummary = {
     reason: "no_supported_source",
     title: "No supported quota source",
     detail: "No supported quota/statusline snapshot was found.",
-    action: "Record a visible Codex /status value."
+    action: "Use Codex once and refresh; use the manual fallback only if needed."
   }
 };
 
@@ -66,17 +66,17 @@ describe("trial preflight", () => {
       }),
       codexStatus: codexStatus({
         readiness: "not_recorded",
-        readinessLabel: "No Codex snapshot yet",
-        nextAction: "node dist/index.js codex snapshot --remaining-percent <0-100> --reset-at <iso-time>"
+        readinessLabel: "No Codex fallback yet",
+        nextAction: "Use Codex once and refresh; if no local CLI rate_limits are found, record a visible fallback with node dist/index.js codex snapshot --remaining-percent <0-100> --reset-at <iso-time>"
       })
     };
     const report = formatTrialPreflightReport(input);
 
     assert.equal(isTrialPreflightReady(input), false);
     assert.match(report, /Overall: not ready/);
-    assert.match(report, /Codex: needs setup \(No Codex snapshot yet\)/);
+    assert.match(report, /Codex: needs setup \(No Codex fallback yet\)/);
     assert.match(report, /Claude Code: waiting \(Waiting for Claude Code data\)/);
-    assert.match(report, /Record a visible Codex/);
+    assert.match(report, /Use Codex once and refresh/);
     assert.match(report, /npm run trial:ready/);
     assert.doesNotMatch(report, /setup claude-statusline --write/);
   });
@@ -108,8 +108,8 @@ describe("trial preflight", () => {
       }),
       codexStatus: codexStatus({
         readiness: "ready",
-        readinessLabel: "Ready for manual Codex quota data",
-        nextAction: "Refresh the dashboard to load the latest Codex snapshot."
+        readinessLabel: "Manual Codex fallback ready",
+        nextAction: "Refresh the dashboard to load the latest Codex fallback."
       }),
       refreshResult: {
         ...baseInput.refreshResult,

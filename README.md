@@ -19,7 +19,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Fixture-driven parsers for Claude Code statusline rate limits
 - A conservative Codex parser for explicit structured quota snapshots
 - Manual Codex snapshot command and Settings form for visible `/status` or Usage values
-- Settings view status for Codex manual snapshots
+- Settings view status for Codex CLI quota detection with a manual fallback
 - Settings real-data overview for first-run Codex and Claude Code setup
 - Real-data desktop trial guide for Codex and Claude Code setup
 - Doctor first-run checklist for real-data readiness
@@ -193,27 +193,27 @@ node dist/index.js export --json --no-refresh
 
 The export command refreshes local sources by default. Use `--no-refresh` to export only the latest data already stored in SQLite. JSON output includes snapshots and reset events; CSV output includes latest quota snapshots. Both formats exclude account identifiers and raw local source references.
 
-## Codex Manual Snapshot
+## Codex Quota Detection
 
-OpenAI documents that Codex remaining limits can be checked with `/status` during an active CLI session, and that Codex Settings > Usage can show usage or credit details. Until there is a stable machine-readable local schema, AIQD does not parse arbitrary Codex transcripts or hidden files.
+AIQD first scans local Codex CLI session logs for supported `rate_limits` events. When those events are present, Codex quota is labeled `official_cli` and no manual copying is needed.
 
-To record a value you can visibly confirm:
+The manual fallback command remains only for machines or Codex versions that do not expose usable local rate-limit events. To record a value you can visibly confirm:
 
 ```bash
 node dist/index.js codex snapshot --remaining-percent 72 --reset-at 2026-08-16T03:00:00Z
 ```
 
-You can also save the same visible values from the Settings view. The browser form writes only AIQD's own manual snapshot file and refreshes the local dashboard after saving.
+You can also save the same visible values from the Settings view. The browser form writes only AIQD's own fallback file and refreshes the local dashboard after saving.
 
-This writes a structured manual snapshot to:
+This writes a structured manual fallback snapshot to:
 
 ```text
 ~/.ai-agent-quota-dashboard/codex/codex-quota-snapshot.json
 ```
 
-Manual Codex snapshots are labeled `manual` and expire at the reported reset time.
+Manual Codex fallback snapshots are labeled `manual` and expire at the reported reset time.
 
-The Settings view shows whether that snapshot exists, the latest remaining quota, the reported reset time, copyable commands, and the fields that are stored or deliberately not stored.
+The Settings view shows whether automatic CLI detection is active, whether a fallback exists, the latest remaining quota, the reported reset time, copyable fallback commands, and the fields that are stored or deliberately not stored.
 
 ## Local Data Paths
 

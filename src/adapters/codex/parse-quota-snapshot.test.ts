@@ -46,6 +46,58 @@ describe("parseCodexQuotaSnapshots", () => {
     assert.equal(snapshots[0]?.confidence, "high");
   });
 
+  it("parses Codex session rate limit events", async () => {
+    const fixture = await readFile(
+      join(fixturesDir, "session-rate-limits.jsonl"),
+      "utf8"
+    );
+    const snapshots = parseCodexQuotaSnapshots(fixture, { observedAt });
+
+    assert.equal(snapshots.length, 2);
+    assert.equal(snapshots[0]?.windowType, "session_5h");
+    assert.equal(snapshots[0]?.usedPercent, 12);
+    assert.equal(snapshots[0]?.remainingPercent, 88);
+    assert.equal(snapshots[0]?.source, "official_cli");
+    assert.equal(snapshots[0]?.confidence, "official");
+    assert.equal(snapshots[0]?.observedAt, "2026-08-10T09:30:00.000Z");
+    assert.equal(snapshots[1]?.windowType, "weekly");
+    assert.equal(snapshots[1]?.usedPercent, 58);
+    assert.equal(snapshots[1]?.remainingPercent, 42);
+    assert.equal(snapshots[1]?.resetAt, "2026-08-16T08:00:00.000Z");
+    assert.equal(snapshots[1]?.expiresAt, "2026-08-16T08:00:00.000Z");
+  });
+
+  it("parses Codex app-server rate limit response shapes", () => {
+    const snapshots = parseCodexQuotaSnapshots(
+      JSON.stringify({
+        id: 6,
+        result: {
+          rateLimitsByLimitId: {
+            codex: {
+              limitId: "codex",
+              limitName: null,
+              planType: "pro",
+              primary: {
+                usedPercent: 40,
+                windowDurationMins: 10080,
+                resetsAt: 1786867200
+              },
+              secondary: null
+            }
+          }
+        }
+      }),
+      { observedAt }
+    );
+
+    assert.equal(snapshots.length, 1);
+    assert.equal(snapshots[0]?.windowType, "weekly");
+    assert.equal(snapshots[0]?.usedPercent, 40);
+    assert.equal(snapshots[0]?.remainingPercent, 60);
+    assert.equal(snapshots[0]?.resetAt, "2026-08-16T08:00:00.000Z");
+    assert.equal(snapshots[0]?.source, "official_cli");
+  });
+
   it("ignores unrelated JSON documents", () => {
     const snapshots = parseCodexQuotaSnapshots(
       JSON.stringify({ type: "message", text: "hello" }),

@@ -20,7 +20,7 @@ const baseAgent: AgentSummary = {
     reason: "no_supported_source",
     title: "No supported quota source",
     detail: "No supported quota/statusline snapshot was found.",
-    action: "Record a visible Codex /status value."
+    action: "Use Codex once and refresh; use the manual fallback only if needed."
   }
 };
 

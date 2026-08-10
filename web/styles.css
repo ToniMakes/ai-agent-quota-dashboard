@@ -1076,6 +1076,10 @@ h2 {
   border-bottom: 1px solid var(--border);
 }
 
+.codex-source-notice {
+  margin-bottom: 14px;
+}
+
 .setup-next-actions {
   justify-content: start;
   border-bottom: 0;

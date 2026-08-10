@@ -11,7 +11,7 @@ It reads known local usage files, local quota snapshots, or official status outp
 - Demo data is opt-in through `--demo` or `npm run dev`.
 - User-configured scan roots are stored in the app's own local `config.json`.
 - Network connectors must be explicit and opt-in.
-- The Settings view does not modify external tool settings. The Codex manual snapshot form writes only AIQD's own local snapshot file after an explicit save action.
+- The Settings view does not modify Codex settings. The Codex fallback form writes only AIQD's own local snapshot file after an explicit save action.
 
 ## Stored Data
 
@@ -24,7 +24,8 @@ The app may store:
 - Doctor check results
 - Refresh run timestamps, aggregate saved counts, and adapter error summaries
 - User-provided local scan roots
-- Manual Codex quota snapshots the user explicitly records from a visible status or Usage surface
+- Codex CLI `rate_limits` fields extracted from local structured session events, when available
+- Manual Codex fallback snapshots the user explicitly records from a visible status or Usage surface
 - Sanitized Claude Code statusline `rate_limits` snapshots, when explicitly enabled
 
 The app should not store:
