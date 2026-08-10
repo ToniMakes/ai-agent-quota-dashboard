@@ -168,6 +168,10 @@ describe("getClaudeStatuslineSetupStatus", () => {
       );
 
       const status = await getClaudeStatuslineSetupStatus({
+        claudeCliLookup: async () => ({
+          available: true,
+          path: "C:\\Tools\\Claude\\claude.exe"
+        }),
         historyPath: join(directory, "history.jsonl"),
         latestPath: join(directory, "latest.json"),
         settingsPath,
@@ -182,6 +186,72 @@ describe("getClaudeStatuslineSetupStatus", () => {
       assert.doesNotMatch(status.nextAction, /after installing/);
       assert.match(latestCheck?.action ?? "", /let the statusline render once/);
       assert.doesNotMatch(latestCheck?.action ?? "", /after installing/);
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("reports whether the Claude Code CLI command is available", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-status-"));
+    const settingsPath = join(directory, ".claude", "settings.json");
+
+    try {
+      const status = await getClaudeStatuslineSetupStatus({
+        claudeCliLookup: async () => ({
+          available: true,
+          path: "C:\\Tools\\Claude\\claude.exe"
+        }),
+        historyPath: join(directory, "history.jsonl"),
+        latestPath: join(directory, "latest.json"),
+        settingsPath,
+        shimPath: join(directory, "shim.ps1")
+      });
+
+      assert.equal(status.claudeCliAvailable, true);
+      assert.equal(status.claudeCliCommand, "claude");
+      assert.equal(status.claudeCliPath, "C:\\Tools\\Claude\\claude.exe");
+      assert.equal(
+        status.checks.find((check) => check.id === "claude-cli")?.status,
+        "pass"
+      );
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("guides users to install Claude Code CLI when claude is missing", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-status-"));
+    const settingsPath = join(directory, ".claude", "settings.json");
+    const shimPath = join(directory, "claude-statusline.ps1");
+
+    try {
+      await mkdir(dirname(settingsPath), { recursive: true });
+      await writeFile(shimPath, "");
+      await writeFile(
+        settingsPath,
+        JSON.stringify({
+          statusLine: {
+            type: "command",
+            command: "powershell -File claude-statusline.ps1"
+          }
+        })
+      );
+
+      const status = await getClaudeStatuslineSetupStatus({
+        claudeCliLookup: async () => ({ available: false }),
+        historyPath: join(directory, "history.jsonl"),
+        latestPath: join(directory, "latest.json"),
+        settingsPath,
+        shimPath
+      });
+      const cliCheck = status.checks.find((check) => check.id === "claude-cli");
+
+      assert.equal(status.claudeCliAvailable, false);
+      assert.equal(status.readiness, "waiting_for_data");
+      assert.equal(status.readinessLabel, "Waiting for Claude Code CLI command");
+      assert.match(status.nextAction, /Install Claude Code CLI/);
+      assert.equal(cliCheck?.status, "warn");
+      assert.match(cliCheck?.action ?? "", /claude\.ai\/install/);
     } finally {
       await rm(directory, { force: true, recursive: true });
     }

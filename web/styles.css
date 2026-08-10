@@ -649,6 +649,56 @@ h2 {
   border-top: 1px solid var(--border);
 }
 
+.step-helper {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.step-helper strong {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.step-helper p {
+  margin: 0;
+}
+
+.step-helper-commands {
+  display: grid;
+  gap: 8px;
+}
+
+.step-helper-command {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.34fr) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.step-helper-command span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 740;
+}
+
+.step-helper-command code {
+  display: block;
+  min-width: 0;
+  padding: 7px 9px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  white-space: pre;
+}
+
 .step-notice {
   padding: 8px 10px;
   border: 1px solid var(--border);
@@ -1126,7 +1176,8 @@ h2 {
   .real-data-summary,
   .settings-row,
   .setup-overview-row,
-  .setup-step {
+  .setup-step,
+  .step-helper-command {
     grid-template-columns: 1fr;
     gap: 4px;
   }
