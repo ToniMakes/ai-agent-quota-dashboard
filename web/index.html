@@ -4,26 +4,73 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AI Agent Quota</title>
-    <link rel="stylesheet" href="/styles.css?v=20260810-deep-links" />
+    <link rel="stylesheet" href="/styles.css?v=20260810-i18n-onboarding" />
   </head>
   <body>
     <main class="shell">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Local dashboard</p>
+          <p
+            class="eyebrow"
+            data-i18n-en="Local dashboard"
+            data-i18n-zh="本地仪表盘"
+          >Local dashboard</p>
           <h1>AI Agent Quota</h1>
+          <p
+            class="topbar-subtitle"
+            data-i18n-en="See remaining quota, reset time, and local source readiness at a glance."
+            data-i18n-zh="一眼看清剩余额度、reset 时间和本地数据源是否就绪。"
+          >See remaining quota, reset time, and local source readiness at a glance.</p>
         </div>
         <div class="topbar-actions">
+          <button
+            id="language-toggle"
+            class="button language-toggle"
+            type="button"
+            data-i18n-title-en="Switch language"
+            data-i18n-title-zh="切换语言"
+            data-i18n-aria-label-en="Switch language"
+            data-i18n-aria-label-zh="切换语言"
+          >中文</button>
           <span id="last-refresh" class="last-refresh">Last refresh: --</span>
           <span id="refresh-status" class="refresh-status" aria-live="polite"></span>
-          <button id="refresh-button" class="button" type="button">Refresh</button>
+          <button
+            id="refresh-button"
+            class="button"
+            type="button"
+            data-i18n-en="Refresh"
+            data-i18n-zh="刷新"
+          >Refresh</button>
         </div>
       </header>
 
-      <nav class="tabs" aria-label="Views">
-        <button class="tab is-active" type="button" data-view="dashboard">Dashboard</button>
-        <button class="tab" type="button" data-view="doctor">Doctor</button>
-        <button class="tab" type="button" data-view="settings">Settings</button>
+      <nav
+        class="tabs"
+        aria-label="Views"
+        data-i18n-aria-label-en="Views"
+        data-i18n-aria-label-zh="视图"
+      >
+        <button
+          class="tab is-active"
+          type="button"
+          data-view="dashboard"
+          data-i18n-en="Dashboard"
+          data-i18n-zh="仪表盘"
+        >Dashboard</button>
+        <button
+          class="tab"
+          type="button"
+          data-view="doctor"
+          data-i18n-en="Doctor"
+          data-i18n-zh="诊断"
+        >Doctor</button>
+        <button
+          class="tab"
+          type="button"
+          data-view="settings"
+          data-i18n-en="Settings"
+          data-i18n-zh="设置"
+        >Settings</button>
       </nav>
 
       <section id="dashboard-view" class="view is-active">
@@ -31,15 +78,19 @@
         <section class="panel">
           <div class="panel-header">
             <div>
-              <h2>Reported Resets</h2>
-              <p class="panel-note">Observed source values; reset anchors can change.</p>
+              <h2 data-i18n-en="Reported Resets" data-i18n-zh="已报告的 Reset">Reported Resets</h2>
+              <p
+                class="panel-note"
+                data-i18n-en="Observed source values; reset anchors can change."
+                data-i18n-zh="来自本地数据源的观测值；reset 锚点可能会变化。"
+              >Observed source values; reset anchors can change.</p>
             </div>
           </div>
           <div id="reset-list" class="reset-list"></div>
         </section>
         <section class="panel">
           <div class="panel-header">
-            <h2>Recent Changes</h2>
+            <h2 data-i18n-en="Recent Changes" data-i18n-zh="最近变化">Recent Changes</h2>
           </div>
           <div id="event-list" class="event-list"></div>
         </section>
@@ -49,8 +100,12 @@
         <div class="panel">
           <div class="panel-header">
             <div>
-              <h2>First Run Checklist</h2>
-              <p class="panel-note">Local setup signals for the first real-data experience.</p>
+              <h2 data-i18n-en="First Run Checklist" data-i18n-zh="首次运行清单">First Run Checklist</h2>
+              <p
+                class="panel-note"
+                data-i18n-en="Local setup signals for the first real-data experience."
+                data-i18n-zh="用于首次真实数据体验的本地准备状态。"
+              >Local setup signals for the first real-data experience.</p>
             </div>
             <span id="doctor-checklist-score" class="badge stale">--</span>
           </div>
@@ -58,13 +113,13 @@
         </div>
         <div class="panel">
           <div class="panel-header">
-            <h2>Doctor</h2>
+            <h2 data-i18n-en="Doctor" data-i18n-zh="诊断">Doctor</h2>
           </div>
           <div id="doctor-list" class="doctor-list"></div>
         </div>
         <div class="panel">
           <div class="panel-header">
-            <h2>Refresh History</h2>
+            <h2 data-i18n-en="Refresh History" data-i18n-zh="刷新历史">Refresh History</h2>
           </div>
           <div id="refresh-run-list" class="refresh-run-list"></div>
         </div>
@@ -74,8 +129,12 @@
         <div class="panel">
           <div class="panel-header">
             <div>
-              <h2>Real Data Setup</h2>
-              <p class="panel-note">Local sources only; no prompts, cookies, or account identifiers.</p>
+              <h2 data-i18n-en="Real Data Setup" data-i18n-zh="真实数据设置">Real Data Setup</h2>
+              <p
+                class="panel-note"
+                data-i18n-en="Local sources only; no prompts, cookies, or account identifiers."
+                data-i18n-zh="只读取本地合法数据源；不保存提示词、cookie 或账号标识。"
+              >Local sources only; no prompts, cookies, or account identifiers.</p>
             </div>
             <span id="real-data-score" class="badge stale">--</span>
           </div>
@@ -83,40 +142,52 @@
         </div>
         <div class="panel">
           <div class="panel-header">
-            <h2>Codex Manual Snapshot</h2>
+            <h2 data-i18n-en="Codex Manual Snapshot" data-i18n-zh="Codex 手动快照">Codex Manual Snapshot</h2>
           </div>
           <div id="codex-snapshot-content" class="settings-content"></div>
         </div>
         <div class="panel">
           <div class="panel-header">
-            <h2>Claude Code Statusline</h2>
+            <h2 data-i18n-en="Claude Code Statusline" data-i18n-zh="Claude Code 状态栏">Claude Code Statusline</h2>
           </div>
           <div id="settings-content" class="settings-content"></div>
         </div>
         <div class="panel">
           <div class="panel-header">
-            <h2>Local Data Paths</h2>
+            <h2 data-i18n-en="Local Data Paths" data-i18n-zh="本地数据路径">Local Data Paths</h2>
           </div>
           <div id="paths-content" class="settings-content"></div>
         </div>
         <div class="panel">
           <div class="panel-header">
-            <h2>Desktop Shortcuts</h2>
+            <h2 data-i18n-en="Desktop Shortcuts" data-i18n-zh="桌面快捷键">Desktop Shortcuts</h2>
           </div>
           <div id="desktop-shortcuts-content" class="settings-content"></div>
         </div>
         <div class="panel">
           <div class="panel-header">
-            <h2>Data Export</h2>
+            <h2 data-i18n-en="Data Export" data-i18n-zh="数据导出">Data Export</h2>
           </div>
           <div class="export-actions">
-            <a class="button" href="/api/export?format=json" download>Export JSON</a>
-            <a class="button" href="/api/export?format=csv" download>Export CSV</a>
+            <a
+              class="button"
+              href="/api/export?format=json"
+              download
+              data-i18n-en="Export JSON"
+              data-i18n-zh="导出 JSON"
+            >Export JSON</a>
+            <a
+              class="button"
+              href="/api/export?format=csv"
+              download
+              data-i18n-en="Export CSV"
+              data-i18n-zh="导出 CSV"
+            >Export CSV</a>
           </div>
         </div>
       </section>
     </main>
 
-    <script src="/app.js?v=20260810-deep-links" type="module"></script>
+    <script src="/app.js?v=20260810-i18n-onboarding" type="module"></script>
   </body>
 </html>
