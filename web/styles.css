@@ -1119,6 +1119,33 @@ h2 {
   margin-top: 12px;
 }
 
+.optional-settings-details {
+  margin-top: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+
+.optional-settings-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.optional-settings-details summary small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.optional-settings-body {
+  margin-top: 12px;
+}
+
 .setup-flow {
   display: grid;
   gap: 10px;
