@@ -261,7 +261,7 @@ function resolveReadiness(input: {
         : "Waiting for Claude Code CLI command",
       nextAction:
         input.status.claudeCliAvailable
-          ? "Open Claude Code from a terminal. If it already shows 'Claude quota: waiting for rate limit data', run /status or send a short message, then check again."
+          ? "Open Claude Code from a terminal. Send one short message and wait for Claude to finish replying, then check again."
           : "Open Claude Code from your usual terminal. If no terminal has the claude command, install Claude Code CLI first."
     };
   }
@@ -435,7 +435,7 @@ function buildLatestSnapshotCheck(input: {
       message: "No statusline snapshot received yet",
       detail: input.status.latestPath,
       action:
-        "Open Claude Code from a terminal. If it already shows 'Claude quota: waiting for rate limit data', run /status or send a short message, then check again."
+        "Open Claude Code from a terminal. Send one short message and wait for Claude to finish replying, then check again."
     };
   }
 
@@ -449,7 +449,24 @@ function buildLatestSnapshotCheck(input: {
         input.latest.issue ??
         "Claude Code called AIQD, but this statusline payload did not include rate_limits.",
       action:
-        "In Claude Code, run /status or send a short message, then check again."
+        "In Claude Code, send one short message and wait for Claude to finish replying, then check again."
+    };
+  }
+
+  if (
+    input.latest.issueCode === "empty_input" ||
+    input.latest.issueCode === "invalid_json"
+  ) {
+    return {
+      id: "latest-snapshot",
+      label: "Latest snapshot",
+      status: "warn",
+      message: "AIQD receiver ran without Claude session JSON",
+      detail:
+        input.latest.issue ??
+        "The local receiver was called, but it did not receive a usable Claude statusline payload.",
+      action:
+        "Open Claude Code from the generated project command. Send one short message and wait for Claude to finish replying, then check again."
     };
   }
 
@@ -512,7 +529,7 @@ async function readSettings(path: string): Promise<Record<string, unknown> | und
 type LatestSnapshotStatus = {
   hasRateLimits: boolean;
   issue?: string;
-  issueCode?: "missing_rate_limits";
+  issueCode?: "empty_input" | "invalid_json" | "missing_rate_limits";
   observedAt?: string;
   windowTypes: QuotaWindowType[];
 };
@@ -548,6 +565,28 @@ async function readLatestSnapshot(path: string): Promise<LatestSnapshotStatus> {
         issue:
           "Claude Code called AIQD, but this statusline payload did not include rate_limits.",
         issueCode: "missing_rate_limits",
+        windowTypes: []
+      };
+
+      if (typeof parsed.observed_at === "string") {
+        result.observedAt = parsed.observed_at;
+      }
+
+      return result;
+    }
+
+    if (parsed.type === "claude_code_statusline_input_issue") {
+      const issueCode =
+        parsed.issue === "empty_input" || parsed.issue === "invalid_json"
+          ? parsed.issue
+          : "invalid_json";
+      const result: LatestSnapshotStatus = {
+        hasRateLimits: false,
+        issue:
+          issueCode === "empty_input"
+            ? "AIQD receiver ran, but no Claude statusline JSON was provided."
+            : "AIQD receiver ran, but the statusline input was not valid JSON.",
+        issueCode,
         windowTypes: []
       };
 

@@ -109,6 +109,32 @@ describe("claude statusline sink", () => {
     }
   });
 
+  it("writes a safe marker when the sink runs without Claude JSON", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-statusline-"));
+    const latestPath = join(directory, "latest.json");
+    const historyPath = join(directory, "history.jsonl");
+
+    try {
+      const result = await runClaudeStatuslineSink({
+        input: "",
+        now: observedAt,
+        latestPath,
+        historyPath
+      });
+
+      assert.equal(result.wroteSnapshot, true);
+      assert.equal(result.snapshots.length, 0);
+      assert.deepEqual(JSON.parse(await readFile(latestPath, "utf8")), {
+        type: "claude_code_statusline_input_issue",
+        observed_at: "2026-08-09T00:00:00.000Z",
+        issue: "empty_input"
+      });
+      await assert.rejects(readFile(historyPath, "utf8"));
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
   it("builds a sanitized self-test payload", () => {
     const record = buildSanitizedClaudeStatuslineRecord(
       buildClaudeStatuslineSelfTestInput(observedAt),

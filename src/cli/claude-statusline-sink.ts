@@ -44,6 +44,10 @@ type SanitizedClaudeStatuslineRecord = {
   type: "claude_code_statusline_no_rate_limits";
   observed_at: string;
   issue: "missing_rate_limits";
+} | {
+  type: "claude_code_statusline_input_issue";
+  observed_at: string;
+  issue: "empty_input" | "invalid_json";
 };
 
 export async function runClaudeStatuslineSink(
@@ -152,11 +156,24 @@ export function buildSanitizedClaudeStatuslineRecord(
   now = new Date()
 ): SanitizedClaudeStatuslineRecord | undefined {
   let payload: unknown;
+  const trimmedInput = input.trim();
+
+  if (!trimmedInput) {
+    return {
+      type: "claude_code_statusline_input_issue",
+      observed_at: now.toISOString(),
+      issue: "empty_input"
+    };
+  }
 
   try {
-    payload = JSON.parse(input);
+    payload = JSON.parse(trimmedInput);
   } catch {
-    return undefined;
+    return {
+      type: "claude_code_statusline_input_issue",
+      observed_at: now.toISOString(),
+      issue: "invalid_json"
+    };
   }
 
   if (!isRecord(payload)) {

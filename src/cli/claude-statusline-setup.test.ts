@@ -25,6 +25,7 @@ describe("claude statusline setup", () => {
       assert.equal(result.wroteSettings, false);
       assert.equal(existsSync(result.shimPath), true);
       assert.equal(existsSync(settingsPath), false);
+      assert.match(await readFile(result.shimPath, "utf8"), /ReadToEnd/);
       assert.match(result.message, /No Claude settings were changed/);
       assert.match(result.message, /Real-data check/);
       assert.match(result.message, /npm run build/);

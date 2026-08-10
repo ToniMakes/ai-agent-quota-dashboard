@@ -1415,6 +1415,11 @@ function buildInitialSetupModel(items, readiness) {
   const claudeAutoSetupPending = Boolean(state.claudeAutoSetupPending);
   const claudeMissingRateLimits =
     state.setupStatus?.latestIssueCode === "missing_rate_limits";
+  const claudeInputIssue =
+    state.setupStatus?.latestIssueCode === "empty_input" ||
+    state.setupStatus?.latestIssueCode === "invalid_json";
+  const claudeConnectedWithoutQuota =
+    claudeMissingRateLimits || claudeInputIssue;
   const canAutoSetupClaude =
     !claudeComplete && (!claudeManaged || !claudeCliAvailable);
   const claudeCliOpenCommand =
@@ -1478,11 +1483,15 @@ function buildInitialSetupModel(items, readiness) {
         }
       : undefined;
   const claudeMissingRateLimitsHelper =
-    claudeMissingRateLimits
+    claudeConnectedWithoutQuota
       ? {
           detail: tx(
-            "Claude is connected to AIQD, but this status update did not include quota fields.",
-            "Claude 已经连到 AIQD，但这次状态更新里没有额度字段。"
+            claudeInputIssue
+              ? "AIQD receiver ran, but did not receive Claude session JSON."
+              : "Claude is connected to AIQD, but this status update did not include quota fields.",
+            claudeInputIssue
+              ? "AIQD 接收器运行了，但没有收到 Claude session JSON。"
+              : "Claude 已经连到 AIQD，但这次状态更新里没有额度字段。"
           ),
           title: tx("What should I do now?", "现在做什么？")
         }
@@ -1491,15 +1500,20 @@ function buildInitialSetupModel(items, readiness) {
     state.claudeCheckFeedback ??
     (claudeWaiting
       ? {
-          detail: claudeMissingRateLimits
+          detail: claudeInputIssue
+            ? tx(
+                "Use the project command to open Claude Code; do not run the internal statusline command manually.",
+                "请用项目命令打开 Claude Code；不要手动运行内部 statusline 命令。"
+              )
+            : claudeMissingRateLimits
             ? tx(
                 "Claude already called AIQD, but did not include quota fields in this update.",
                 "Claude 已经调用 AIQD，但这次更新里没有包含额度字段。"
               )
             : claudeCliAvailable
             ? tx(
-                "If Claude is already open and the bottom line says waiting for rate limit data, type /status in Claude or send one short message.",
-                "如果 Claude 已经打开，且底部显示 waiting for rate limit data，请在 Claude 里输入 /status，或发一条简短消息。"
+                "If Claude is already open and the bottom line says waiting for rate limit data, send one short message and wait for Claude to reply.",
+                "如果 Claude 已经打开，且底部显示 waiting for rate limit data，请发一条短消息，并等 Claude 回复完成。"
               )
             : tx(
                 "Install Claude Code first, then come back to this step.",
@@ -1511,6 +1525,11 @@ function buildInitialSetupModel(items, readiness) {
               ? tx(
                   "Claude is connected, but no quota fields were included yet.",
                   "Claude 已连接，但还没有额度字段。"
+                )
+              : claudeInputIssue
+              ? tx(
+                  "AIQD receiver ran, but not with Claude session JSON.",
+                  "AIQD 接收器运行了，但输入不是 Claude session JSON。"
                 )
               : claudeCliOnPath
               ? tx(
@@ -1603,10 +1622,10 @@ function buildInitialSetupModel(items, readiness) {
           )
         : claudeManaged
         ? tx(
-            claudeMissingRateLimits
+            claudeConnectedWithoutQuota
               ? "Ask Claude to refresh quota status"
               : "Paste the command into a terminal",
-            claudeMissingRateLimits
+            claudeConnectedWithoutQuota
               ? "让 Claude 刷新额度状态"
               : "把命令粘贴到终端"
           )
@@ -1627,15 +1646,19 @@ function buildInitialSetupModel(items, readiness) {
             )
           ]
         : claudeManaged
-        ? claudeMissingRateLimits
+        ? claudeConnectedWithoutQuota
           ? [
               tx(
                 "Keep the current Claude window open.",
                 "保持当前 Claude 窗口打开。"
               ),
               tx(
-                "Type /status or send one short message.",
-                "输入 /status，或发一条简短消息。"
+                "Send one short message, such as hi.",
+                "发一条短消息，比如 hi。"
+              ),
+              tx(
+                "Wait for Claude to finish replying.",
+                "等 Claude 回复完成。"
               ),
               tx(
                 "Come back here and click check.",
@@ -1657,8 +1680,8 @@ function buildInitialSetupModel(items, readiness) {
                 "先完成 Claude 自己的提示，比如主题、登录或信任项目。"
               ),
               tx(
-                "If the bottom line says waiting for rate limit data, type /status in Claude or send one short message.",
-                "如果底部显示 waiting for rate limit data，在 Claude 里输入 /status，或发一条简短消息。"
+                "Send one short message and wait for Claude to finish replying.",
+                "发一条短消息，并等 Claude 回复完成。"
               ),
               tx(
                 "Come back here and click check.",
@@ -1701,12 +1724,12 @@ function buildInitialSetupModel(items, readiness) {
           )
         : claudeManaged
         ? tx(
-            claudeMissingRateLimits
-              ? "Claude is connected. Ask it for status once, then check again."
-              : "Open Claude from the terminal. After Claude is ready for input, trigger /status or one short message, then check.",
-            claudeMissingRateLimits
-              ? "Claude 已连接。让它刷新一次状态，再检查。"
-              : "从终端打开 Claude。等 Claude 可以输入后，用 /status 或一条短消息触发状态，再检查。"
+            claudeConnectedWithoutQuota
+              ? "Claude is connected. Send one short message and wait for the reply, then check again."
+              : "Open Claude from the terminal. After Claude is ready for input, send one short message and wait for the reply, then check.",
+            claudeConnectedWithoutQuota
+              ? "Claude 已连接。发一条短消息，等回复完成后再检查。"
+              : "从终端打开 Claude。等 Claude 可以输入后，发一条短消息，等回复完成后再检查。"
           )
         : tx(
             "Review the generated command, then install the local statusline hook only if you approve it.",
@@ -1728,10 +1751,10 @@ function buildInitialSetupModel(items, readiness) {
             )
         : claudeManaged
           ? tx(
-              claudeMissingRateLimits
+              claudeConnectedWithoutQuota
                 ? "Claude connected; waiting for quota fields."
                 : "Waiting for Claude to send quota fields.",
-              claudeMissingRateLimits
+              claudeConnectedWithoutQuota
                 ? "Claude 已连接，等待额度字段。"
                 : "等待 Claude 发送额度字段。"
             )
@@ -3153,12 +3176,20 @@ function renderClaudeStatuslineWaitingNotice(status) {
   }
 
   const missingRateLimits = status.latestIssueCode === "missing_rate_limits";
+  const inputIssue =
+    status.latestIssueCode === "empty_input" ||
+    status.latestIssueCode === "invalid_json";
 
   return `
     <div class="setup-watch-notice">
       <div>
         <strong>${escapeHtml(
-          missingRateLimits
+          inputIssue
+            ? tx(
+                "AIQD receiver ran without Claude session JSON",
+                "AIQD 接收器运行了，但不是 Claude session JSON"
+              )
+            : missingRateLimits
             ? tx(
                 "Claude is connected; quota fields are not available yet",
                 "Claude 已连接；额度字段暂时不可用"
@@ -3170,14 +3201,19 @@ function renderClaudeStatuslineWaitingNotice(status) {
         )}</strong>
         <div class="settings-detail">
           ${escapeHtml(
-            missingRateLimits
+            inputIssue
               ? tx(
-                  "In Claude, run /status or send one short message, then check again.",
-                  "在 Claude 里输入 /status，或发一条简短消息，然后再检查。"
+                  "Use the project command to open Claude Code, send one short message, wait for the reply to finish, then check again.",
+                  "请用项目命令打开 Claude Code，发一条短消息，等回复完成后再检查。"
+                )
+              : missingRateLimits
+              ? tx(
+                  "In Claude, send one short message, wait for the reply to finish, then check again.",
+                  "在 Claude 里发一条短消息，等回复完成后再检查。"
                 )
               : tx(
-                  "If Claude is already open and shows 'waiting for rate limit data', type /status in Claude or send one short message, then check again.",
-                  "如果 Claude 已经打开，并显示 waiting for rate limit data，请在 Claude 里输入 /status，或发一条简短消息，然后再检查。"
+                  "If Claude is already open and shows 'waiting for rate limit data', send one short message, wait for the reply to finish, then check again.",
+                  "如果 Claude 已经打开，并显示 waiting for rate limit data，请发一条短消息，等回复完成后再检查。"
                 )
           )}
         </div>
@@ -3928,8 +3964,12 @@ function localizedNextAction(action) {
       "先安装 Claude Code CLI，然后在项目文件夹里打开终端并运行 claude。"
     ],
     [
-      "If it already shows 'Claude quota: waiting for rate limit data'",
-      "从终端打开 Claude Code；如果底部已经显示 waiting for rate limit data，请在 Claude 里输入 /status，或发一条简短消息，然后再检查。"
+      "Send one short message and wait for Claude to finish replying",
+      "从终端打开 Claude Code；发一条短消息，等 Claude 回复完成后再检查。"
+    ],
+    [
+      "send one short message",
+      "从终端打开 Claude Code；发一条短消息，等 Claude 回复完成后再检查。"
     ],
     [
       "Open Claude Code",
