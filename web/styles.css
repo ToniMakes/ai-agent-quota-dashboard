@@ -790,6 +790,14 @@ h2 {
   gap: 10px;
 }
 
+.codex-snapshot-grid {
+  grid-template-columns:
+    minmax(120px, 0.9fr)
+    minmax(150px, 1fr)
+    minmax(130px, 0.9fr)
+    minmax(180px, 1.2fr);
+}
+
 .form-field {
   display: grid;
   gap: 6px;
@@ -808,6 +816,13 @@ h2 {
   background: var(--surface);
   color: var(--text);
   font: inherit;
+}
+
+.form-hint {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 650;
+  line-height: 1.35;
 }
 
 .form-field input:focus {
@@ -1015,6 +1030,10 @@ h2 {
   }
 
   .settings-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .codex-snapshot-grid {
     grid-template-columns: 1fr;
   }
 

@@ -40,6 +40,8 @@ export type CodexManualSnapshotInput = {
   planLabel?: string | undefined;
   remainingPercent?: number | undefined;
   resetAt?: string | undefined;
+  resetDate?: string | undefined;
+  resetTime?: string | undefined;
   usedPercent?: number | undefined;
 };
 
@@ -78,7 +80,7 @@ export function parseCodexManualSnapshotInput(
   input: CodexManualSnapshotInput,
   now = new Date()
 ): CodexManualSnapshotOptions {
-  const resetAt = parseRequiredDateValue(input.resetAt, "resetAt");
+  const resetAt = parseManualResetAt(input);
   const observedAt = parseOptionalDateValue(input.observedAt, "observedAt");
   const remainingPercent = parseOptionalPercentValue(
     input.remainingPercent,
@@ -99,6 +101,78 @@ export function parseCodexManualSnapshotInput(
     },
     now
   );
+}
+
+function parseManualResetAt(input: CodexManualSnapshotInput): string {
+  if (input.resetAt) {
+    return parseRequiredDateValue(input.resetAt, "resetAt");
+  }
+
+  if (input.resetDate) {
+    return parseResetDateAndOptionalTime(input.resetDate, input.resetTime);
+  }
+
+  throw new Error("resetAt or resetDate is required.");
+}
+
+function parseResetDateAndOptionalTime(
+  resetDate: string,
+  resetTime: string | undefined
+): string {
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(resetDate);
+
+  if (!dateMatch) {
+    throw new Error("resetDate must be a valid date.");
+  }
+
+  const [, yearText, monthText, dayText] = dateMatch;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  let hour = 23;
+  let minute = 59;
+  let second = 59;
+  let millisecond = 999;
+
+  if (resetTime) {
+    const timeMatch = /^(\d{2}):(\d{2})$/.exec(resetTime);
+
+    if (!timeMatch) {
+      throw new Error("resetTime must be a valid HH:MM time.");
+    }
+
+    hour = Number(timeMatch[1]);
+    minute = Number(timeMatch[2]);
+    second = 0;
+    millisecond = 0;
+  }
+
+  if (
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31 ||
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    throw new Error("resetDate or resetTime is out of range.");
+  }
+
+  const date = new Date(year, month - 1, day, hour, minute, second, millisecond);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day ||
+    date.getHours() !== hour ||
+    date.getMinutes() !== minute
+  ) {
+    throw new Error("resetDate must be a real calendar date.");
+  }
+
+  return date.toISOString();
 }
 
 type NormalizedCodexManualSnapshotInput = {
