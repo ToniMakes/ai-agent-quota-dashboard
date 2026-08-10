@@ -99,6 +99,56 @@ describe("getClaudeStatuslineSetupStatus", () => {
     }
   });
 
+  it("accepts UTF-8 BOM in settings and latest snapshots", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-status-"));
+    const settingsPath = join(directory, ".claude", "settings.json");
+    const latestPath = join(directory, "latest.json");
+    const shimPath = join(directory, "claude-statusline.ps1");
+
+    try {
+      await mkdir(dirname(settingsPath), { recursive: true });
+      await writeFile(shimPath, "");
+      await writeFile(
+        settingsPath,
+        `\uFEFF${JSON.stringify({
+          statusLine: {
+            type: "command",
+            command: "powershell -File claude-statusline.ps1"
+          }
+        })}`
+      );
+      await writeFile(
+        latestPath,
+        `\uFEFF${JSON.stringify({
+          type: "claude_code_statusline_rate_limits",
+          observed_at: "2026-08-09T00:00:00.000Z",
+          rate_limits: {
+            daily: {
+              used_percentage: 21,
+              resets_at: 1786233600
+            }
+          }
+        })}`
+      );
+
+      const status = await getClaudeStatuslineSetupStatus({
+        historyPath: join(directory, "history.jsonl"),
+        latestPath,
+        now: new Date("2026-08-09T01:00:00.000Z"),
+        settingsPath,
+        shimPath
+      });
+
+      assert.equal(status.statusLineConfigured, true);
+      assert.equal(status.statusLineManagedByApp, true);
+      assert.equal(status.latestHasRateLimits, true);
+      assert.deepEqual(status.latestWindowTypes, ["daily"]);
+      assert.equal(status.readiness, "ready");
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
   it("waits for data after setup without suggesting another install", async () => {
     const directory = await mkdtemp(join(tmpdir(), "aiqd-status-"));
     const settingsPath = join(directory, ".claude", "settings.json");

@@ -22,6 +22,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Settings view status for Codex manual snapshots
 - Settings real-data overview for first-run Codex and Claude Code setup
 - Doctor first-run checklist for real-data readiness
+- Setup refresh feedback for Codex saves, Claude Code waiting state, and manual refreshes
 - Claude Code statusline setup helper with explicit opt-in
 - Reset event timeline for changed reset anchors and sharp replenishment
 - Dashboard reset display with relative and absolute reported reset times
@@ -224,6 +225,8 @@ Preview without changing Claude settings: `node dist/index.js setup claude-statu
 If a `statusLine` already exists, the command refuses to replace it unless you add `--force`.
 
 The Settings view shows the same setup state, readiness checks, latest received rate limit windows, snapshot age, and copyable commands. It is read-only: it does not modify Claude Code configuration from the browser.
+
+Portable or test installs can override Claude setup paths with `AIQD_CLAUDE_SETTINGS_PATH`, `AIQD_CLAUDE_STATUSLINE_DIR`, and `AIQD_CLAUDE_STATUSLINE_SHIM_PATH`.
 
 ## Architecture
 

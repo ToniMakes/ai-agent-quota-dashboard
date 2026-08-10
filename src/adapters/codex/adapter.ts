@@ -99,7 +99,8 @@ async function readCodexQuotaSnapshots(
   context: AdapterScanContext
 ): Promise<QuotaSnapshot[]> {
   const candidates = await findReadableCandidateFiles(roots, {
-    namePattern: /(?:quota|status|usage[-_]?limits?|limits?).*\.(?:jsonl?|txt)$/i
+    namePattern:
+      /(?:quota|snapshot|status|usage[-_]?limits?|limits?).*\.(?:jsonl?|txt)$/i
   });
 
   return candidates.flatMap((candidate) =>

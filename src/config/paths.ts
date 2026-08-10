@@ -22,6 +22,10 @@ export function defaultCodexManualSnapshotPath(): string {
 }
 
 export function defaultClaudeStatuslineSnapshotDir(): string {
+  if (process.env.AIQD_CLAUDE_STATUSLINE_DIR) {
+    return process.env.AIQD_CLAUDE_STATUSLINE_DIR;
+  }
+
   return join(defaultAppDataDir(), "claude-code");
 }
 
@@ -40,10 +44,18 @@ export function defaultClaudeStatuslineLatestPath(): string {
 }
 
 export function defaultClaudeSettingsPath(): string {
+  if (process.env.AIQD_CLAUDE_SETTINGS_PATH) {
+    return process.env.AIQD_CLAUDE_SETTINGS_PATH;
+  }
+
   return join(homedir(), ".claude", "settings.json");
 }
 
 export function defaultClaudeStatuslineShimPath(): string {
+  if (process.env.AIQD_CLAUDE_STATUSLINE_SHIM_PATH) {
+    return process.env.AIQD_CLAUDE_STATUSLINE_SHIM_PATH;
+  }
+
   return join(
     defaultAppDataDir(),
     platform() === "win32" ? "claude-statusline.ps1" : "claude-statusline.sh"
