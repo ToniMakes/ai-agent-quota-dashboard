@@ -96,6 +96,8 @@ In the desktop app, check:
 
 `npm run trial:ready` uses strict Doctor mode. It fails until every configured agent has a fresh non-demo quota snapshot, which is useful right before deciding whether the app is ready for a real-data experience.
 
+The Settings > Real Data Setup summary shows the same strict readiness result as `npm run trial:ready`.
+
 ## Notes
 
 - Reported reset times are observations from the current source, not guaranteed future reset predictions.

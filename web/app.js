@@ -9,6 +9,7 @@ const state = {
   refreshStatus: undefined,
   resetEvents: [],
   setupStatus: undefined,
+  trialReadiness: undefined,
   generatedAt: undefined
 };
 
@@ -187,7 +188,8 @@ async function load() {
     eventsResponse,
     pathsResponse,
     refreshRunsResponse,
-    setupResponse
+    setupResponse,
+    trialReadinessResponse
   ] = await Promise.all([
     fetch("/api/agents"),
     fetch("/api/setup/codex-snapshot"),
@@ -196,7 +198,8 @@ async function load() {
     fetch("/api/reset-events"),
     fetch("/api/setup/local-paths"),
     fetch("/api/refresh-runs"),
-    fetch("/api/setup/claude-statusline")
+    fetch("/api/setup/claude-statusline"),
+    fetch("/api/trial-readiness")
   ]);
   const agentsPayload = await agentsResponse.json();
   const codexSnapshotPayload = await codexSnapshotResponse.json();
@@ -206,6 +209,7 @@ async function load() {
   const pathsPayload = await pathsResponse.json();
   const refreshRunsPayload = await refreshRunsResponse.json();
   const setupPayload = await setupResponse.json();
+  const trialReadinessPayload = await trialReadinessResponse.json();
 
   state.agents = agentsPayload.agents ?? [];
   state.codexSnapshotStatus = codexSnapshotPayload.status;
@@ -215,6 +219,7 @@ async function load() {
   state.pathsStatus = pathsPayload.status;
   state.refreshRuns = refreshRunsPayload.runs ?? [];
   state.setupStatus = setupPayload.status;
+  state.trialReadiness = trialReadinessPayload.readiness;
   state.generatedAt = agentsPayload.generatedAt;
 
   render();
@@ -930,6 +935,7 @@ function renderCodexSnapshotSettings() {
 
 function renderRealDataOverview() {
   const items = buildRealDataOverviewItems();
+  const readiness = state.trialReadiness;
   const sourceItems = items.filter((item) => item.countsTowardReady);
   const readyCount = sourceItems.filter((item) => item.state === "pass").length;
   const totalCount = sourceItems.length;
@@ -939,9 +945,15 @@ function renderRealDataOverview() {
     items.find((item) => item.state === "stale");
 
   if (elements.realDataScore) {
-    elements.realDataScore.textContent = `${readyCount}/${totalCount} ready`;
+    elements.realDataScore.textContent = readiness
+      ? readiness.ok
+        ? "ready"
+        : "not ready"
+      : `${readyCount}/${totalCount} ready`;
     elements.realDataScore.className = `badge ${
-      readyCount === totalCount ? "healthy" : "warning"
+      readiness?.ok || (!readiness && readyCount === totalCount)
+        ? "healthy"
+        : "warning"
     }`;
   }
 
@@ -952,19 +964,104 @@ function renderRealDataOverview() {
   elements.realDataContent.innerHTML = `
     <div class="real-data-summary">
       <div class="setup-score">
-        <strong>${readyCount}/${totalCount}</strong>
-        <span>quota sources ready</span>
+        <strong>${escapeHtml(
+          readinessScoreLabel(readiness, readyCount, totalCount)
+        )}</strong>
+        <span>${escapeHtml(readinessScoreCaption(readiness))}</span>
       </div>
       <div>
-        <strong>${escapeHtml(realDataSummaryTitle(readyCount, totalCount))}</strong>
+        <strong>${escapeHtml(
+          readiness
+            ? trialReadinessTitle(readiness)
+            : realDataSummaryTitle(readyCount, totalCount)
+        )}</strong>
         <div class="settings-detail">${escapeHtml(
-          nextItem?.nextAction ?? "Both primary quota sources have usable local data."
+          readinessDetail(readiness, nextItem)
         )}</div>
-        ${nextItem?.command ? renderInlineCommand(nextItem.command) : ""}
+        ${renderRealDataSummaryCommand(readiness, nextItem)}
       </div>
     </div>
+    ${readiness ? renderTrialReadinessChecks(readiness) : ""}
     <div class="setup-overview-list">
       ${items.map(renderRealDataOverviewItem).join("")}
+    </div>
+  `;
+}
+
+function readinessScoreLabel(readiness, readyCount, totalCount) {
+  if (!readiness) {
+    return `${readyCount}/${totalCount}`;
+  }
+
+  const checks = readiness.checks ?? [];
+  const passCount = checks.filter((check) => check.status === "pass").length;
+
+  return readiness.ok ? "ready" : `${passCount}/${checks.length}`;
+}
+
+function readinessScoreCaption(readiness) {
+  return readiness ? "strict trial checks" : "quota sources ready";
+}
+
+function renderRealDataSummaryCommand(readiness, nextItem) {
+  if (readiness) {
+    return renderInlineCommand("npm run trial:ready");
+  }
+
+  return nextItem?.command ? renderInlineCommand(nextItem.command) : "";
+}
+
+function trialReadinessTitle(readiness) {
+  return readiness.ok
+    ? "Ready for a real-data trial"
+    : "Real-data trial is not ready yet";
+}
+
+function readinessDetail(readiness, nextItem) {
+  if (!readiness) {
+    return nextItem?.nextAction ?? "Both primary quota sources have usable local data.";
+  }
+
+  const failingCheck = (readiness.checks ?? []).find(
+    (check) => check.status === "fail"
+  );
+
+  return (
+    failingCheck?.action ??
+    failingCheck?.message ??
+    "Every configured agent has a fresh non-demo quota snapshot."
+  );
+}
+
+function renderTrialReadinessChecks(readiness) {
+  const checks = readiness.checks ?? [];
+
+  if (checks.length === 0) {
+    return "";
+  }
+
+  return `
+    <div class="setup-overview-list trial-readiness-list">
+      ${checks.map(renderTrialReadinessCheck).join("")}
+    </div>
+  `;
+}
+
+function renderTrialReadinessCheck(check) {
+  return `
+    <div class="setup-overview-row trial-readiness-row">
+      <div>
+        <strong>${escapeHtml(check.displayName)}</strong>
+        <div>${escapeHtml(check.message)}</div>
+        ${
+          check.action
+            ? `<div class="settings-detail">${escapeHtml(check.action)}</div>`
+            : ""
+        }
+      </div>
+      <span class="badge ${doctorBadgeClass(check.status)}">${escapeHtml(
+        check.status
+      )}</span>
     </div>
   `;
 }
