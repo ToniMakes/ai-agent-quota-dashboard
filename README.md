@@ -40,6 +40,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Strict real-data readiness check before desktop trials
 - Settings view status for desktop shortcut bindings and overrides
 - Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
+- Tray tooltip/menu status uses strict readiness before showing daily quota summaries
 - Mini footer summary for the latest refresh result and warnings
 - Mini strict readiness progress text for first-run Codex and Claude Code onboarding
 - Clickable mini footer actions for refresh warnings and setup guidance
@@ -136,6 +137,7 @@ It starts the local backend, adds an AI Agent Quota tray icon, and provides:
 - a tray mini panel that hides when it loses focus
 - an optional always-on-top desktop widget
 - a tray tooltip and menu summary for the current quota state
+- strict readiness status in the tray when real-data setup is not reliable yet
 - tray menu shortcuts for Refresh, Doctor, Settings, and Dashboard
 - a one-time first-run guide that uses strict trial readiness to open the exact Settings or Doctor section when real data is not ready, or shows the mini panel when it is ready
 - safe global shortcuts for AIQD itself: `Ctrl+Alt+Q` toggles the mini panel, `Ctrl+Alt+R` refreshes quota data, and `Ctrl+Alt+W` toggles the desktop widget

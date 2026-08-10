@@ -11,6 +11,7 @@ const {
   resolveDesktopShortcuts,
   resolveWidgetBounds,
   shouldRefreshForClaudeStatusline,
+  summarizeDesktopStatus,
   summarizeAgents
 } = require("./helpers.cjs");
 
@@ -255,6 +256,61 @@ describe("desktop helpers", () => {
     );
 
     assert.equal(summary, "Codex: 42% 2h left | Claude: waiting");
+  });
+
+  it("prioritizes strict trial readiness for desktop status text", () => {
+    assert.equal(
+      summarizeDesktopStatus(
+        [
+          {
+            agent: "codex",
+            shortName: "Codex",
+            primarySnapshot: {
+              remainingPercent: 70
+            }
+          }
+        ],
+        {
+          ok: false,
+          checks: [
+            {
+              agent: "codex",
+              displayName: "Codex",
+              provider: "openai",
+              status: "fail",
+              message: "Codex quota data is stale."
+            },
+            {
+              agent: "claude-code",
+              displayName: "Claude Code",
+              provider: "anthropic",
+              status: "pass",
+              message: "5h quota from statusline."
+            }
+          ]
+        }
+      ),
+      "Trial: 1/2 ready - Codex"
+    );
+
+    assert.equal(
+      summarizeDesktopStatus(
+        [
+          {
+            agent: "codex",
+            shortName: "Codex",
+            primarySnapshot: {
+              remainingPercent: 70
+            }
+          }
+        ],
+        {
+          ok: true,
+          checks: []
+        }
+      ),
+      "Codex: 70%"
+    );
   });
 
   it("summarizes first-run empty states for tray text", () => {
