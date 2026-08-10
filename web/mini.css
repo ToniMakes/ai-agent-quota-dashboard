@@ -114,6 +114,12 @@ button {
   opacity: 0.62;
 }
 
+.language-tool {
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .icon {
   position: relative;
   display: inline-block;
