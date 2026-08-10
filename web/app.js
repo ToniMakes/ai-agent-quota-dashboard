@@ -1420,6 +1420,7 @@ function buildInitialSetupModel(items, readiness) {
     state.setupStatus?.latestIssueCode === "invalid_json";
   const claudeConnectedWithoutQuota =
     claudeMissingRateLimits || claudeInputIssue;
+  const localTerminal = localTerminalName(state.setupStatus?.hostPlatform);
   const canAutoSetupClaude =
     !claudeComplete && (!claudeManaged || !claudeCliAvailable);
   const claudeCliOpenCommand =
@@ -1438,8 +1439,9 @@ function buildInitialSetupModel(items, readiness) {
         detail: claudeCliAvailable
           ? claudeCliOnPath
             ? tx(
-                "Use this one button. It opens Claude Code from PowerShell or Windows Terminal.",
-                "只用这个复制按钮。它会从 PowerShell 或 Windows Terminal 打开 Claude Code。"
+                "Use this one button. It opens Claude Code from {terminal}.",
+                "只用这个复制按钮。它会从{terminal}打开 Claude Code。",
+                { terminal: localTerminal }
               )
             : tx(
                 "Use this one button. It opens your installed Claude Code by full path, so you do not need to change PATH.",
@@ -1672,8 +1674,9 @@ function buildInitialSetupModel(items, readiness) {
                 "点击下面的“复制命令”按钮。"
               ),
               tx(
-                "Paste it into PowerShell or Windows Terminal, then press Enter.",
-                "粘贴到 PowerShell 或 Windows Terminal，然后按 Enter。"
+                "Paste it into {terminal}, then press Enter.",
+                "粘贴到{terminal}，然后按 Enter。",
+                { terminal: localTerminal }
               ),
               tx(
                 "Finish Claude's own prompts, such as theme, login, or project trust.",
@@ -1694,8 +1697,9 @@ function buildInitialSetupModel(items, readiness) {
                 "点击下面的“复制命令”。"
               ),
               tx(
-                "Open PowerShell or Windows Terminal; paste and press Enter.",
-                "打开 PowerShell 或 Windows Terminal，粘贴后按 Enter。"
+                "Open {terminal}; paste and press Enter.",
+                "打开{terminal}，粘贴后按 Enter。",
+                { terminal: localTerminal }
               ),
               tx(
                 "When the prompt returns, come back and click check.",
@@ -1853,6 +1857,27 @@ function buildInitialSetupModel(items, readiness) {
 
 function buildCodexDoneDetail(codex) {
   return codex?.detail ?? tx("Codex value is saved.", "Codex 额度已保存。");
+}
+
+function localTerminalName(platform) {
+  const normalized = String(platform ?? "").toLowerCase();
+
+  if (normalized === "win32") {
+    return tx(
+      "PowerShell or Windows Terminal",
+      "PowerShell 或 Windows Terminal"
+    );
+  }
+
+  if (normalized === "darwin") {
+    return tx("Terminal on macOS", "macOS 的“终端”");
+  }
+
+  if (normalized === "linux") {
+    return tx("your Linux terminal", "你的 Linux 终端");
+  }
+
+  return tx("your system terminal", "你的系统终端");
 }
 
 function renderSetupCurrentAction(model) {

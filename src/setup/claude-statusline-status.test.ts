@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { platform, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { getClaudeStatuslineSetupStatus } from "./claude-statusline-status.js";
@@ -25,6 +25,7 @@ describe("getClaudeStatuslineSetupStatus", () => {
       assert.equal(status.latestHasRateLimits, false);
       assert.equal(status.readiness, "needs_setup");
       assert.equal(status.readinessLabel, "Setup required");
+      assert.equal(status.hostPlatform, platform());
       assert.match(status.nextAction, /setup claude-statusline --write/);
       assert.match(
         status.selfTestCommand,
