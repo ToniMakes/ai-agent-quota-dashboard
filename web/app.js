@@ -120,17 +120,17 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
-  const claudeCheckActionButton = target.closest("[data-claude-check-action]");
-
-  if (claudeCheckActionButton instanceof HTMLButtonElement) {
-    await runClaudeStatuslineCheck();
-    return;
-  }
-
   const claudeAutoSetupButton = target.closest("[data-claude-auto-setup-action]");
 
   if (claudeAutoSetupButton instanceof HTMLButtonElement) {
     await runClaudeAutoSetup();
+    return;
+  }
+
+  const claudeCheckActionButton = target.closest("[data-claude-check-action]");
+
+  if (claudeCheckActionButton instanceof HTMLButtonElement) {
+    await runClaudeStatuslineCheck();
     return;
   }
 
@@ -442,14 +442,18 @@ async function runClaudeAutoSetup() {
   state.refreshStatus = {
     kind: "pending",
     message: tx(
-      "Installing and configuring Claude Code.",
-      "正在安装并配置 Claude Code。"
+      "Connecting and configuring Claude Code.",
+      "正在接入并配置 Claude Code。"
     )
   };
   render();
 
   try {
-    const response = await fetch("/api/setup/claude-auto", { method: "POST" });
+    const response = await fetch("/api/setup/claude-auto", {
+      body: JSON.stringify({ installIfMissing: false }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST"
+    });
     const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
@@ -1518,19 +1522,19 @@ function buildInitialSetupModel(items, readiness) {
           autoSetupPending: claudeAutoSetupPending,
           autoSetupResult: state.claudeAutoSetupResult,
           detail: tx(
-            "AIQD can install Claude Code CLI with WinGet on Windows and write its own local statusline capture setting. You approve once by clicking the automatic setup button.",
-            "AIQD 可以在 Windows 上用 WinGet 安装 Claude Code CLI，并写入 AIQD 自己的本地 statusline 采集设置。你点击自动设置按钮，即表示同意这一次本地改动。"
+            "AIQD will connect your existing Claude Code by writing its local statusline capture setting. It will not install new software from this button.",
+            "AIQD 会通过写入本地 statusline 采集设置来接入你已有的 Claude Code。这个按钮不会安装新软件。"
           ),
           tip: {
             text: tx(
-              "AIQD will not read cookies, passwords, prompts, responses, source code, or account identifiers. If Claude Code asks you to sign in, finish that in Claude Code itself.",
-              "AIQD 不读取 cookie、密码、提示词、回复、源码或账号标识。如果 Claude Code 要求登录，请在 Claude Code 自己的流程里完成。"
+              "Claude desktop and Claude Code CLI are different. AIQD needs Claude Code's terminal/statusline data; the ordinary Claude desktop app cannot send quota statusline fields.",
+              "Claude 桌面应用和 Claude Code CLI 不是同一个东西。AIQD 需要 Claude Code 的终端/statusline 数据；普通 Claude 桌面应用不会发送这些额度字段。"
             ),
-            title: tx("What stays manual", "哪些仍需你自己确认")
+            title: tx("Claude app vs Claude Code", "Claude 应用和 Claude Code 的区别")
           },
           title: tx(
-            "One-click local setup",
-            "一键完成本地设置"
+            "Connect existing Claude Code",
+            "接入已有 Claude Code"
           )
         }
       : undefined;
@@ -1606,8 +1610,8 @@ function buildInitialSetupModel(items, readiness) {
           ? claudeAutoSetupPending
             ? tx("Setting up Claude", "正在设置 Claude")
             : tx(
-                "Auto-install and configure Claude",
-                "自动安装并配置 Claude"
+                "Connect existing Claude Code",
+                "接入已有 Claude Code"
               )
         : claudeManaged
           ? tx(
@@ -1617,8 +1621,8 @@ function buildInitialSetupModel(items, readiness) {
           : tx("Open Claude setup", "打开 Claude 设置"),
       actionTitle: canAutoSetupClaude
         ? tx(
-            "Let AIQD install and configure Claude Code",
-            "让 AIQD 安装并配置 Claude Code"
+            "Let AIQD connect your existing Claude Code",
+            "让 AIQD 接入你已有的 Claude Code"
           )
         : claudeManaged
         ? tx(
@@ -1629,16 +1633,16 @@ function buildInitialSetupModel(items, readiness) {
       checklist: canAutoSetupClaude
         ? [
             tx(
-              "Click the automatic setup button.",
-              "点击自动设置按钮。"
+              "Click the connect button.",
+              "点击接入按钮。"
             ),
             tx(
-              "AIQD installs Claude Code CLI when needed and writes its local statusline setting.",
-              "AIQD 会在需要时安装 Claude Code CLI，并写入本地 statusline 设置。"
+              "AIQD writes its local statusline setting; it does not install software here.",
+              "AIQD 会写入本地 statusline 设置；这里不会安装新软件。"
             ),
             tx(
-              "If Claude Code asks you to sign in later, finish that in Claude Code itself.",
-              "如果之后 Claude Code 要求登录，请在 Claude Code 自己的流程里完成。"
+              "Then open Claude Code CLI once from your normal terminal so it can send quota data.",
+              "然后从你平时使用的终端打开一次 Claude Code CLI，让它发送额度数据。"
             )
           ]
         : claudeManaged
@@ -1688,8 +1692,8 @@ function buildInitialSetupModel(items, readiness) {
       complete: claudeComplete,
       detail: canAutoSetupClaude
         ? tx(
-            "AIQD can handle the local install and statusline configuration. You still approve Claude Code's own sign-in or authorization prompts yourself.",
-            "AIQD 可以处理本地安装和 statusline 配置。Claude Code 自己的登录或授权提示仍由你本人确认。"
+            "AIQD can configure the local statusline capture for your existing Claude Code. It will not install Claude Code unless you choose an explicit install path later.",
+            "AIQD 可以为你已有的 Claude Code 配置本地 statusline 采集。除非后续你明确选择安装路径，否则它不会安装 Claude Code。"
           )
         : claudeManaged
         ? tx(
@@ -1721,7 +1725,7 @@ function buildInitialSetupModel(items, readiness) {
             )
           : tx("Setup is not enabled yet.", "尚未启用设置。"),
       claudeAutoSetupAction: canAutoSetupClaude,
-      claudeCheckAction: claudeWaiting,
+      claudeCheckAction: claudeWaiting && !canAutoSetupClaude,
       disabled: claudeAutoSetupPending,
       notice: claudeWaitingNotice,
       secondaryActionLabel:
@@ -2023,7 +2027,7 @@ function localizedClaudeAutoNextAction(action) {
   }
 
   if (action.includes("cannot see the claude command yet")) {
-    return "本地设置已完成，但当前 AIQD 进程还没识别到 claude 命令。请打开新终端检查 claude --version；必要时重启 AIQD。";
+    return "本地 statusline 设置已完成，但当前 AIQD 进程还没识别到 claude 命令。如果 Claude Code 在你的终端里能打开，请在那里打开一次；必要时重启 AIQD。";
   }
 
   if (action.includes("Review the warning")) {

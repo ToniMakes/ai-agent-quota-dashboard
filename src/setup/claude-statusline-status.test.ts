@@ -249,11 +249,11 @@ describe("getClaudeStatuslineSetupStatus", () => {
       assert.equal(status.claudeCliAvailable, false);
       assert.equal(status.readiness, "waiting_for_data");
       assert.equal(status.readinessLabel, "Waiting for Claude Code CLI command");
-      assert.match(status.nextAction, /Install Claude Code CLI/);
+      assert.match(status.nextAction, /Open Claude Code from your usual terminal/);
       assert.equal(cliCheck?.status, "warn");
       assert.match(
         cliCheck?.action ?? "",
-        /Anthropic\.ClaudeCode|claude\.ai\/install/
+        /Open Claude Code from your usual terminal/
       );
     } finally {
       await rm(directory, { force: true, recursive: true });

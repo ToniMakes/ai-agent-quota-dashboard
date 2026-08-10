@@ -185,8 +185,15 @@ async function handleApiRequest(
   }
 
   if (request.method === "POST" && url.pathname === "/api/setup/claude-auto") {
+    const body = await readJsonBody(request);
+
+    if (!isRecord(body)) {
+      throw new HttpRequestError(400, "Request body must be a JSON object.");
+    }
+
     const setup = await runClaudeAutoSetup({
-      entryPointUrl: context.entryPointUrl
+      entryPointUrl: context.entryPointUrl,
+      installIfMissing: body.installIfMissing === true
     });
     const refreshResult = await context.service.refresh();
 
