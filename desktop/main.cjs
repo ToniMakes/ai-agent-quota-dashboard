@@ -37,7 +37,9 @@ const preloadPath = path.join(__dirname, "preload.cjs");
 const panelSize = { width: 340, height: 236 };
 const widgetSize = { width: 340, height: 196 };
 const smokeMode = process.argv.includes("--smoke");
-const smokeUserDataDir = smokeMode
+const firstRunGuideSmokeMode = process.argv.includes("--smoke-first-run-guide");
+const smokeLikeMode = smokeMode || firstRunGuideSmokeMode;
+const smokeUserDataDir = smokeLikeMode
   ? path.join(tmpdir(), `aiqd-desktop-smoke-${process.pid}`)
   : undefined;
 const trayStatusIntervalMs = 30_000;
@@ -73,7 +75,7 @@ if (!hasSingleInstanceLock) {
   app.quit();
 } else {
   app.on("second-instance", () => {
-    if (smokeMode) {
+    if (smokeLikeMode) {
       return;
     }
 
@@ -108,6 +110,12 @@ if (!hasSingleInstanceLock) {
 
     if (smokeMode) {
       console.log(`AIQD desktop smoke ready at ${baseUrl}`);
+      app.quit();
+      return;
+    }
+
+    if (firstRunGuideSmokeMode) {
+      await runFirstRunGuideSmoke();
       app.quit();
       return;
     }
@@ -195,8 +203,24 @@ function backendEnv() {
 
   return {
     ...process.env,
+    AIQD_CLAUDE_SETTINGS_PATH: path.join(
+      smokeUserDataDir,
+      ".claude",
+      "settings.json"
+    ),
+    AIQD_CLAUDE_STATUSLINE_DIR: path.join(smokeUserDataDir, "claude-code"),
+    AIQD_CLAUDE_STATUSLINE_SHIM_PATH: path.join(
+      smokeUserDataDir,
+      "claude-statusline.ps1"
+    ),
+    AIQD_CODEX_MANUAL_SNAPSHOT_PATH: path.join(
+      smokeUserDataDir,
+      "codex",
+      "codex-quota-snapshot.json"
+    ),
     AIQD_CONFIG_PATH: path.join(smokeUserDataDir, "config.json"),
-    AIQD_DB_PATH: path.join(smokeUserDataDir, "quota.db")
+    AIQD_DB_PATH: path.join(smokeUserDataDir, "quota.db"),
+    CLAUDE_CONFIG_DIR: path.join(smokeUserDataDir, ".claude")
   };
 }
 
@@ -439,23 +463,15 @@ function dashboardUrl(view, target) {
 }
 
 async function openFirstRunGuide() {
-  const state = readDesktopState();
-
-  if (state.firstRunGuideShownAt) {
-    return;
-  }
-
   try {
-    const payload = await getJson(`${baseUrl}/api/agents`);
-    const guideTarget = firstRunGuideTarget(payload.agents ?? []);
+    const result = await resolveFirstRunGuide();
 
-    writeDesktopState({
-      ...readDesktopState(),
-      firstRunGuideShownAt: new Date().toISOString()
-    });
+    if (result.skipped) {
+      return;
+    }
 
-    if (guideTarget) {
-      openDashboardWindow(guideTarget.view, guideTarget.target);
+    if (result.guideTarget) {
+      openDashboardWindow(result.guideTarget.view, result.guideTarget.target);
       return;
     }
 
@@ -463,6 +479,56 @@ async function openFirstRunGuide() {
   } catch {
     // Keep startup quiet if the guide cannot be resolved.
   }
+}
+
+async function runFirstRunGuideSmoke() {
+  const result = await resolveFirstRunGuide();
+  const state = readDesktopState();
+  const guidePath = result.guideTarget
+    ? dashboardPath(result.guideTarget.view, result.guideTarget.target)
+    : "mini-panel";
+  const expectedPath = "/?view=settings#codex-snapshot-content";
+  const ok = !result.skipped && guidePath === expectedPath && Boolean(
+    state.firstRunGuideShownAt
+  );
+  const output = {
+    expectedPath,
+    firstRunGuideShownAt: state.firstRunGuideShownAt ?? null,
+    guidePath,
+    ok,
+    skipped: result.skipped
+  };
+
+  console.log(`AIQD desktop first-run guide smoke ${ok ? "passed" : "failed"}`);
+  console.log(JSON.stringify(output, null, 2));
+
+  if (!ok) {
+    process.exitCode = 1;
+  }
+}
+
+async function resolveFirstRunGuide() {
+  const state = readDesktopState();
+
+  if (state.firstRunGuideShownAt) {
+    return {
+      guideTarget: undefined,
+      skipped: true
+    };
+  }
+
+  const payload = await getJson(`${baseUrl}/api/agents`);
+  const guideTarget = firstRunGuideTarget(payload.agents ?? []);
+
+  writeDesktopState({
+    ...readDesktopState(),
+    firstRunGuideShownAt: new Date().toISOString()
+  });
+
+  return {
+    guideTarget,
+    skipped: false
+  };
 }
 
 function secureWebPreferences() {
