@@ -50,6 +50,8 @@ export type ClaudeStatuslineSetupStatus = {
   latestObservedAt?: string;
   latestAgeSeconds?: number;
   latestHasRateLimits: boolean;
+  latestIssue?: string;
+  latestIssueCode?: string;
   latestWindowTypes: QuotaWindowType[];
   historyPath: string;
   historyExists: boolean;
@@ -170,6 +172,14 @@ export async function getClaudeStatuslineSetupStatus(
     status.latestObservedAt = latest.observedAt;
   }
 
+  if (latest.issue) {
+    status.latestIssue = latest.issue;
+  }
+
+  if (latest.issueCode) {
+    status.latestIssueCode = latest.issueCode;
+  }
+
   if (latestAgeSeconds !== undefined) {
     status.latestAgeSeconds = latestAgeSeconds;
   }
@@ -251,7 +261,7 @@ function resolveReadiness(input: {
         : "Waiting for Claude Code CLI command",
       nextAction:
         input.status.claudeCliAvailable
-          ? "Open Claude Code from a terminal, let the statusline render once, then refresh this dashboard."
+          ? "Open Claude Code from a terminal. If it already shows 'Claude quota: waiting for rate limit data', run /status or send a short message, then check again."
           : "Open Claude Code from your usual terminal. If no terminal has the claude command, install Claude Code CLI first."
     };
   }
@@ -425,7 +435,21 @@ function buildLatestSnapshotCheck(input: {
       message: "No statusline snapshot received yet",
       detail: input.status.latestPath,
       action:
-        "Open Claude Code from a terminal, let the statusline render once, then refresh this dashboard."
+        "Open Claude Code from a terminal. If it already shows 'Claude quota: waiting for rate limit data', run /status or send a short message, then check again."
+    };
+  }
+
+  if (input.latest.issueCode === "missing_rate_limits") {
+    return {
+      id: "latest-snapshot",
+      label: "Latest snapshot",
+      status: "warn",
+      message: "Claude connected, but no quota fields were included",
+      detail:
+        input.latest.issue ??
+        "Claude Code called AIQD, but this statusline payload did not include rate_limits.",
+      action:
+        "In Claude Code, run /status or send a short message, then check again."
     };
   }
 
@@ -488,6 +512,7 @@ async function readSettings(path: string): Promise<Record<string, unknown> | und
 type LatestSnapshotStatus = {
   hasRateLimits: boolean;
   issue?: string;
+  issueCode?: "missing_rate_limits";
   observedAt?: string;
   windowTypes: QuotaWindowType[];
 };
@@ -516,6 +541,23 @@ async function readLatestSnapshot(path: string): Promise<LatestSnapshotStatus> {
     }
 
     const rateLimits = isRecord(parsed.rate_limits) ? parsed.rate_limits : undefined;
+
+    if (parsed.type === "claude_code_statusline_no_rate_limits") {
+      const result: LatestSnapshotStatus = {
+        hasRateLimits: false,
+        issue:
+          "Claude Code called AIQD, but this statusline payload did not include rate_limits.",
+        issueCode: "missing_rate_limits",
+        windowTypes: []
+      };
+
+      if (typeof parsed.observed_at === "string") {
+        result.observedAt = parsed.observed_at;
+      }
+
+      return result;
+    }
+
     const windowTypes = rateLimits ? readRateLimitWindowTypes(rateLimits) : [];
     const result = {
       hasRateLimits: windowTypes.length > 0,
