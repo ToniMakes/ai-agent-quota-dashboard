@@ -19,6 +19,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Environment overrides for Claude Code setup paths
 - Development desktop shell with a tray mini panel and optional always-on-top widget
 - Tray tooltip/menu quota summaries for the desktop shell
+- Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
 - Mini and tray first-run actions that open Settings or Doctor directly
 - Compact mini-surface quota rows with manual refresh and reset/observed summaries
 - Single-instance desktop shell behavior that focuses the existing mini panel on repeat launch

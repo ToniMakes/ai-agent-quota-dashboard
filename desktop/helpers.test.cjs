@@ -1,6 +1,7 @@
 const assert = require("node:assert/strict");
 const { describe, it } = require("node:test");
 const {
+  buildTrayMenuTemplate,
   clampBoundsToWorkArea,
   hasClaudeWaitingState,
   isSavedWidgetBounds,
@@ -12,6 +13,51 @@ const {
 const nowMs = Date.parse("2026-08-10T00:00:00.000Z");
 
 describe("desktop helpers", () => {
+  it("builds tray menu actions for real-data setup", () => {
+    const template = buildTrayMenuTemplate({
+      actions: {
+        openDashboardWindow() {},
+        openDoctorWindow() {},
+        openSettingsWindow() {},
+        quit() {},
+        refreshTrayNow() {},
+        togglePanelWindow() {},
+        toggleWidgetWindow() {}
+      },
+      isRefreshing: false,
+      trayStatus: "Codex: setup | Claude: waiting"
+    });
+    const labels = template
+      .filter((item) => item.label)
+      .map((item) => item.label);
+
+    assert.deepEqual(labels, [
+      "Codex: setup | Claude: waiting",
+      "Open Mini Panel",
+      "Toggle Desktop Widget",
+      "Refresh Now",
+      "Open Dashboard",
+      "Open Doctor",
+      "Open Settings",
+      "Quit"
+    ]);
+    assert.equal(
+      template.find((item) => item.label === "Refresh Now")?.enabled,
+      true
+    );
+  });
+
+  it("disables tray refresh while refresh is running", () => {
+    const template = buildTrayMenuTemplate({
+      actions: {},
+      isRefreshing: true,
+      trayStatus: "Codex: setup"
+    });
+    const refreshItem = template.find((item) => item.label === "Refreshing");
+
+    assert.equal(refreshItem?.enabled, false);
+  });
+
   it("summarizes compact agent status for tray text", () => {
     const summary = summarizeAgents(
       [
