@@ -158,6 +158,54 @@ describe("desktop helpers", () => {
     );
   });
 
+  it("uses strict readiness for first-run guide targets", () => {
+    assert.deepEqual(
+      firstRunGuideTarget(
+        [
+          {
+            agent: "codex",
+            primarySnapshot: { remainingPercent: 70 }
+          }
+        ],
+        {
+          ok: false,
+          checks: [
+            {
+              agent: "codex",
+              displayName: "Codex",
+              message: "Codex quota data is stale.",
+              provider: "openai",
+              status: "fail"
+            }
+          ]
+        }
+      ),
+      {
+        target: "codex-snapshot-content",
+        view: "settings"
+      }
+    );
+
+    assert.deepEqual(
+      firstRunGuideTarget([], {
+        ok: false,
+        checks: [
+          {
+            agent: "doctor",
+            displayName: "Doctor",
+            message: "Blocking diagnostics must pass.",
+            provider: "local",
+            status: "fail"
+          }
+        ]
+      }),
+      {
+        target: "doctor-list",
+        view: "doctor"
+      }
+    );
+  });
+
   it("formats desktop startup recovery guidance", () => {
     const message = formatStartupError({
       detail: "No free localhost port between 4317 and 4399",

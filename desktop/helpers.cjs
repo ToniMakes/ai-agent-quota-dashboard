@@ -53,7 +53,13 @@ function dashboardPath(view, target) {
   return `/?view=${encodeURIComponent(view)}${hash ? `#${hash}` : ""}`;
 }
 
-function firstRunGuideTarget(agents) {
+function firstRunGuideTarget(agents, readiness) {
+  const readinessTarget = firstRunGuideTargetFromReadiness(readiness);
+
+  if (readinessTarget) {
+    return readinessTarget;
+  }
+
   if (!Array.isArray(agents) || agents.length === 0) {
     return {
       target: "real-data-content",
@@ -85,6 +91,49 @@ function firstRunGuideTarget(agents) {
   }
 
   if (missing.agent === "claude-code") {
+    return {
+      target: "settings-content",
+      view: "settings"
+    };
+  }
+
+  return {
+    target: "real-data-content",
+    view: "settings"
+  };
+}
+
+function firstRunGuideTargetFromReadiness(readiness) {
+  if (!readiness || readiness.ok) {
+    return undefined;
+  }
+
+  const failedCheck = (readiness.checks ?? []).find(
+    (check) => check.status === "fail"
+  );
+
+  if (!failedCheck) {
+    return {
+      target: "real-data-content",
+      view: "settings"
+    };
+  }
+
+  if (failedCheck.agent === "doctor") {
+    return {
+      target: "doctor-list",
+      view: "doctor"
+    };
+  }
+
+  if (failedCheck.agent === "codex") {
+    return {
+      target: "codex-snapshot-content",
+      view: "settings"
+    };
+  }
+
+  if (failedCheck.agent === "claude-code") {
     return {
       target: "settings-content",
       view: "settings"

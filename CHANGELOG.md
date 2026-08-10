@@ -20,7 +20,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Settings view strict real-data trial readiness from the same checks as `trial:ready`
 - Environment overrides for Claude Code setup paths
 - Development desktop shell with a tray mini panel and optional always-on-top widget
-- One-time desktop first-run guide that opens the exact setup or Doctor section
+- One-time desktop first-run guide that uses strict trial readiness to open the exact setup or Doctor section
 - Desktop smoke coverage for the first-run guide deep-link and local state write
 - Desktop startup diagnostics with recovery guidance for backend failures
 - Desktop global shortcuts for AIQD mini panel, refresh, and widget actions
@@ -30,7 +30,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Tray tooltip/menu quota summaries for the desktop shell
 - Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
 - Mini footer summary for the latest refresh result and warnings
-- Mini setup progress text for first-run Codex and Claude Code onboarding
+- Mini strict readiness progress text for first-run Codex and Claude Code onboarding
 - Clickable mini footer actions for refresh warnings and setup guidance
 - Mini and tray first-run actions that open Settings or Doctor directly
 - Mini first-run actions deep-link to the exact Settings or Doctor section
