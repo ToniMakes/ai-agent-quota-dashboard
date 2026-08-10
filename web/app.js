@@ -1411,9 +1411,12 @@ function buildInitialSetupModel(items, readiness) {
   const claudeManaged = Boolean(state.setupStatus?.statusLineManagedByApp);
   const claudeWaiting = claudeManaged && !claudeComplete;
   const claudeCliAvailable = Boolean(state.setupStatus?.claudeCliAvailable);
+  const claudeCliOnPath = state.setupStatus?.claudeCliOnPath !== false;
   const claudeAutoSetupPending = Boolean(state.claudeAutoSetupPending);
   const canAutoSetupClaude =
     !claudeComplete && (!claudeManaged || !claudeCliAvailable);
+  const claudeCliCommand = state.setupStatus?.claudeCliCommand ?? "claude";
+  const claudeCliVersionCommand = `${claudeCliCommand} --version`;
   const claudeCliOpenCommand =
     state.setupStatus?.claudeCliOpenCommand ??
     "Set-Location -LiteralPath 'C:\\path\\to\\your-project'\nclaude";
@@ -1428,13 +1431,18 @@ function buildInitialSetupModel(items, readiness) {
         autoSetupPending: claudeAutoSetupPending,
         autoSetupResult: state.claudeAutoSetupResult,
         detail: claudeCliAvailable
-          ? tx(
-              "AIQD found the claude command. Now copy the project command below, paste it into PowerShell, and press Enter.",
-              "AIQD 已找到 claude 命令。现在只需要复制下面的项目命令，粘贴到 PowerShell，然后按 Enter。"
-            )
+          ? claudeCliOnPath
+            ? tx(
+                "AIQD found the claude command. Now copy the project command below, paste it into PowerShell, and press Enter.",
+                "AIQD 已找到 claude 命令。现在只需要复制下面的项目命令，粘贴到 PowerShell，然后按 Enter。"
+              )
+            : tx(
+                "AIQD found Claude Code in its local install folder, but that folder is not on PATH yet. Use the full-path project command below; it will work without editing PATH.",
+                "AIQD 已在本地安装目录找到 Claude Code，但这个目录还没有加入 PATH。请使用下面的完整路径项目命令；它不需要你先改 PATH。"
+              )
           : tx(
-              "AIQD did not find the claude command. Do only the highlighted step first: copy the install command, paste it into PowerShell, and press Enter.",
-              "AIQD 没有找到 claude 命令。现在只做高亮的这一步：复制安装命令，粘贴到 PowerShell，然后按 Enter。"
+              "AIQD did not find the claude command. Do only the highlighted install step first. After pressing Enter, the terminal can stay quiet for a while; wait for the installer to finish.",
+              "AIQD 没有找到 claude 命令。现在只做高亮的安装步骤。按 Enter 后终端可能会安静一段时间；请等安装器完成。"
             ),
         methods: [
           ...(claudeCliAvailable
@@ -1472,8 +1480,12 @@ function buildInitialSetupModel(items, readiness) {
                       "点击下面高亮的复制按钮。"
                     ),
                     tx(
-                      "Paste into PowerShell, press Enter, then wait until a new PS ...> prompt appears.",
-                      "粘贴到 PowerShell，按 Enter，然后等新的 PS ...> 提示符出现。"
+                      "Paste into PowerShell and press Enter. No output for 30 seconds to a few minutes can be normal.",
+                      "粘贴到 PowerShell 并按 Enter。30 秒到几分钟没有新输出都可能是正常的。"
+                    ),
+                    tx(
+                      "Do not paste claude --version yet. Wait until Installation complete or a new PS ...> prompt appears.",
+                      "现在不要粘贴 claude --version。请等出现 Installation complete 或新的 PS ...> 提示符。"
                     )
                   ],
                   title: tx(
@@ -1501,8 +1513,8 @@ function buildInitialSetupModel(items, readiness) {
               command: claudeCliInstallCommand,
               copyLabel: tx("Copy install command", "复制安装命令"),
               detail: tx(
-                "Run this in PowerShell first. If prompted by WinGet, type Y to continue. After installation, come back and click the check button.",
-                "先在 PowerShell 里运行这条。如果 WinGet 询问是否同意，输入 Y 继续。安装完成后，回到这里点击检查按钮。"
+                "Run this in PowerShell first. The installer may show no output for a while; that is normal. After the prompt returns, come back and click the check button.",
+                "先在 PowerShell 里运行这条。安装器可能有一段时间没有新输出，这是正常的。等提示符回来后，回到这里点击检查按钮。"
               ),
               eyebrow: tx("Copy this one now", "现在复制这一条"),
               title: tx("Install Claude Code CLI", "安装 Claude Code CLI")
@@ -1517,19 +1529,19 @@ function buildInitialSetupModel(items, readiness) {
             }
           : {
               text: tx(
-                "If there is no output for more than 2 minutes, press Ctrl+C to cancel and try the install command again in a normal non-admin PowerShell. While installing, do not paste claude --version; wait until a new PS ...> prompt appears.",
-                "如果超过 2 分钟完全没输出，按 Ctrl+C 取消，换普通非管理员 PowerShell 再试安装命令。安装期间不要粘贴 claude --version；等重新出现新的 PS ...> 提示符后再检查。"
+                "Seeing only a blinking cursor after the install command is not automatically an error. Wait for Setting up Claude Code, Installation complete, or a new PS ...> prompt. Only cancel if nothing changes after several minutes.",
+                "输入安装命令后只看到光标闪烁，不一定是出错。请等出现 Setting up Claude Code、Installation complete，或新的 PS ...> 提示符。只有几分钟都没有任何变化时再取消。"
               ),
-              title: tx("If PowerShell looks stuck", "如果 PowerShell 看起来卡住")
+              title: tx("Waiting is normal", "等待是正常的")
             },
         secondaryCommands: claudeCliAvailable
           ? [
               {
-                command: "claude --version",
+                command: claudeCliVersionCommand,
                 label: tx("Optional: check the CLI version", "可选：检查 CLI 版本")
               },
               {
-                command: "claude",
+                command: claudeCliCommand,
                 label: tx(
                   "Optional: run when terminal is already in a project",
                   "可选：终端已经在项目里时运行"
@@ -1538,7 +1550,7 @@ function buildInitialSetupModel(items, readiness) {
             ]
           : [
               {
-                command: "claude --version",
+                command: claudeCliVersionCommand,
                 label: tx(
                   "After install: check whether claude works",
                   "安装后：检查 claude 是否可用"
@@ -1590,10 +1602,15 @@ function buildInitialSetupModel(items, readiness) {
           detail: state.setupStatus?.latestPath,
           kind: "warning",
           message: claudeCliAvailable
-            ? tx(
-                "Current check: no Claude Code statusline file has been received yet. Open a terminal in a project and run claude.",
-                "当前检测结果：还没有收到 Claude Code statusline 文件。请在项目文件夹里打开终端并运行 claude。"
-              )
+            ? claudeCliOnPath
+              ? tx(
+                  "Current check: no Claude Code statusline file has been received yet. Open a terminal in a project and run claude.",
+                  "当前检测结果：还没有收到 Claude Code statusline 文件。请在项目文件夹里打开终端并运行 claude。"
+                )
+              : tx(
+                  "Current check: no Claude Code statusline file has been received yet. Claude Code is installed outside PATH, so use the full-path project command shown below.",
+                  "当前检测结果：还没有收到 Claude Code statusline 文件。Claude Code 已安装但不在 PATH 里，请使用下面显示的完整路径项目命令。"
+                )
             : tx(
                 "Current check: no Claude Code statusline file has been received yet, and AIQD did not find the claude command on PATH.",
                 "当前检测结果：还没有收到 Claude Code statusline 文件，并且 AIQD 没有在 PATH 里找到 claude 命令。"
@@ -3114,7 +3131,11 @@ function renderSettings() {
             tx("Claude Code CLI", "Claude Code CLI"),
             status.claudeCliAvailable ? tx("Found", "已找到") : tx("Not found", "未找到"),
             status.claudeCliAvailable
-              ? status.claudeCliPath ?? status.claudeCliCommand ?? "claude"
+              ? status.claudeCliOnPath === false
+                ? tx("Installed at {path}, but not on PATH. AIQD will use the full path.", "已安装在 {path}，但还不在 PATH。AIQD 会使用完整路径。", {
+                    path: status.claudeCliPath ?? status.claudeCliCommand ?? "claude"
+                  })
+                : status.claudeCliPath ?? status.claudeCliCommand ?? "claude"
               : tx("Install command: {command}", "安装命令：{command}", {
                   command: status.claudeCliInstallCommand
                 }),
