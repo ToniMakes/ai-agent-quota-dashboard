@@ -8,6 +8,9 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ### Added
 
+- Project status document summarizing current v0.1 developer-preview progress and next release focus
+- Mini dashboard language toggle shared with the main dashboard language preference
+- Chinese/English language switching for tray mini panel and always-on-top widget surfaces
 - Normalized JSON and CSV export endpoints for dashboard quota data
 - Settings view export buttons for local JSON/CSV downloads
 - Manual Codex snapshot CLI for visible `/status` or Usage values
@@ -65,6 +68,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ### Fixed
 
+- Dashboard quota cards now clarify remaining quota versus official pages that display used quota
 - Codex manual snapshot files saved by the Settings form now refresh into the Dashboard
 - Claude Code setup status tolerates UTF-8 BOM in settings and latest snapshot JSON
 
