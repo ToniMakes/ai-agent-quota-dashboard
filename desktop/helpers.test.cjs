@@ -5,6 +5,7 @@ const {
   clampBoundsToWorkArea,
   hasClaudeWaitingState,
   isSavedWidgetBounds,
+  resolveDesktopShortcuts,
   resolveWidgetBounds,
   shouldRefreshForClaudeStatusline,
   summarizeAgents
@@ -25,6 +26,11 @@ describe("desktop helpers", () => {
         toggleWidgetWindow() {}
       },
       isRefreshing: false,
+      shortcuts: {
+        panel: "CommandOrControl+Alt+Q",
+        refresh: "CommandOrControl+Alt+R",
+        widget: "CommandOrControl+Alt+W"
+      },
       trayStatus: "Codex: setup | Claude: waiting"
     });
     const labels = template
@@ -44,6 +50,14 @@ describe("desktop helpers", () => {
     assert.equal(
       template.find((item) => item.label === "Refresh Now")?.enabled,
       true
+    );
+    assert.equal(
+      template.find((item) => item.label === "Open Mini Panel")?.accelerator,
+      "CommandOrControl+Alt+Q"
+    );
+    assert.equal(
+      template.find((item) => item.label === "Refresh Now")?.accelerator,
+      "CommandOrControl+Alt+R"
     );
   });
 
@@ -122,6 +136,26 @@ describe("desktop helpers", () => {
     assert.equal(
       shouldRefreshForClaudeStatusline(agents, { latestHasRateLimits: false }),
       false
+    );
+  });
+
+  it("resolves default and user-configured desktop shortcuts", () => {
+    assert.deepEqual(resolveDesktopShortcuts({}), {
+      panel: "CommandOrControl+Alt+Q",
+      refresh: "CommandOrControl+Alt+R",
+      widget: "CommandOrControl+Alt+W"
+    });
+    assert.deepEqual(
+      resolveDesktopShortcuts({
+        AIQD_SHORTCUT_PANEL: "F3",
+        AIQD_SHORTCUT_REFRESH: "off",
+        AIQD_SHORTCUT_WIDGET: "CommandOrControl+Shift+W"
+      }),
+      {
+        panel: "F3",
+        refresh: undefined,
+        widget: "CommandOrControl+Shift+W"
+      }
     );
   });
 

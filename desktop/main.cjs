@@ -1,12 +1,29 @@
-const { app, BrowserWindow, Menu, Tray, ipcMain, nativeImage, screen, shell } =
-  require("electron");
+const {
+  app,
+  BrowserWindow,
+  Menu,
+  Tray,
+  globalShortcut,
+  ipcMain,
+  nativeImage,
+  screen,
+  shell
+} = require("electron");
 const { spawn } = require("node:child_process");
-const { existsSync, mkdirSync, readFileSync, writeFileSync } = require("node:fs");
+const {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync
+} = require("node:fs");
 const http = require("node:http");
 const net = require("node:net");
+const { tmpdir } = require("node:os");
 const path = require("node:path");
 const {
   buildTrayMenuTemplate,
+  resolveDesktopShortcuts,
   resolveWidgetBounds: resolveSavedWidgetBounds,
   shouldRefreshForClaudeStatusline,
   summarizeAgents
@@ -18,6 +35,9 @@ const preloadPath = path.join(__dirname, "preload.cjs");
 const panelSize = { width: 340, height: 236 };
 const widgetSize = { width: 340, height: 196 };
 const smokeMode = process.argv.includes("--smoke");
+const smokeUserDataDir = smokeMode
+  ? path.join(tmpdir(), `aiqd-desktop-smoke-${process.pid}`)
+  : undefined;
 const trayStatusIntervalMs = 30_000;
 
 let backend;
@@ -26,6 +46,7 @@ let desktopStatePath;
 let tray;
 let trayStatus = "Starting";
 let trayStatusTimer;
+let desktopShortcuts = {};
 let panelWindow;
 let widgetWindow;
 let dashboardWindow;
@@ -36,6 +57,13 @@ let showPanelWhenReady = false;
 
 app.setName("AI Agent Quota");
 app.setAppUserModelId("com.isToniLiu.ai-agent-quota-dashboard");
+
+if (smokeUserDataDir) {
+  app.commandLine.appendSwitch("disable-gpu");
+  app.commandLine.appendSwitch("disable-gpu-compositing");
+  app.setPath("userData", smokeUserDataDir);
+  app.disableHardwareAcceleration();
+}
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 
@@ -61,7 +89,7 @@ if (!hasSingleInstanceLock) {
     baseUrl = `http://127.0.0.1:${port}`;
     backend = spawn(process.env.AIQD_NODE_PATH ?? "node", backendArgs(port), {
       cwd: projectRoot,
-      env: process.env,
+      env: backendEnv(),
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true
     });
@@ -83,8 +111,10 @@ if (!hasSingleInstanceLock) {
     }
 
     registerIpc();
+    desktopShortcuts = resolveDesktopShortcuts(process.env);
     createTray();
     createPanelWindow();
+    registerGlobalShortcuts(desktopShortcuts);
     updateTrayStatus();
     trayStatusTimer = setInterval(() => {
       void updateTrayStatus();
@@ -103,6 +133,19 @@ if (!hasSingleInstanceLock) {
     }
     if (backend && !backend.killed) {
       backend.kill();
+    }
+    globalShortcut.unregisterAll();
+  });
+
+  app.on("will-quit", () => {
+    if (!smokeUserDataDir) {
+      return;
+    }
+
+    try {
+      rmSync(smokeUserDataDir, { force: true, recursive: true });
+    } catch {
+      // A locked Electron file should not fail smoke validation.
     }
   });
 
@@ -139,6 +182,18 @@ function backendArgs(port) {
   }
 
   return args;
+}
+
+function backendEnv() {
+  if (!smokeUserDataDir) {
+    return process.env;
+  }
+
+  return {
+    ...process.env,
+    AIQD_CONFIG_PATH: path.join(smokeUserDataDir, "config.json"),
+    AIQD_DB_PATH: path.join(smokeUserDataDir, "quota.db")
+  };
 }
 
 function registerIpc() {
@@ -231,10 +286,50 @@ function updateTrayMenu() {
           toggleWidgetWindow
         },
         isRefreshing: isTrayRefreshing,
+        shortcuts: desktopShortcuts,
         trayStatus
       })
     )
   );
+}
+
+function registerGlobalShortcuts(shortcuts) {
+  const registrations = [
+    {
+      accelerator: shortcuts.panel,
+      action: togglePanelWindow,
+      label: "mini panel"
+    },
+    {
+      accelerator: shortcuts.refresh,
+      action: () => {
+        void refreshTrayNow();
+      },
+      label: "refresh"
+    },
+    {
+      accelerator: shortcuts.widget,
+      action: toggleWidgetWindow,
+      label: "desktop widget"
+    }
+  ];
+
+  for (const registration of registrations) {
+    if (!registration.accelerator) {
+      continue;
+    }
+
+    const registered = globalShortcut.register(
+      registration.accelerator,
+      registration.action
+    );
+
+    if (!registered) {
+      console.warn(
+        `Could not register ${registration.label} shortcut: ${registration.accelerator}`
+      );
+    }
+  }
 }
 
 function createPanelWindow() {

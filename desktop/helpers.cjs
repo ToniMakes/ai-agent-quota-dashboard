@@ -10,15 +10,25 @@ function summarizeAgents(agents, options = {}) {
 
 function buildTrayMenuTemplate(input) {
   const actions = input.actions ?? {};
+  const shortcuts = input.shortcuts ?? {};
   const refreshLabel = input.isRefreshing ? "Refreshing" : "Refresh Now";
 
   return [
     { label: input.trayStatus, enabled: false },
     { type: "separator" },
-    { label: "Open Mini Panel", click: actions.togglePanelWindow },
-    { label: "Toggle Desktop Widget", click: actions.toggleWidgetWindow },
+    {
+      label: "Open Mini Panel",
+      accelerator: shortcuts.panel,
+      click: actions.togglePanelWindow
+    },
+    {
+      label: "Toggle Desktop Widget",
+      accelerator: shortcuts.widget,
+      click: actions.toggleWidgetWindow
+    },
     {
       label: refreshLabel,
+      accelerator: shortcuts.refresh,
       enabled: !input.isRefreshing,
       click: actions.refreshTrayNow
     },
@@ -110,6 +120,41 @@ function shouldRefreshForClaudeStatusline(agents, setupStatus) {
   return Boolean(setupStatus?.latestHasRateLimits && hasClaudeWaitingState(agents));
 }
 
+function resolveDesktopShortcuts(env = {}) {
+  return {
+    panel: resolveShortcutValue(
+      env.AIQD_SHORTCUT_PANEL,
+      "CommandOrControl+Alt+Q"
+    ),
+    refresh: resolveShortcutValue(
+      env.AIQD_SHORTCUT_REFRESH,
+      "CommandOrControl+Alt+R"
+    ),
+    widget: resolveShortcutValue(
+      env.AIQD_SHORTCUT_WIDGET,
+      "CommandOrControl+Alt+W"
+    )
+  };
+}
+
+function resolveShortcutValue(value, fallback) {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+
+  const normalized = value.trim();
+
+  if (normalized.length === 0) {
+    return fallback;
+  }
+
+  if (["0", "false", "off", "none", "disabled"].includes(normalized.toLowerCase())) {
+    return undefined;
+  }
+
+  return normalized;
+}
+
 function resolveWidgetBounds(input) {
   const { savedBounds, widgetSize, workArea } = input;
   const clampToWorkArea = input.clampToWorkArea ?? true;
@@ -156,6 +201,7 @@ module.exports = {
   hasClaudeWaitingState,
   isSavedWidgetBounds,
   resolveWidgetBounds,
+  resolveDesktopShortcuts,
   shouldRefreshForClaudeStatusline,
   summarizeAgent,
   summarizeAgents

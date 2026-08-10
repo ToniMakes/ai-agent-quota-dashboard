@@ -30,6 +30,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Dashboard and Doctor views
 - Mini panel page for tray-sized quota checks
 - Electron desktop shell with a tray mini panel and optional always-on-top widget
+- Desktop global shortcuts for AIQD mini panel, refresh, and widget actions
 - Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
 - Mini footer summary for the latest refresh result and warnings
 - Mini setup progress text for first-run Codex and Claude Code onboarding
@@ -111,6 +112,7 @@ It starts the local backend, adds an AI Agent Quota tray icon, and provides:
 - an optional always-on-top desktop widget
 - a tray tooltip and menu summary for the current quota state
 - tray menu shortcuts for Refresh, Doctor, Settings, and Dashboard
+- safe global shortcuts for AIQD itself: `Ctrl+Alt+Q` toggles the mini panel, `Ctrl+Alt+R` refreshes quota data, and `Ctrl+Alt+W` toggles the desktop widget
 - compact per-window quota rows and manual refresh in mini surfaces
 - single-instance behavior: launching the desktop app again focuses the existing mini panel
 - automatic tray refresh when Claude Code sends the first statusline snapshot
@@ -119,6 +121,8 @@ It starts the local backend, adds an AI Agent Quota tray icon, and provides:
 - a normal full dashboard window for setup, Doctor, and exports
 
 The mini surfaces reuse the same normalized `/api/agents` and setup endpoints as the main dashboard. They do not read extra files, collect prompts, or call hidden provider APIs.
+
+Desktop shortcuts do not approve or automate other apps. Override or disable them with `AIQD_SHORTCUT_PANEL`, `AIQD_SHORTCUT_REFRESH`, and `AIQD_SHORTCUT_WIDGET`; set a value to `off` to disable that shortcut.
 
 This is currently a development shell, not an installer. Auto-start, packaging, and signed releases are intentionally left for a later release.
 

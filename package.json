@@ -21,7 +21,7 @@
     "dev:local": "tsx src/index.ts",
     "desktop": "npm run build && electron desktop/main.cjs",
     "desktop:demo": "npm run build && electron desktop/main.cjs --demo",
-    "desktop:smoke": "npm run build && electron desktop/main.cjs --smoke",
+    "desktop:smoke": "npm run build && electron --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process desktop/main.cjs --smoke",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "test": "npm run build && node --test dist/**/*.test.js desktop/**/*.test.cjs",

@@ -18,6 +18,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Setup refresh feedback for Codex saves, Claude Code waiting state, and manual refreshes
 - Environment overrides for Claude Code setup paths
 - Development desktop shell with a tray mini panel and optional always-on-top widget
+- Desktop global shortcuts for AIQD mini panel, refresh, and widget actions
 - Tray tooltip/menu quota summaries for the desktop shell
 - Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
 - Mini footer summary for the latest refresh result and warnings
