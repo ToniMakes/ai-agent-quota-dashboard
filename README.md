@@ -21,6 +21,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Manual Codex snapshot command and Settings form for visible `/status` or Usage values
 - Settings view status for Codex manual snapshots
 - Settings real-data overview for first-run Codex and Claude Code setup
+- Real-data desktop trial guide for Codex and Claude Code setup
 - Doctor first-run checklist for real-data readiness
 - Setup refresh feedback for Codex saves, Claude Code waiting state, and manual refreshes
 - Claude Code statusline setup helper with explicit opt-in
@@ -33,6 +34,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - One-time desktop first-run guide that opens the exact setup or Doctor section
 - Desktop smoke coverage for the first-run guide deep-link and local state write
 - Desktop global shortcuts for AIQD mini panel, refresh, and widget actions
+- Local trial scripts for desktop launch, Doctor, and Claude statusline self-test
 - Settings view status for desktop shortcut bindings and overrides
 - Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
 - Mini footer summary for the latest refresh result and warnings
@@ -71,6 +73,8 @@ This project does not:
 
 ## Quick Start
 
+Demo mode:
+
 ```bash
 npm install
 npm run dev
@@ -90,14 +94,27 @@ npm run dev:local
 
 If demo snapshots were previously written to the local SQLite database, `npm run dev:local`, `doctor`, and `export` hide them unless demo mode is explicitly enabled.
 
+Real local desktop trial:
+
+```bash
+npm install
+npm run desktop:local
+```
+
+The desktop first-run guide opens the exact Settings or Doctor section needed for real data setup. See [docs/real-data-trial.md](docs/real-data-trial.md) for the full Codex and Claude Code checklist.
+
 ## Scripts
 
 ```bash
 npm run dev        # local server with demo quota snapshots
 npm run dev:local  # local server without demo quota snapshots
 npm run desktop    # desktop tray app without demo quota snapshots
+npm run desktop:local
 npm run desktop:demo
 npm run desktop:smoke
+npm run desktop:first-run-smoke
+npm run doctor
+npm run claude:self-test
 npm run build      # compile TypeScript
 npm test           # typecheck and run node:test tests
 ```

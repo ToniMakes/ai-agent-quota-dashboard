@@ -14,6 +14,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Settings view form to save visible Codex manual snapshots and refresh dashboard data
 - Settings view status and copyable commands for Codex manual snapshots
 - Settings real-data overview for first-run Codex and Claude Code setup
+- Real-data desktop trial guide for Codex and Claude Code setup
 - Doctor first-run checklist for real-data readiness
 - Setup refresh feedback for Codex saves, Claude Code waiting state, and manual refreshes
 - Environment overrides for Claude Code setup paths
@@ -21,6 +22,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - One-time desktop first-run guide that opens the exact setup or Doctor section
 - Desktop smoke coverage for the first-run guide deep-link and local state write
 - Desktop global shortcuts for AIQD mini panel, refresh, and widget actions
+- Local trial scripts for desktop launch, Doctor, and Claude statusline self-test
 - Settings view status for desktop shortcut bindings and overrides
 - Tray tooltip/menu quota summaries for the desktop shell
 - Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
