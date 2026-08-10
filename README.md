@@ -30,6 +30,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Dashboard and Doctor views
 - Mini panel page for tray-sized quota checks
 - Electron desktop shell with a tray mini panel and optional always-on-top widget
+- Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
 - Mini and tray first-run actions that open Settings or Doctor directly
 - Dashboard guidance for missing quota data
 - CLI `doctor` command for one-shot local diagnostics
@@ -106,6 +107,7 @@ It starts the local backend, adds an AI Agent Quota tray icon, and provides:
 - a tray mini panel that hides when it loses focus
 - an optional always-on-top desktop widget
 - a tray tooltip and menu summary for the current quota state
+- tray menu shortcuts for Refresh, Doctor, Settings, and Dashboard
 - compact per-window quota rows and manual refresh in mini surfaces
 - single-instance behavior: launching the desktop app again focuses the existing mini panel
 - automatic tray refresh when Claude Code sends the first statusline snapshot

@@ -8,6 +8,29 @@ function summarizeAgents(agents, options = {}) {
     .join(" | ");
 }
 
+function buildTrayMenuTemplate(input) {
+  const actions = input.actions ?? {};
+  const refreshLabel = input.isRefreshing ? "Refreshing" : "Refresh Now";
+
+  return [
+    { label: input.trayStatus, enabled: false },
+    { type: "separator" },
+    { label: "Open Mini Panel", click: actions.togglePanelWindow },
+    { label: "Toggle Desktop Widget", click: actions.toggleWidgetWindow },
+    {
+      label: refreshLabel,
+      enabled: !input.isRefreshing,
+      click: actions.refreshTrayNow
+    },
+    { type: "separator" },
+    { label: "Open Dashboard", click: actions.openDashboardWindow },
+    { label: "Open Doctor", click: actions.openDoctorWindow },
+    { label: "Open Settings", click: actions.openSettingsWindow },
+    { type: "separator" },
+    { label: "Quit", click: actions.quit }
+  ];
+}
+
 function summarizeAgent(agent, options = {}) {
   const snapshot = agent.primarySnapshot;
   const name = agent.shortName ?? agent.displayName ?? agent.agent;
@@ -127,6 +150,7 @@ function clamp(value, min, max) {
 }
 
 module.exports = {
+  buildTrayMenuTemplate,
   clampBoundsToWorkArea,
   formatResetDistance,
   hasClaudeWaitingState,

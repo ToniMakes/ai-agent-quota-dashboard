@@ -6,6 +6,7 @@ const http = require("node:http");
 const net = require("node:net");
 const path = require("node:path");
 const {
+  buildTrayMenuTemplate,
   resolveWidgetBounds: resolveSavedWidgetBounds,
   shouldRefreshForClaudeStatusline,
   summarizeAgents
@@ -29,6 +30,7 @@ let panelWindow;
 let widgetWindow;
 let dashboardWindow;
 let isQuitting = false;
+let isTrayRefreshing = false;
 let saveWidgetBoundsTimer;
 let showPanelWhenReady = false;
 
@@ -84,7 +86,9 @@ if (!hasSingleInstanceLock) {
     createTray();
     createPanelWindow();
     updateTrayStatus();
-    trayStatusTimer = setInterval(updateTrayStatus, trayStatusIntervalMs);
+    trayStatusTimer = setInterval(() => {
+      void updateTrayStatus();
+    }, trayStatusIntervalMs);
 
     if (showPanelWhenReady) {
       showPanelWhenReady = false;
@@ -178,28 +182,58 @@ async function updateTrayStatus() {
     trayStatus = "Local service unavailable";
   }
 
+  applyTrayStatus();
+}
+
+async function refreshTrayNow() {
+  if (!tray || !baseUrl || isTrayRefreshing) {
+    return;
+  }
+
+  isTrayRefreshing = true;
+  trayStatus = "Refreshing";
+  applyTrayStatus();
+
+  try {
+    await postJson(`${baseUrl}/api/refresh`);
+  } catch {
+    trayStatus = "Refresh failed";
+    applyTrayStatus();
+  } finally {
+    isTrayRefreshing = false;
+    await updateTrayStatus();
+  }
+}
+
+function applyTrayStatus() {
+  if (!tray) {
+    return;
+  }
+
   tray.setToolTip(`AI Agent Quota\n${trayStatus}`);
   updateTrayMenu();
 }
 
 function updateTrayMenu() {
   tray.setContextMenu(
-    Menu.buildFromTemplate([
-      { label: trayStatus, enabled: false },
-      { type: "separator" },
-      { label: "Open Mini Panel", click: togglePanelWindow },
-      { label: "Toggle Desktop Widget", click: toggleWidgetWindow },
-      { label: "Open Dashboard", click: openDashboardWindow },
-      { label: "Open Settings", click: () => openDashboardWindow("settings") },
-      { type: "separator" },
-      {
-        label: "Quit",
-        click: () => {
-          isQuitting = true;
-          app.quit();
-        }
-      }
-    ])
+    Menu.buildFromTemplate(
+      buildTrayMenuTemplate({
+        actions: {
+          openDashboardWindow,
+          openDoctorWindow: () => openDashboardWindow("doctor"),
+          openSettingsWindow: () => openDashboardWindow("settings"),
+          quit: () => {
+            isQuitting = true;
+            app.quit();
+          },
+          refreshTrayNow,
+          togglePanelWindow,
+          toggleWidgetWindow
+        },
+        isRefreshing: isTrayRefreshing,
+        trayStatus
+      })
+    )
   );
 }
 
