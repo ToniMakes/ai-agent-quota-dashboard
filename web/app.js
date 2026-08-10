@@ -1279,16 +1279,65 @@ function buildInitialSetupModel(items, readiness) {
   const claudeComplete = claude?.state === "pass";
   const claudeManaged = Boolean(state.setupStatus?.statusLineManagedByApp);
   const claudeWaiting = claudeManaged && !claudeComplete;
+  const claudeCliAvailable = Boolean(state.setupStatus?.claudeCliAvailable);
+  const claudeCliOpenCommand =
+    state.setupStatus?.claudeCliOpenCommand ?? "cd C:\\path\\to\\your-project\nclaude";
+  const claudeCliInstallCommand =
+    state.setupStatus?.claudeCliInstallCommand ??
+    "irm https://claude.ai/install.ps1 | iex";
+  const claudeCliHelper = claudeWaiting
+    ? {
+        commands: [
+          ...(claudeCliAvailable
+            ? []
+            : [
+                {
+                  command: claudeCliInstallCommand,
+                  label: tx(
+                    "If not installed, run this in PowerShell",
+                    "如果未安装，在 PowerShell 里运行"
+                  )
+                }
+              ]),
+          {
+            command: "claude --version",
+            label: tx("Check the CLI command", "检查 CLI 命令是否可用")
+          },
+          {
+            command: claudeCliOpenCommand,
+            label: tx("Open Claude Code in a project", "在项目里打开 Claude Code")
+          }
+        ],
+        detail: claudeCliAvailable
+          ? tx(
+              "AIQD detected the claude command on this computer. Open PowerShell or VS Code Terminal, enter any project folder, then run claude.",
+              "AIQD 已检测到本机有 claude 命令。打开 PowerShell 或 VS Code 终端，进入任意项目文件夹，然后运行 claude。"
+            )
+          : tx(
+              "AIQD did not find the claude command on PATH. Claude Code CLI is not the Claude desktop window; it is the standalone terminal command named claude.",
+              "AIQD 没有在 PATH 里找到 claude 命令。Claude Code CLI 不是 Claude 桌面窗口，而是名为 claude 的独立终端命令。"
+            ),
+        title: tx(
+          "What is Claude Code CLI?",
+          "什么是 Claude Code CLI？"
+        )
+      }
+    : undefined;
   const claudeWaitingNotice =
     state.claudeCheckFeedback ??
     (claudeWaiting
       ? {
           detail: state.setupStatus?.latestPath,
           kind: "warning",
-          message: tx(
-            "Current check: no Claude Code statusline file has been received yet. Opening the Claude desktop app will not trigger this step.",
-            "当前检测结果：还没有收到 Claude Code statusline 文件。打开普通 Claude 桌面应用不会触发这一步。"
-          )
+          message: claudeCliAvailable
+            ? tx(
+                "Current check: no Claude Code statusline file has been received yet. Open a terminal in a project and run claude.",
+                "当前检测结果：还没有收到 Claude Code statusline 文件。请在项目文件夹里打开终端并运行 claude。"
+              )
+            : tx(
+                "Current check: no Claude Code statusline file has been received yet, and AIQD did not find the claude command on PATH.",
+                "当前检测结果：还没有收到 Claude Code statusline 文件，并且 AIQD 没有在 PATH 里找到 claude 命令。"
+              )
         }
       : undefined);
   const readinessComplete = Boolean(readiness?.ok);
@@ -1357,16 +1406,16 @@ function buildInitialSetupModel(items, readiness) {
       checklist: claudeManaged
         ? [
             tx(
-              "Open Claude Code from a terminal or CLI project session, not the Claude desktop app.",
-              "从终端或 CLI 项目会话打开 Claude Code，不是普通 Claude 桌面应用。"
+              "Open PowerShell, Windows Terminal, or VS Code Terminal.",
+              "打开 PowerShell、Windows Terminal 或 VS Code 终端。"
             ),
             tx(
-              "Enter any project or session and wait until Claude Code renders its statusline once.",
-              "进入任意项目或会话，等 Claude Code 的 statusline 出现一次。"
+              "Enter a project folder and run claude. This opens Claude Code CLI.",
+              "进入一个项目文件夹并运行 claude，这才是打开 Claude Code CLI。"
             ),
             tx(
-              "Come back here and click the check button. If no data arrived, AIQD will explain why.",
-              "回到这里点击检查按钮；如果没收到数据，AIQD 会说明原因。"
+              "After Claude Code shows a statusline once, come back and click the check button.",
+              "等 Claude Code 显示过一次 statusline 后，回到这里点击检查按钮。"
             )
           ]
         : [
@@ -1394,6 +1443,7 @@ function buildInitialSetupModel(items, readiness) {
             "先检查生成的命令；只有你确认后才安装本地 statusline hook。"
       ),
       id: "claude-code",
+      helper: claudeCliHelper,
       number: "2",
       outcome: tx(
         "When data is received, this step becomes done and the next step verifies the dashboard.",
@@ -1536,6 +1586,7 @@ function renderSetupCurrentAction(model) {
               )}</p>`
             : renderActionChecklist(step.checklist)
         }
+        ${allDone ? "" : renderStepHelper(step.helper)}
         ${allDone ? "" : renderStepNotice(step.notice)}
         <p class="outcome-note">${escapeHtml(
           allDone
@@ -1560,6 +1611,32 @@ function renderSetupCurrentAction(model) {
         ${renderGuidedSecondaryAction(step)}
       </div>
     </section>
+  `;
+}
+
+function renderStepHelper(helper) {
+  if (!helper) {
+    return "";
+  }
+
+  return `
+    <div class="step-helper">
+      <strong>${escapeHtml(helper.title)}</strong>
+      <p>${escapeHtml(helper.detail)}</p>
+      <div class="step-helper-commands">
+        ${helper.commands
+          .map(
+            (item) => `
+              <div class="step-helper-command">
+                <span>${escapeHtml(item.label)}</span>
+                <code>${escapeHtml(item.command)}</code>
+                ${renderCopyButton(item.command)}
+              </div>
+            `
+          )
+          .join("")}
+      </div>
+    </div>
   `;
 }
 
@@ -2384,6 +2461,16 @@ function renderSettings() {
       `
         <div class="settings-list">
           ${settingsRow(
+            tx("Claude Code CLI", "Claude Code CLI"),
+            status.claudeCliAvailable ? tx("Found", "已找到") : tx("Not found", "未找到"),
+            status.claudeCliAvailable
+              ? status.claudeCliPath ?? status.claudeCliCommand ?? "claude"
+              : tx("Install command: {command}", "安装命令：{command}", {
+                  command: status.claudeCliInstallCommand
+                }),
+            status.claudeCliAvailable ? "healthy" : "warning"
+          )}
+          ${settingsRow(
             tx("Claude settings", "Claude 设置"),
             status.settingsExists ? tx("Found", "已找到") : tx("Not found", "未找到"),
             status.settingsPath,
@@ -3113,6 +3200,7 @@ function localizedReadinessLabel(label) {
     ["Waiting for visible quota", "等待可见额度"],
     ["No Codex snapshot yet", "还没有 Codex 快照"],
     ["Waiting for Claude Code data", "等待 Claude Code 数据"],
+    ["Waiting for Claude Code CLI command", "等待 Claude Code CLI 命令"],
     ["Claude Code setup needed", "需要设置 Claude Code"],
     ["Codex manual snapshot ready", "Codex 手动快照已就绪"],
     ["Claude Code data ready", "Claude Code 数据已就绪"]
@@ -3134,6 +3222,10 @@ function localizedNextAction(action) {
     [
       "Install the statusline sink",
       "安装 statusline sink，然后从 CLI/终端项目会话打开 Claude Code。"
+    ],
+    [
+      "Install Claude Code CLI",
+      "先安装 Claude Code CLI，然后在项目文件夹里打开终端并运行 claude。"
     ],
     [
       "Open Claude Code",

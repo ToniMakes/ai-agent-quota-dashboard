@@ -1,5 +1,6 @@
-import { existsSync } from "node:fs";
-import { readFile, stat } from "node:fs/promises";
+import { constants, existsSync } from "node:fs";
+import { access, readFile, stat } from "node:fs/promises";
+import { delimiter, extname, join } from "node:path";
 import {
   defaultClaudeSettingsPath,
   defaultClaudeStatuslineHistoryPath,
@@ -27,6 +28,12 @@ export type ClaudeStatuslineSetupCheck = {
 };
 
 export type ClaudeStatuslineSetupStatus = {
+  claudeCliAvailable: boolean;
+  claudeCliCommand: string;
+  claudeCliDocsUrl: string;
+  claudeCliInstallCommand: string;
+  claudeCliOpenCommand: string;
+  claudeCliPath?: string;
   settingsPath: string;
   settingsExists: boolean;
   statusLineConfigured: boolean;
@@ -55,11 +62,17 @@ export type ClaudeStatuslineSetupStatus = {
 };
 
 export type ClaudeStatuslineSetupStatusOptions = {
+  claudeCliLookup?: () => Promise<ClaudeCliStatus>;
   settingsPath?: string;
   shimPath?: string;
   latestPath?: string;
   historyPath?: string;
   now?: Date;
+};
+
+type ClaudeCliStatus = {
+  available: boolean;
+  path?: string;
 };
 
 export async function getClaudeStatuslineSetupStatus(
@@ -83,8 +96,14 @@ export async function getClaudeStatuslineSetupStatus(
   const latestFresh =
     latestAgeSeconds !== undefined &&
     latestAgeSeconds <= freshStatuslineSnapshotSeconds;
+  const claudeCli = await (options.claudeCliLookup?.() ?? detectClaudeCli());
 
   const status: ClaudeStatuslineSetupStatus = {
+    claudeCliAvailable: claudeCli.available,
+    claudeCliCommand: "claude",
+    claudeCliDocsUrl: "https://docs.anthropic.com/en/docs/claude-code/quickstart",
+    claudeCliInstallCommand: defaultClaudeInstallCommand(),
+    claudeCliOpenCommand: defaultClaudeOpenCommand(),
     settingsPath,
     settingsExists: existsSync(settingsPath),
     statusLineConfigured: Boolean(statusLine),
@@ -126,6 +145,10 @@ export async function getClaudeStatuslineSetupStatus(
 
   if (statusLineCommand) {
     status.statusLineCommand = statusLineCommand;
+  }
+
+  if (claudeCli.path) {
+    status.claudeCliPath = claudeCli.path;
   }
 
   if (latest.observedAt) {
@@ -208,9 +231,13 @@ function resolveReadiness(input: {
   if (!input.status.latestExists || !input.status.latestHasRateLimits) {
     return {
       readiness: "waiting_for_data",
-      readinessLabel: "Waiting for Claude Code data",
+      readinessLabel: input.status.claudeCliAvailable
+        ? "Waiting for Claude Code data"
+        : "Waiting for Claude Code CLI command",
       nextAction:
-        "Open Claude Code, let the statusline render once, then refresh this dashboard."
+        input.status.claudeCliAvailable
+          ? "Open Claude Code from a terminal, let the statusline render once, then refresh this dashboard."
+          : "Install Claude Code CLI, then open a terminal in a project and run claude."
     };
   }
 
@@ -237,11 +264,40 @@ function buildSetupChecks(input: {
   status: ClaudeStatuslineSetupStatus;
 }): ClaudeStatuslineSetupCheck[] {
   return [
+    buildClaudeCliCheck(input.status),
     buildSettingsCheck(input.status),
     buildStatusLineCommandCheck(input.status),
     buildShimCheck(input.status),
     buildLatestSnapshotCheck(input)
   ];
+}
+
+function buildClaudeCliCheck(
+  status: ClaudeStatuslineSetupStatus
+): ClaudeStatuslineSetupCheck {
+  if (status.claudeCliAvailable) {
+    const check: ClaudeStatuslineSetupCheck = {
+      id: "claude-cli",
+      label: "Claude Code CLI",
+      status: "pass",
+      message: "claude command found"
+    };
+
+    if (status.claudeCliPath) {
+      check.detail = status.claudeCliPath;
+    }
+
+    return check;
+  }
+
+  return {
+    action: status.claudeCliInstallCommand,
+    detail: status.claudeCliDocsUrl,
+    id: "claude-cli",
+    label: "Claude Code CLI",
+    message: "claude command not found on PATH",
+    status: "warn"
+  };
 }
 
 function buildSettingsCheck(
@@ -347,7 +403,7 @@ function buildLatestSnapshotCheck(input: {
       message: "No statusline snapshot received yet",
       detail: input.status.latestPath,
       action:
-        "Open Claude Code, let the statusline render once, then refresh this dashboard."
+        "Open Claude Code from a terminal, let the statusline render once, then refresh this dashboard."
     };
   }
 
@@ -370,7 +426,7 @@ function buildLatestSnapshotCheck(input: {
       message: "Snapshot has no supported rate_limits",
       detail: input.status.latestPath,
       action:
-        "Open Claude Code, let the statusline render once with rate_limits, then refresh this dashboard."
+        "Open Claude Code from a terminal, let the statusline render once with rate_limits, then refresh this dashboard."
     };
   }
 
@@ -545,4 +601,61 @@ function formatDuration(seconds: number): string {
   }
 
   return `${seconds}s`;
+}
+
+async function detectClaudeCli(): Promise<ClaudeCliStatus> {
+  const path = await findCommandOnPath("claude");
+
+  if (!path) {
+    return { available: false };
+  }
+
+  return { available: true, path };
+}
+
+async function findCommandOnPath(command: string): Promise<string | undefined> {
+  const pathEntries = (process.env.PATH ?? "")
+    .split(delimiter)
+    .filter(Boolean);
+  const names = commandNames(command);
+
+  for (const directory of pathEntries) {
+    for (const name of names) {
+      const candidate = join(directory, name);
+
+      try {
+        await access(candidate, constants.X_OK);
+        return candidate;
+      } catch {
+        // Try the next PATH candidate.
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function commandNames(command: string): string[] {
+  if (process.platform !== "win32" || extname(command)) {
+    return [command];
+  }
+
+  const extensions = (process.env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD")
+    .split(";")
+    .filter(Boolean);
+  return [command, ...extensions.map((extension) => `${command}${extension}`)];
+}
+
+function defaultClaudeInstallCommand(): string {
+  if (process.platform === "win32") {
+    return "irm https://claude.ai/install.ps1 | iex";
+  }
+
+  return "curl -fsSL https://claude.ai/install.sh | bash";
+}
+
+function defaultClaudeOpenCommand(): string {
+  return process.platform === "win32"
+    ? "cd C:\\path\\to\\your-project\nclaude"
+    : "cd /path/to/your-project\nclaude";
 }
