@@ -4,6 +4,7 @@ let currentLanguage = resolveInitialLanguage();
 
 const state = {
   agents: [],
+  codexSnapshotFormDraft: undefined,
   codexSnapshotSaveStatus: undefined,
   codexSnapshotStatus: undefined,
   desktopShortcutsStatus: undefined,
@@ -52,6 +53,34 @@ elements.languageToggle?.addEventListener("click", () => {
 
 elements.refreshButton.addEventListener("click", () => {
   void runRefresh(tx("Dashboard refreshed.", "仪表盘已刷新。"));
+});
+
+document.addEventListener("input", (event) => {
+  const target = event.target;
+
+  if (!(target instanceof Element)) {
+    return;
+  }
+
+  const form = target.closest("#codex-snapshot-form");
+
+  if (form instanceof HTMLFormElement) {
+    saveCodexSnapshotDraft(form);
+  }
+});
+
+document.addEventListener("change", (event) => {
+  const target = event.target;
+
+  if (!(target instanceof Element)) {
+    return;
+  }
+
+  const form = target.closest("#codex-snapshot-form");
+
+  if (form instanceof HTMLFormElement) {
+    saveCodexSnapshotDraft(form);
+  }
 });
 
 for (const tab of elements.tabs) {
@@ -1025,6 +1054,10 @@ function renderCodexSnapshotSettings() {
     return;
   }
 
+  if (shouldKeepActiveCodexSnapshotForm()) {
+    return;
+  }
+
   elements.codexSnapshotContent.innerHTML = `
     ${renderCodexSnapshotSteps(status)}
     ${renderCodexSnapshotForm(status)}
@@ -1619,18 +1652,25 @@ function realDataSummaryTitle(readyCount, totalCount) {
 }
 
 function renderCodexSnapshotForm(status) {
+  const draft = state.codexSnapshotFormDraft;
   const remainingValue =
-    typeof status.latestRemainingPercent === "number"
+    draft?.remainingPercent ??
+    (typeof status.latestRemainingPercent === "number"
       ? status.latestRemainingPercent
-      : "";
-  const resetValue = status.latestResetAt
-    ? toDateTimeLocalValue(status.latestResetAt)
-    : "";
+      : "");
+  const resetDateValue =
+    draft?.resetDate ??
+    (status.latestResetAt ? toDateLocalValue(status.latestResetAt) : "");
+  const resetTimeValue =
+    draft?.resetTime ??
+    (status.latestResetAt ? toTimeLocalValue(status.latestResetAt) : "");
+  const planLabelValue =
+    draft?.planLabel ?? tx("Codex visible status", "Codex 可见状态");
   const saveStatus = state.codexSnapshotSaveStatus;
 
   return `
     <form id="codex-snapshot-form" class="settings-form">
-      <div class="settings-form-grid">
+      <div class="settings-form-grid codex-snapshot-grid">
         <label class="form-field">
           <span>${escapeHtml(tx("Remaining %", "剩余百分比"))}</span>
           <input
@@ -1645,13 +1685,25 @@ function renderCodexSnapshotForm(status) {
           >
         </label>
         <label class="form-field">
-          <span>${escapeHtml(tx("Reported reset", "报告 reset 时间"))}</span>
+          <span>${escapeHtml(tx("Reset date", "Reset 日期"))}</span>
           <input
-            name="resetAt"
-            type="datetime-local"
-            value="${escapeHtml(resetValue)}"
+            name="resetDate"
+            type="date"
+            value="${escapeHtml(resetDateValue)}"
             required
           >
+        </label>
+        <label class="form-field">
+          <span>${escapeHtml(tx("Reset time", "Reset 时间"))}</span>
+          <input
+            name="resetTime"
+            type="time"
+            step="60"
+            value="${escapeHtml(resetTimeValue)}"
+          >
+          <span class="form-hint">${escapeHtml(
+            tx("Optional if Codex only shows a date.", "如果 Codex 只显示日期，这里可以留空。")
+          )}</span>
         </label>
         <label class="form-field">
           <span>${escapeHtml(tx("Label", "标签"))}</span>
@@ -1659,7 +1711,7 @@ function renderCodexSnapshotForm(status) {
             name="planLabel"
             type="text"
             maxlength="80"
-            value="${escapeHtml(tx("Codex visible status", "Codex 可见状态"))}"
+            value="${escapeHtml(planLabelValue)}"
           >
         </label>
       </div>
@@ -1675,6 +1727,19 @@ function renderCodexSnapshotForm(status) {
       ${renderCodexSnapshotPostSaveActions(saveStatus)}
     </form>
   `;
+}
+
+function shouldKeepActiveCodexSnapshotForm() {
+  const form = elements.codexSnapshotContent?.querySelector(
+    "#codex-snapshot-form"
+  );
+
+  return Boolean(
+    form &&
+      state.codexSnapshotFormDraft?.dirty &&
+      form.contains(document.activeElement) &&
+      state.codexSnapshotSaveStatus?.kind !== "success"
+  );
 }
 
 function renderCodexSnapshotPostSaveActions(saveStatus) {
@@ -1699,16 +1764,20 @@ function renderCodexSnapshotPostSaveActions(saveStatus) {
 
 async function saveCodexSnapshotForm(form) {
   const remainingInput = formField(form, "remainingPercent");
-  const resetInput = formField(form, "resetAt");
+  const resetDateInput = formField(form, "resetDate");
+  const resetTimeInput = formField(form, "resetTime");
   const labelInput = formField(form, "planLabel");
   const button = form.querySelector("button[type='submit']");
 
-  if (!remainingInput || !resetInput) {
+  if (!remainingInput || !resetDateInput) {
     return;
   }
 
   const remainingPercent = Number(remainingInput.value);
-  const resetDate = resetInput.value ? new Date(resetInput.value) : undefined;
+  const resetDate = buildResetDateFromForm(
+    resetDateInput.value,
+    resetTimeInput?.value ?? ""
+  );
 
   if (!Number.isFinite(remainingPercent)) {
     setCodexSnapshotFormStatus(
@@ -1722,7 +1791,7 @@ async function saveCodexSnapshotForm(form) {
   if (!resetDate || Number.isNaN(resetDate.getTime())) {
     setCodexSnapshotFormStatus(
       form,
-      tx("Reported reset must be a valid time.", "报告 reset 必须是有效时间。"),
+      tx("Reset date must be valid.", "Reset 日期必须有效。"),
       "error"
     );
     return;
@@ -1740,7 +1809,8 @@ async function saveCodexSnapshotForm(form) {
       body: JSON.stringify({
         planLabel: labelInput?.value.trim() || undefined,
         remainingPercent,
-        resetAt: resetDate.toISOString()
+        resetDate: resetDateInput.value,
+        resetTime: resetTimeInput?.value || undefined
       }),
       headers: {
         "Content-Type": "application/json"
@@ -1759,6 +1829,7 @@ async function saveCodexSnapshotForm(form) {
       kind: "success",
       message: codexSnapshotSaveMessage(payload.refreshResult)
     };
+    state.codexSnapshotFormDraft = undefined;
     state.refreshStatus = refreshStatusFromResult(
       payload.refreshResult ?? {},
       tx(
@@ -1776,6 +1847,73 @@ async function saveCodexSnapshotForm(form) {
       button.textContent = tx("Save snapshot", "保存快照");
     }
   }
+}
+
+function saveCodexSnapshotDraft(form) {
+  state.codexSnapshotFormDraft = {
+    dirty: true,
+    planLabel: formField(form, "planLabel")?.value ?? "",
+    remainingPercent: formField(form, "remainingPercent")?.value ?? "",
+    resetDate: formField(form, "resetDate")?.value ?? "",
+    resetTime: formField(form, "resetTime")?.value ?? ""
+  };
+}
+
+function buildResetDateFromForm(resetDateValue, resetTimeValue) {
+  const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(resetDateValue);
+
+  if (!dateMatch) {
+    return undefined;
+  }
+
+  const [, yearText, monthText, dayText] = dateMatch;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  let hour = 23;
+  let minute = 59;
+  let second = 59;
+  let millisecond = 999;
+
+  if (resetTimeValue) {
+    const timeMatch = /^(\d{2}):(\d{2})$/.exec(resetTimeValue);
+
+    if (!timeMatch) {
+      return undefined;
+    }
+
+    hour = Number(timeMatch[1]);
+    minute = Number(timeMatch[2]);
+    second = 0;
+    millisecond = 0;
+  }
+
+  if (
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31 ||
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
+  ) {
+    return undefined;
+  }
+
+  const date = new Date(year, month - 1, day, hour, minute, second, millisecond);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day ||
+    date.getHours() !== hour ||
+    date.getMinutes() !== minute
+  ) {
+    return undefined;
+  }
+
+  return date;
 }
 
 function codexSnapshotSaveMessage(refreshResult) {
@@ -2575,6 +2713,15 @@ function formatRelative(value) {
 }
 
 function formatTimestamp(value) {
+  if (isEndOfLocalDay(value)) {
+    const date = new Intl.DateTimeFormat(locale(), {
+      day: "numeric",
+      month: "short"
+    }).format(new Date(value));
+
+    return tx("{date} (date only)", "{date}（仅日期）", { date });
+  }
+
   return new Intl.DateTimeFormat(locale(), {
     day: "numeric",
     hour: "numeric",
@@ -2584,7 +2731,19 @@ function formatTimestamp(value) {
   }).format(new Date(value));
 }
 
-function toDateTimeLocalValue(value) {
+function isEndOfLocalDay(value) {
+  const date = new Date(value);
+
+  return (
+    !Number.isNaN(date.getTime()) &&
+    date.getHours() === 23 &&
+    date.getMinutes() === 59 &&
+    date.getSeconds() === 59 &&
+    date.getMilliseconds() === 999
+  );
+}
+
+function toDateLocalValue(value) {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
@@ -2593,7 +2752,19 @@ function toDateTimeLocalValue(value) {
 
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
 
-  return localDate.toISOString().slice(0, 16);
+  return localDate.toISOString().slice(0, 10);
+}
+
+function toTimeLocalValue(value) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+
+  return localDate.toISOString().slice(11, 16);
 }
 
 function windowLabel(windowType) {

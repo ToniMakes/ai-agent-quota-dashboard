@@ -14,6 +14,26 @@ import {
 
 const now = new Date("2026-08-10T00:00:00.000Z");
 
+function localIso(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number,
+  millisecond: number
+): string {
+  return new Date(
+    year,
+    month - 1,
+    day,
+    hour,
+    minute,
+    second,
+    millisecond
+  ).toISOString();
+}
+
 describe("codex manual snapshot command", () => {
   it("builds a structured manual weekly quota snapshot", () => {
     const options = parseCodexManualSnapshotOptions(
@@ -100,6 +120,38 @@ describe("codex manual snapshot command", () => {
     assert.equal(options.resetAt, "2026-08-16T03:00:00.000Z");
   });
 
+  it("parses app-owned date-only reset input", () => {
+    const options = parseCodexManualSnapshotInput(
+      {
+        remainingPercent: 58,
+        resetDate: "2026-08-16"
+      },
+      now
+    );
+
+    assert.equal(options.remainingPercent, 58);
+    assert.equal(
+      options.resetAt,
+      localIso(2026, 8, 16, 23, 59, 59, 999)
+    );
+  });
+
+  it("parses app-owned reset date with optional time input", () => {
+    const options = parseCodexManualSnapshotInput(
+      {
+        remainingPercent: 58,
+        resetDate: "2026-08-16",
+        resetTime: "13:45"
+      },
+      now
+    );
+
+    assert.equal(
+      options.resetAt,
+      localIso(2026, 8, 16, 13, 45, 0, 0)
+    );
+  });
+
   it("rejects invalid or stale input", () => {
     assert.throws(
       () =>
@@ -162,7 +214,30 @@ describe("codex manual snapshot command", () => {
           },
           now
         ),
-      /resetAt is required/
+      /resetAt or resetDate is required/
+    );
+    assert.throws(
+      () =>
+        parseCodexManualSnapshotInput(
+          {
+            remainingPercent: 70,
+            resetDate: "2026-02-31"
+          },
+          now
+        ),
+      /real calendar date/
+    );
+    assert.throws(
+      () =>
+        parseCodexManualSnapshotInput(
+          {
+            remainingPercent: 70,
+            resetDate: "2026-08-16",
+            resetTime: "25:00"
+          },
+          now
+        ),
+      /out of range/
     );
     assert.throws(
       () =>

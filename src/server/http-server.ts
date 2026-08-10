@@ -206,6 +206,8 @@ async function handleApiRequest(
           planLabel: readOptionalStringField(body, "planLabel"),
           remainingPercent: readOptionalNumberField(body, "remainingPercent"),
           resetAt: readOptionalStringField(body, "resetAt"),
+          resetDate: readOptionalStringField(body, "resetDate"),
+          resetTime: readOptionalStringField(body, "resetTime"),
           usedPercent: readOptionalNumberField(body, "usedPercent")
         },
         now
