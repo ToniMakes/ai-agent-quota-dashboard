@@ -1193,10 +1193,13 @@ function renderCodexSnapshotSettings() {
     return;
   }
 
+  const autoDetected = isAutoCodexSnapshot(getCodexPrimarySnapshot());
+  const fallbackNeeded = !autoDetected && status.readiness !== "ready";
+
   elements.codexSnapshotContent.innerHTML = `
     ${renderCodexAutoDetectionStatus(status)}
-    ${renderCodexSnapshotSteps(status)}
-    ${renderCodexSnapshotForm(status)}
+    ${renderCodexPrimaryNextAction(status)}
+    ${fallbackNeeded ? renderCodexSnapshotForm(status) : renderOptionalCodexFallback(status)}
 
     ${renderAdvancedDetails(
       tx("Codex technical details", "Codex 技术细节"),
@@ -1240,6 +1243,78 @@ function renderCodexSnapshotSettings() {
         )}
       `
     )}
+  `;
+}
+
+function renderCodexPrimaryNextAction(status) {
+  const autoDetected = isAutoCodexSnapshot(getCodexPrimarySnapshot());
+
+  if (autoDetected) {
+    return `
+      <div class="setup-watch-notice">
+        <div>
+          <strong>${escapeHtml(tx("Nothing else is required for Codex", "Codex 不需要继续配置"))}</strong>
+          <div class="settings-detail">${escapeHtml(
+            tx(
+              "Automatic CLI detection is already working. The manual fallback and command details below are optional troubleshooting tools.",
+              "自动 CLI 检测已经可用。下面的手动兜底和命令详情只是可选排障工具。"
+            )
+          )}</div>
+        </div>
+        <span class="badge healthy">${escapeHtml(tx("Done", "完成"))}</span>
+      </div>
+    `;
+  }
+
+  if (status.readiness === "ready") {
+    return `
+      <div class="setup-watch-notice">
+        <div>
+          <strong>${escapeHtml(tx("Codex fallback is ready", "Codex 兜底已就绪"))}</strong>
+          <div class="settings-detail">${escapeHtml(
+            tx(
+              "AIQD can use the saved fallback. Refresh after using Codex again; automatic CLI data will replace it when available.",
+              "AIQD 可以使用已保存的兜底值。之后使用 Codex 后再刷新；如果自动 CLI 数据可用，会自动替代兜底。"
+            )
+          )}</div>
+        </div>
+        <span class="badge healthy">${escapeHtml(tx("Ready", "就绪"))}</span>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="setup-watch-notice">
+      <div>
+        <strong>${escapeHtml(tx("Codex needs one value", "Codex 还需要一个额度值"))}</strong>
+        <div class="settings-detail">${escapeHtml(
+          tx(
+            "First try Refresh after using Codex once. If automatic detection still cannot read quota, fill the fallback form below.",
+            "先使用 Codex 一次后点刷新。如果自动检测仍然读不到额度，再填写下面的兜底表单。"
+          )
+        )}</div>
+      </div>
+      <span class="badge warning">${escapeHtml(tx("Action needed", "需要处理"))}</span>
+    </div>
+  `;
+}
+
+function renderOptionalCodexFallback(status) {
+  return `
+    <details class="optional-settings-details">
+      <summary>
+        <span>${escapeHtml(tx("Optional manual fallback", "可选：手动兜底"))}</span>
+        <small>${escapeHtml(
+          tx(
+            "Use only if automatic Codex detection stops working.",
+            "只有自动检测不可用时才需要。"
+          )
+        )}</small>
+      </summary>
+      <div class="optional-settings-body">
+        ${renderCodexSnapshotForm(status)}
+      </div>
+    </details>
   `;
 }
 
@@ -3025,7 +3100,7 @@ function renderCodexSnapshotSteps(status) {
               <div>
                 <strong>${escapeHtml(step.title)}</strong>
                 <div class="settings-detail">${escapeHtml(step.detail)}</div>
-                ${renderInlineCommand(step.command)}
+                ${step.command ? renderInlineCommand(step.command) : ""}
               </div>
               <span class="badge ${doctorBadgeClass(step.state)}">${escapeHtml(
                 statusLabel(step.state)
@@ -3130,7 +3205,7 @@ function renderSettings() {
   }
 
   elements.settingsContent.innerHTML = `
-    ${renderRealDataSteps(status)}
+    ${renderClaudeConnectionSummary(status)}
     ${renderClaudeStatuslineWaitingNotice(status)}
 
     ${renderAdvancedDetails(
@@ -3192,6 +3267,52 @@ function renderSettings() {
         ${renderFieldPills(tx("Not stored", "未保存"), status.notSavedFields, "stale")}
       `
     )}
+  `;
+}
+
+function renderClaudeConnectionSummary(status) {
+  const ready = status.readiness === "ready";
+  const needsSetup = !status.statusLineManagedByApp || !status.shimExists;
+  const title = ready
+    ? tx("Claude is ready", "Claude 已就绪")
+    : needsSetup
+      ? tx("Claude needs setup", "Claude 需要设置")
+      : tx("Claude is waiting for quota data", "Claude 正在等待额度数据");
+  const detail = ready
+    ? tx(
+        "First-time setup is complete. The checklist below is only for troubleshooting.",
+        "首次配置已完成。下面的检查清单只用于排障。"
+      )
+    : localizedNextAction(status.nextAction) ??
+      tx(
+        "Follow the current step above. The checklist below is optional troubleshooting detail.",
+        "按上方当前步骤操作即可。下面的检查清单只是可选排障详情。"
+      );
+
+  return `
+    <div class="setup-watch-notice connection-summary">
+      <div>
+        <strong>${escapeHtml(title)}</strong>
+        <div class="settings-detail">${escapeHtml(detail)}</div>
+      </div>
+      <span class="badge ${readinessBadgeClass(status.readiness)}">${escapeHtml(
+        statusLabel(status.readiness)
+      )}</span>
+    </div>
+    <details class="optional-settings-details">
+      <summary>
+        <span>${escapeHtml(tx("Troubleshooting checklist", "排障检查清单"))}</span>
+        <small>${escapeHtml(
+          tx(
+            "Not part of normal first-time setup unless something fails.",
+            "正常首次配置不需要操作，出问题时再看。"
+          )
+        )}</small>
+      </summary>
+      <div class="optional-settings-body">
+        ${renderRealDataSteps(status)}
+      </div>
+    </details>
   `;
 }
 
@@ -3613,6 +3734,10 @@ function renderFieldPills(label, fields = [], badgeClass) {
 }
 
 function renderInlineCommand(command) {
+  if (!command) {
+    return "";
+  }
+
   return `
     <div class="inline-command">
       <code>${escapeHtml(command)}</code>
