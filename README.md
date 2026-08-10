@@ -37,6 +37,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Desktop startup diagnostics with recovery guidance for backend failures
 - Desktop global shortcuts for AIQD mini panel, refresh, and widget actions
 - Local trial scripts for desktop launch, Doctor, and Claude statusline self-test
+- Real-data trial preflight command with source-specific next actions
 - Strict real-data readiness check before desktop trials
 - Settings view status for desktop shortcut bindings and overrides
 - Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
@@ -118,6 +119,7 @@ npm run desktop:demo
 npm run desktop:smoke
 npm run desktop:first-run-smoke
 npm run doctor
+npm run trial:preflight
 npm run trial:ready
 npm run claude:self-test
 npm run build      # compile TypeScript
@@ -172,6 +174,8 @@ node dist/index.js doctor --strict
 The command prints refresh counts, each agent's quota or empty-state guidance, and the underlying Doctor checks. It exits with code `1` only for blocking failures such as adapter errors or invalid config. Missing quota sources are warnings because a freshly installed app may simply need setup.
 
 Use `npm run trial:ready` or `doctor --strict` before a real-data desktop trial. Strict mode also requires fresh non-demo quota snapshots for every configured agent, so it fails when Codex or Claude Code still needs setup. The Settings real-data overview shows the same strict readiness result through `/api/trial-readiness`.
+
+Use `npm run trial:preflight` when you want the shortest setup answer first. It runs one local refresh and prints source-specific next actions for Codex, Claude Code, and blocking Doctor issues without modifying external agent settings.
 
 `--json` prints a machine-readable report that excludes account identifiers, raw source references, and raw content, redacts local paths, and includes per-snapshot freshness reasons. The plain text report is meant for local troubleshooting and can include local filesystem paths.
 

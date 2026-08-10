@@ -7,6 +7,7 @@ This guide is for a local desktop trial with real Codex and Claude Code quota si
 ```bash
 npm install
 npm test
+npm run trial:preflight
 npm run desktop:first-run-smoke
 ```
 
@@ -31,6 +32,7 @@ If the desktop app does not open, run:
 
 ```bash
 npm run desktop:smoke
+npm run trial:preflight
 npm run doctor
 ```
 
@@ -83,6 +85,7 @@ Then open Claude Code once so its statusline renders. AIQD will refresh when sup
 ## 5. Verify
 
 ```bash
+npm run trial:preflight
 npm run doctor
 npm run trial:ready
 ```
@@ -94,7 +97,7 @@ In the desktop app, check:
 - Doctor first-run checklist shows quota sources ready or gives a specific next action.
 - Refresh History has a recent run with snapshot and check counts.
 
-`npm run trial:ready` uses strict Doctor mode. It fails until every configured agent has a fresh non-demo quota snapshot, which is useful right before deciding whether the app is ready for a real-data experience.
+`npm run trial:preflight` gives the shortest next action for Codex, Claude Code, and blocking Doctor issues. `npm run trial:ready` uses strict Doctor mode. It fails until every configured agent has a fresh non-demo quota snapshot, which is useful right before deciding whether the app is ready for a real-data experience.
 
 The Settings > Real Data Setup summary, desktop first-run guide, tray status, and mini footer show the same strict readiness result as `npm run trial:ready`.
 
