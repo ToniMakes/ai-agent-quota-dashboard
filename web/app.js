@@ -1,3 +1,7 @@
+const languageStorageKey = "aiqd.language";
+
+let currentLanguage = resolveInitialLanguage();
+
 const state = {
   agents: [],
   codexSnapshotSaveStatus: undefined,
@@ -21,6 +25,7 @@ const elements = {
   doctorChecklistScore: document.querySelector("#doctor-checklist-score"),
   doctorList: document.querySelector("#doctor-list"),
   eventList: document.querySelector("#event-list"),
+  languageToggle: document.querySelector("#language-toggle"),
   lastRefresh: document.querySelector("#last-refresh"),
   pathsContent: document.querySelector("#paths-content"),
   realDataContent: document.querySelector("#real-data-content"),
@@ -39,8 +44,14 @@ const statuslineWatchIntervalMs = 10_000;
 let statuslineWatchTimer;
 let statuslineWatchInFlight = false;
 
+elements.languageToggle?.addEventListener("click", () => {
+  currentLanguage = currentLanguage === "zh" ? "en" : "zh";
+  window.localStorage?.setItem(languageStorageKey, currentLanguage);
+  render();
+});
+
 elements.refreshButton.addEventListener("click", () => {
-  void runRefresh("Dashboard refreshed.");
+  void runRefresh(tx("Dashboard refreshed.", "仪表盘已刷新。"));
 });
 
 for (const tab of elements.tabs) {
@@ -73,7 +84,7 @@ document.addEventListener("click", async (event) => {
   const refreshActionButton = target.closest("[data-refresh-action]");
 
   if (refreshActionButton instanceof HTMLButtonElement) {
-    await runRefresh("Checklist refresh completed.");
+    await runRefresh(tx("Checklist refresh completed.", "清单刷新完成。"));
     return;
   }
 
@@ -113,6 +124,65 @@ activateView(requestedViewName());
 
 await load();
 scrollToRequestedTarget();
+
+function resolveInitialLanguage() {
+  const savedLanguage = window.localStorage?.getItem(languageStorageKey);
+
+  if (savedLanguage === "zh" || savedLanguage === "en") {
+    return savedLanguage;
+  }
+
+  return navigator.language?.toLowerCase().startsWith("zh") ? "zh" : "en";
+}
+
+function locale() {
+  return currentLanguage === "zh" ? "zh-CN" : "en-US";
+}
+
+function tx(english, chinese, values = {}) {
+  const template = currentLanguage === "zh" ? chinese : english;
+
+  return Object.entries(values).reduce(
+    (text, [key, value]) => text.replaceAll(`{${key}}`, String(value)),
+    template
+  );
+}
+
+function applyStaticTranslations() {
+  document.documentElement.lang = currentLanguage === "zh" ? "zh-Hans" : "en";
+  document.title = tx("AI Agent Quota", "AI Agent Quota");
+
+  if (elements.languageToggle) {
+    elements.languageToggle.textContent = currentLanguage === "zh" ? "EN" : "中文";
+  }
+
+  for (const item of document.querySelectorAll("[data-i18n-en]")) {
+    item.textContent =
+      currentLanguage === "zh" ? item.dataset.i18nZh : item.dataset.i18nEn;
+  }
+
+  for (const item of document.querySelectorAll("[data-i18n-title-en]")) {
+    const value =
+      currentLanguage === "zh"
+        ? item.dataset.i18nTitleZh
+        : item.dataset.i18nTitleEn;
+
+    if (value) {
+      item.setAttribute("title", value);
+    }
+  }
+
+  for (const item of document.querySelectorAll("[data-i18n-aria-label-en]")) {
+    const value =
+      currentLanguage === "zh"
+        ? item.dataset.i18nAriaLabelZh
+        : item.dataset.i18nAriaLabelEn;
+
+    if (value) {
+      item.setAttribute("aria-label", value);
+    }
+  }
+}
 
 function activateView(viewName, options = {}) {
   if (!viewName || !isKnownView(viewName)) {
@@ -226,7 +296,10 @@ async function load() {
 }
 
 function render() {
-  elements.lastRefresh.textContent = `Last refresh: ${formatRelative(state.generatedAt)}`;
+  applyStaticTranslations();
+  elements.lastRefresh.textContent = tx("Last refresh: {time}", "上次刷新：{time}", {
+    time: formatRelative(state.generatedAt)
+  });
   renderRefreshStatus();
   renderAgents();
   renderResets();
@@ -248,10 +321,10 @@ async function runRefresh(successMessage) {
   }
 
   elements.refreshButton.disabled = true;
-  elements.refreshButton.textContent = "Refreshing";
+  elements.refreshButton.textContent = tx("Refreshing", "刷新中");
   state.refreshStatus = {
     kind: "pending",
-    message: "Refreshing local quota sources."
+    message: tx("Refreshing local quota sources.", "正在刷新本地额度数据源。")
   };
   renderRefreshStatus();
 
@@ -263,12 +336,12 @@ async function runRefresh(successMessage) {
     state.refreshStatus = {
       detail: error instanceof Error ? error.message : String(error),
       kind: "error",
-      message: "Refresh failed."
+      message: tx("Refresh failed.", "刷新失败。")
     };
     renderRefreshStatus();
   } finally {
     elements.refreshButton.disabled = false;
-    elements.refreshButton.textContent = "Refresh";
+    elements.refreshButton.textContent = tx("Refresh", "刷新");
   }
 }
 
@@ -277,7 +350,7 @@ async function postRefresh() {
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(payload.error ?? "Refresh request failed.");
+    throw new Error(payload.error ?? tx("Refresh request failed.", "刷新请求失败。"));
   }
 
   return payload;
@@ -291,7 +364,15 @@ function refreshStatusFromResult(result, successMessage) {
     return {
       detail: [detail, ...errors].filter(Boolean).join("\n"),
       kind: "warning",
-      message: `${successMessage} ${errors.length} warning${errors.length === 1 ? "" : "s"}.`
+      message: tx(
+        "{message} {count} warning{plural}.",
+        "{message} 有 {count} 条警告。",
+        {
+          count: errors.length,
+          message: successMessage,
+          plural: errors.length === 1 ? "" : "s"
+        }
+      )
     };
   }
 
@@ -373,7 +454,9 @@ async function pollClaudeStatusline() {
     state.setupStatus = setupPayload.status;
 
     if (state.setupStatus?.latestHasRateLimits) {
-      await runRefresh("Claude Code quota data received.");
+      await runRefresh(
+        tx("Claude Code quota data received.", "已收到 Claude Code 额度数据。")
+      );
       return;
     }
 
@@ -387,7 +470,9 @@ async function pollClaudeStatusline() {
 
 function renderAgents() {
   if (state.agents.length === 0) {
-    elements.agentGrid.innerHTML = `<p class="empty">No agents configured.</p>`;
+    elements.agentGrid.innerHTML = `<p class="empty">${escapeHtml(
+      tx("No agents configured.", "尚未配置 Agent。")
+    )}</p>`;
     return;
   }
 
@@ -398,8 +483,10 @@ function renderAgentCard(agent) {
   const primary = agent.primarySnapshot;
   const remaining = formatRemaining(primary);
   const status = agent.status ?? "unknown";
-  const source = primary ? sourceLabel(primary.source) : "Unavailable";
-  const confidence = primary ? confidenceLabel(primary.confidence) : "unknown";
+  const source = primary
+    ? sourceLabel(primary.source)
+    : tx("Unavailable", "不可用");
+  const confidence = primary ? confidenceLabel(primary.confidence) : statusLabel("unknown");
   const meterValue = clamp(primary?.remainingPercent ?? 0, 0, 100);
 
   return `
@@ -409,7 +496,7 @@ function renderAgentCard(agent) {
           <h3 class="agent-name">${escapeHtml(agent.displayName)}</h3>
           <p class="agent-provider">${escapeHtml(agent.provider)}</p>
         </div>
-        <span class="badge ${status}">${status}</span>
+        <span class="badge ${status}">${escapeHtml(statusLabel(status))}</span>
       </div>
 
       <div>
@@ -422,7 +509,7 @@ function renderAgentCard(agent) {
       <div class="quota-lines">
         ${renderSnapshotLines(agent)}
         <div class="quota-line">
-          <span class="label">Source</span>
+          <span class="label">${escapeHtml(tx("Source", "来源"))}</span>
           <span class="value">${escapeHtml(source)} / ${escapeHtml(confidence)}</span>
         </div>
         ${primary ? renderObservedLine(primary) : ""}
@@ -434,7 +521,7 @@ function renderAgentCard(agent) {
 function renderObservedLine(snapshot) {
   return `
     <div class="quota-line">
-      <span class="label">Observed</span>
+      <span class="label">${escapeHtml(tx("Observed", "观测时间"))}</span>
       <span class="value observed-value">
         <time datetime="${escapeHtml(snapshot.observedAt)}">${escapeHtml(
           formatRelative(snapshot.observedAt)
@@ -456,11 +543,15 @@ function renderStaleNote(snapshot) {
   }
 
   if (snapshot.stale) {
-    return `<span class="freshness-note">marked stale by source</span>`;
+    return `<span class="freshness-note">${escapeHtml(
+      tx("marked stale by source", "数据源标记为过期")
+    )}</span>`;
   }
 
   if (snapshot.expiresAt && Date.parse(snapshot.expiresAt) <= Date.now()) {
-    return `<span class="freshness-note">expired observation</span>`;
+    return `<span class="freshness-note">${escapeHtml(
+      tx("expired observation", "观测值已过期")
+    )}</span>`;
   }
 
   return "";
@@ -472,15 +563,17 @@ function renderSnapshotLines(agent) {
   if (!snapshots || snapshots.length === 0) {
     const emptyState = agent.emptyState;
     const action =
-      emptyState?.action ?? "Open Doctor for source checks and refresh history.";
+      emptyState?.action ??
+      tx(
+        "Open Doctor for source checks and refresh history.",
+        "打开诊断查看数据源检查和刷新历史。"
+      );
+    const emptyText = agentEmptyText(agent);
 
     return `
       <div class="agent-empty-state">
-        <strong>${escapeHtml(emptyState?.title ?? "No quota data yet")}</strong>
-        <p>${escapeHtml(
-          emptyState?.detail ??
-            "The latest refresh did not produce a quota snapshot for this agent."
-        )}</p>
+        <strong>${escapeHtml(emptyText.title)}</strong>
+        <p>${escapeHtml(emptyText.detail)}</p>
         ${renderActionHint(action)}
       </div>
     `;
@@ -493,9 +586,9 @@ function renderSnapshotLines(agent) {
           <span class="label">${escapeHtml(windowLabel(snapshot.windowType))}</span>
           <span class="value quota-value">
             <span>${formatRemaining(snapshot)}</span>
-            <span class="quota-reset">reported reset ${renderResetValue(
-              snapshot.resetAt
-            )}</span>
+            <span class="quota-reset">${escapeHtml(
+              tx("reported reset", "报告 reset")
+            )} ${renderResetValue(snapshot.resetAt)}</span>
           </span>
         </div>
       `;
@@ -518,7 +611,9 @@ function renderResets() {
     );
 
   if (snapshots.length === 0) {
-    elements.resetList.innerHTML = `<p class="empty">No reset data.</p>`;
+    elements.resetList.innerHTML = `<p class="empty">${escapeHtml(
+      tx("No reset data.", "还没有 reset 数据。")
+    )}</p>`;
     return;
   }
 
@@ -537,7 +632,9 @@ function renderResets() {
 
 function renderDoctor() {
   if (state.doctorChecks.length === 0) {
-    elements.doctorList.innerHTML = `<p class="empty">No doctor checks yet.</p>`;
+    elements.doctorList.innerHTML = `<p class="empty">${escapeHtml(
+      tx("No doctor checks yet.", "还没有诊断检查。")
+    )}</p>`;
     return;
   }
 
@@ -552,7 +649,7 @@ function renderDoctorGroup(group) {
       <div class="doctor-group-header">
         <strong>${escapeHtml(group.displayName)}</strong>
         <span class="badge ${doctorBadgeClass(group.status)}">${escapeHtml(
-          group.status
+          statusLabel(group.status)
         )}</span>
       </div>
       <div class="doctor-group-list">
@@ -575,7 +672,7 @@ function renderDoctorCheck(check) {
         }
       </div>
       <span class="badge ${doctorBadgeClass(check.status)}">${escapeHtml(
-        check.status
+        statusLabel(check.status)
       )}</span>
     </div>
   `;
@@ -600,7 +697,14 @@ function renderDoctorChecklist() {
     items.find((item) => item.state === "info");
 
   if (elements.doctorChecklistScore) {
-    elements.doctorChecklistScore.textContent = `${readyCount}/${totalCount} ready`;
+    elements.doctorChecklistScore.textContent = tx(
+      "{ready}/{total} ready",
+      "{ready}/{total} 就绪",
+      {
+        ready: readyCount,
+        total: totalCount
+      }
+    );
     elements.doctorChecklistScore.className = `badge ${
       readyCount === totalCount && !hasSupportingIssue ? "healthy" : "warning"
     }`;
@@ -610,14 +714,18 @@ function renderDoctorChecklist() {
     <div class="real-data-summary doctor-checklist-summary">
       <div class="setup-score">
         <strong>${readyCount}/${totalCount}</strong>
-        <span>quota sources ready</span>
+        <span>${escapeHtml(tx("quota sources ready", "额度来源就绪"))}</span>
       </div>
       <div>
         <strong>${escapeHtml(
           doctorChecklistSummaryTitle(readyCount, totalCount, hasSupportingIssue)
         )}</strong>
         <div class="settings-detail">${escapeHtml(
-          nextItem?.nextAction ?? "Real-data sources are ready for a local trial."
+          nextItem?.nextAction ??
+            tx(
+              "Real-data sources are ready for a local trial.",
+              "真实数据来源已经可以用于本地试用。"
+            )
         )}</div>
         ${nextItem?.command ? renderInlineCommand(nextItem.command) : ""}
       </div>
@@ -642,9 +750,9 @@ function buildDoctorCodexChecklistItem() {
 
   return {
     ...item,
-    actionLabel: item.state === "pass" ? "Review" : "Settings",
+    actionLabel: item.state === "pass" ? tx("Review", "查看") : tx("Settings", "设置"),
     actionView: "settings",
-    label: "Codex manual snapshot",
+    label: tx("Codex manual snapshot", "Codex 手动快照"),
     target: "#codex-snapshot-content"
   };
 }
@@ -654,9 +762,9 @@ function buildDoctorClaudeChecklistItem() {
 
   return {
     ...item,
-    actionLabel: item.state === "pass" ? "Review" : "Settings",
+    actionLabel: item.state === "pass" ? tx("Review", "查看") : tx("Settings", "设置"),
     actionView: "settings",
-    label: "Claude Code statusline",
+    label: tx("Claude Code statusline", "Claude Code 状态栏"),
     target: "#settings-content"
   };
 }
@@ -668,31 +776,45 @@ function buildDoctorRefreshChecklistItem() {
 
   if (!latestRun) {
     return {
-      actionLabel: "Refresh now",
+      actionLabel: tx("Refresh now", "立即刷新"),
       countsTowardReady: false,
-      detail: "No local refresh run has been recorded in this workspace yet.",
-      label: "Refresh pipeline",
-      nextAction: "Run one refresh after setting up at least one quota source.",
+      detail: tx(
+        "No local refresh run has been recorded in this workspace yet.",
+        "这个工作区还没有记录过本地刷新。"
+      ),
+      label: tx("Refresh pipeline", "刷新流程"),
+      nextAction: tx(
+        "Run one refresh after setting up at least one quota source.",
+        "至少设置好一个额度来源后，运行一次刷新。"
+      ),
       refreshAction: true,
       state: "info",
-      status: "Not run yet"
+      status: tx("Not run yet", "尚未运行")
     };
   }
 
   const hasErrors = (latestRun.errors?.length ?? 0) > 0;
 
   return {
-    actionLabel: hasErrors ? "View details" : "Refresh now",
+    actionLabel: hasErrors ? tx("View details", "查看详情") : tx("Refresh now", "立即刷新"),
     actionView: hasErrors ? "doctor" : undefined,
     countsTowardReady: false,
     detail: formatRefreshRunDetail(latestRun),
-    label: "Refresh pipeline",
+    label: tx("Refresh pipeline", "刷新流程"),
     nextAction: hasErrors
-      ? "Review the latest refresh errors before relying on the dashboard."
-      : "Refresh is recording source diagnostics and saved-count summaries.",
+      ? tx(
+          "Review the latest refresh errors before relying on the dashboard.",
+          "先查看最近一次刷新错误，再依赖仪表盘结果。"
+        )
+      : tx(
+          "Refresh is recording source diagnostics and saved-count summaries.",
+          "刷新流程正在记录来源诊断和保存数量摘要。"
+        ),
     refreshAction: !hasErrors,
     state: hasErrors ? "warn" : "pass",
-    status: `Last run ${formatRelative(latestRun.observedAt)}`,
+    status: tx("Last run {time}", "上次运行：{time}", {
+      time: formatRelative(latestRun.observedAt)
+    }),
     target: hasErrors ? "#refresh-run-list" : undefined
   };
 }
@@ -702,9 +824,9 @@ function buildDoctorPathChecklistItem() {
 
   return {
     ...item,
-    actionLabel: "Path settings",
+    actionLabel: tx("Path settings", "路径设置"),
     actionView: "settings",
-    label: "Local path config",
+    label: tx("Local path config", "本地路径配置"),
     target: "#paths-content"
   };
 }
@@ -720,7 +842,7 @@ function renderDoctorChecklistItem(item) {
       </div>
       <div class="setup-overview-actions doctor-checklist-actions">
         <span class="badge ${doctorBadgeClass(item.state)}">${escapeHtml(
-          item.state
+          statusLabel(item.state)
         )}</span>
         ${renderDoctorChecklistAction(item)}
       </div>
@@ -753,23 +875,28 @@ function renderDoctorChecklistAction(item) {
 
 function doctorChecklistSummaryTitle(readyCount, totalCount, hasSupportingIssue) {
   if (readyCount === totalCount && hasSupportingIssue) {
-    return "Quota sources are ready; review setup warnings";
+    return tx(
+      "Quota sources are ready; review setup warnings",
+      "额度来源已就绪；请查看设置警告"
+    );
   }
 
   if (readyCount === totalCount) {
-    return "Ready for a real-data trial";
+    return tx("Ready for a real-data trial", "真实数据试用已准备好");
   }
 
   if (readyCount === 0) {
-    return "Real-data setup is not ready yet";
+    return tx("Real-data setup is not ready yet", "真实数据设置尚未就绪");
   }
 
-  return "One quota source is ready";
+  return tx("One quota source is ready", "已有一个额度来源就绪");
 }
 
 function renderRefreshRuns() {
   if (state.refreshRuns.length === 0) {
-    elements.refreshRunList.innerHTML = `<p class="empty">No refresh runs yet.</p>`;
+    elements.refreshRunList.innerHTML = `<p class="empty">${escapeHtml(
+      tx("No refresh runs yet.", "还没有刷新记录。")
+    )}</p>`;
     return;
   }
 
@@ -785,7 +912,9 @@ function renderRefreshRuns() {
           <span class="badge ${
             (run.errors?.length ?? 0) > 0 ? "warning" : "healthy"
           }">${
-            (run.errors?.length ?? 0) > 0 ? "warning" : "pass"
+            (run.errors?.length ?? 0) > 0
+              ? escapeHtml(statusLabel("warning"))
+              : escapeHtml(statusLabel("pass"))
           }</span>
         </div>
       `
@@ -847,17 +976,25 @@ function mostSevereDoctorCheckStatus(statuses) {
 
 function formatRefreshRunDetail(run) {
   return [
-    `${run.snapshotsSaved} snapshots`,
-    `${run.usageEventsSaved} usage events`,
-    `${run.doctorChecksSaved} doctor checks`,
-    `${run.resetEventsSaved} reset events`,
-    `${run.adapterCount} adapters`
+    tx("{count} snapshots", "{count} 个快照", { count: run.snapshotsSaved }),
+    tx("{count} usage events", "{count} 条使用事件", {
+      count: run.usageEventsSaved
+    }),
+    tx("{count} doctor checks", "{count} 条诊断检查", {
+      count: run.doctorChecksSaved
+    }),
+    tx("{count} reset events", "{count} 条 reset 事件", {
+      count: run.resetEventsSaved
+    }),
+    tx("{count} adapters", "{count} 个适配器", { count: run.adapterCount })
   ].join(" / ");
 }
 
 function renderEvents() {
   if (state.resetEvents.length === 0) {
-    elements.eventList.innerHTML = `<p class="empty">No reset changes observed yet.</p>`;
+    elements.eventList.innerHTML = `<p class="empty">${escapeHtml(
+      tx("No reset changes observed yet.", "还没有观测到 reset 变化。")
+    )}</p>`;
     return;
   }
 
@@ -882,7 +1019,9 @@ function renderCodexSnapshotSettings() {
   const status = state.codexSnapshotStatus;
 
   if (!status) {
-    elements.codexSnapshotContent.innerHTML = `<p class="empty">Codex snapshot status unavailable.</p>`;
+    elements.codexSnapshotContent.innerHTML = `<p class="empty">${escapeHtml(
+      tx("Codex snapshot status unavailable.", "Codex 快照状态不可用。")
+    )}</p>`;
     return;
   }
 
@@ -890,46 +1029,48 @@ function renderCodexSnapshotSettings() {
     ${renderCodexSnapshotSteps(status)}
     ${renderCodexSnapshotForm(status)}
 
-    <div class="settings-list">
-      ${settingsRow(
-        "Snapshot file",
-        status.snapshotExists ? "Found" : "Not recorded",
-        status.snapshotPath,
-        status.snapshotExists ? "healthy" : "stale"
-      )}
-      ${settingsRow(
-        "Latest quota",
-        formatCodexSnapshotValue(status),
-        formatCodexSnapshotDetail(status),
-        codexSnapshotBadgeClass(status.readiness)
-      )}
-      ${settingsRow(
-        "Readiness",
-        status.readinessLabel ?? "Unknown",
-        status.nextAction ?? "Record a visible Codex quota value.",
-        codexSnapshotBadgeClass(status.readiness),
-        status.readiness ?? "unknown"
-      )}
-      ${renderSetupChecks(status.checks)}
-    </div>
+    ${renderAdvancedDetails(
+      tx("Codex technical details", "Codex 技术细节"),
+      `
+        <div class="settings-list">
+          ${settingsRow(
+            tx("Snapshot file", "快照文件"),
+            status.snapshotExists ? tx("Found", "已找到") : tx("Not recorded", "未记录"),
+            status.snapshotPath,
+            status.snapshotExists ? "healthy" : "stale"
+          )}
+          ${settingsRow(
+            tx("Latest quota", "最新额度"),
+            formatCodexSnapshotValue(status),
+            formatCodexSnapshotDetail(status),
+            codexSnapshotBadgeClass(status.readiness)
+          )}
+          ${settingsRow(
+            tx("Readiness", "就绪状态"),
+            localizedReadinessLabel(status.readinessLabel) ?? tx("Unknown", "未知"),
+            localizedNextAction(status.nextAction) ??
+              tx("Record a visible Codex quota value.", "记录一个可见的 Codex 额度值。"),
+            codexSnapshotBadgeClass(status.readiness),
+            statusLabel(status.readiness ?? "unknown")
+          )}
+          ${renderSetupChecks(status.checks)}
+        </div>
 
-    ${renderCommandBlock("Record command", status.writeCommand)}
-    ${renderCommandBlock("Help command", status.helpCommand)}
+        ${renderCommandBlock(tx("Record command", "记录命令"), status.writeCommand)}
+        ${renderCommandBlock(tx("Help command", "帮助命令"), status.helpCommand)}
 
-    <div class="settings-row">
-      <strong>Stored</strong>
-      <div class="pill-list">${status.savedFields
-        .map((field) => `<span class="badge healthy">${escapeHtml(field)}</span>`)
-        .join("")}</div>
-      <span></span>
-    </div>
-    <div class="settings-row">
-      <strong>Not stored</strong>
-      <div class="pill-list">${status.notSavedFields
-        .map((field) => `<span class="badge stale">${escapeHtml(field)}</span>`)
-        .join("")}</div>
-      <span></span>
-    </div>
+        ${renderFieldPills(
+          tx("Stored", "已保存"),
+          status.savedFields,
+          "healthy"
+        )}
+        ${renderFieldPills(
+          tx("Not stored", "未保存"),
+          status.notSavedFields,
+          "stale"
+        )}
+      `
+    )}
   `;
 }
 
@@ -939,17 +1080,17 @@ function renderRealDataOverview() {
   const sourceItems = items.filter((item) => item.countsTowardReady);
   const readyCount = sourceItems.filter((item) => item.state === "pass").length;
   const totalCount = sourceItems.length;
-  const nextItem =
-    items.find((item) => item.state === "warn") ??
-    items.find((item) => item.state === "info") ??
-    items.find((item) => item.state === "stale");
+  const guide = buildRealDataGuide(readiness, items, readyCount, totalCount);
 
   if (elements.realDataScore) {
     elements.realDataScore.textContent = readiness
       ? readiness.ok
-        ? "ready"
-        : "not ready"
-      : `${readyCount}/${totalCount} ready`;
+        ? tx("ready", "就绪")
+        : tx("not ready", "未就绪")
+      : tx("{ready}/{total} ready", "{ready}/{total} 就绪", {
+          ready: readyCount,
+          total: totalCount
+        });
     elements.realDataScore.className = `badge ${
       readiness?.ok || (!readiness && readyCount === totalCount)
         ? "healthy"
@@ -962,75 +1103,33 @@ function renderRealDataOverview() {
   }
 
   elements.realDataContent.innerHTML = `
-    <div class="real-data-summary">
-      <div class="setup-score">
-        <strong>${escapeHtml(
-          readinessScoreLabel(readiness, readyCount, totalCount)
-        )}</strong>
-        <span>${escapeHtml(readinessScoreCaption(readiness))}</span>
+    <div class="onboarding-guide">
+      <div class="guide-copy">
+        <span class="guide-kicker">${escapeHtml(tx("Start here", "从这里开始"))}</span>
+        <strong>${escapeHtml(guide.title)}</strong>
+        <p>${escapeHtml(guide.detail)}</p>
       </div>
-      <div>
-        <strong>${escapeHtml(
-          readiness
-            ? trialReadinessTitle(readiness)
-            : realDataSummaryTitle(readyCount, totalCount)
-        )}</strong>
-        <div class="settings-detail">${escapeHtml(
-          readinessDetail(readiness, nextItem)
-        )}</div>
-        ${renderRealDataSummaryCommand(readiness, nextItem)}
+      <div class="guide-actions">
+        ${renderGuideAction(guide)}
+        ${guide.command ? renderInlineCommand(guide.command) : ""}
       </div>
     </div>
-    ${readiness ? renderTrialReadinessChecks(readiness) : ""}
-    <div class="setup-overview-list">
-      ${items.map(renderRealDataOverviewItem).join("")}
+
+    <div class="source-card-grid">
+      ${items.map(renderSourceCard).join("")}
     </div>
+
+    ${renderAdvancedDetails(
+      tx("Advanced readiness details", "高级就绪详情"),
+      `
+        ${readiness ? renderTrialReadinessChecks(readiness) : ""}
+        <div class="setup-overview-list">
+          ${items.map(renderRealDataOverviewItem).join("")}
+        </div>
+        ${readiness ? renderInlineCommand("npm run trial:ready") : ""}
+      `
+    )}
   `;
-}
-
-function readinessScoreLabel(readiness, readyCount, totalCount) {
-  if (!readiness) {
-    return `${readyCount}/${totalCount}`;
-  }
-
-  const checks = readiness.checks ?? [];
-  const passCount = checks.filter((check) => check.status === "pass").length;
-
-  return readiness.ok ? "ready" : `${passCount}/${checks.length}`;
-}
-
-function readinessScoreCaption(readiness) {
-  return readiness ? "strict trial checks" : "quota sources ready";
-}
-
-function renderRealDataSummaryCommand(readiness, nextItem) {
-  if (readiness) {
-    return renderInlineCommand("npm run trial:ready");
-  }
-
-  return nextItem?.command ? renderInlineCommand(nextItem.command) : "";
-}
-
-function trialReadinessTitle(readiness) {
-  return readiness.ok
-    ? "Ready for a real-data trial"
-    : "Real-data trial is not ready yet";
-}
-
-function readinessDetail(readiness, nextItem) {
-  if (!readiness) {
-    return nextItem?.nextAction ?? "Both primary quota sources have usable local data.";
-  }
-
-  const failingCheck = (readiness.checks ?? []).find(
-    (check) => check.status === "fail"
-  );
-
-  return (
-    failingCheck?.action ??
-    failingCheck?.message ??
-    "Every configured agent has a fresh non-demo quota snapshot."
-  );
 }
 
 function renderTrialReadinessChecks(readiness) {
@@ -1048,22 +1147,177 @@ function renderTrialReadinessChecks(readiness) {
 }
 
 function renderTrialReadinessCheck(check) {
+  const text = localizedReadinessCheck(check);
+
   return `
     <div class="setup-overview-row trial-readiness-row">
       <div>
-        <strong>${escapeHtml(check.displayName)}</strong>
-        <div>${escapeHtml(check.message)}</div>
+        <strong>${escapeHtml(readinessDisplayName(check))}</strong>
+        <div>${escapeHtml(text.message)}</div>
         ${
-          check.action
-            ? `<div class="settings-detail">${escapeHtml(check.action)}</div>`
+          text.action
+            ? `<div class="settings-detail">${escapeHtml(text.action)}</div>`
             : ""
         }
       </div>
       <span class="badge ${doctorBadgeClass(check.status)}">${escapeHtml(
-        check.status
+        statusLabel(check.status)
       )}</span>
     </div>
   `;
+}
+
+function buildRealDataGuide(readiness, items, readyCount, totalCount) {
+  const failingCheck = (readiness?.checks ?? []).find(
+    (check) => check.status === "fail"
+  );
+  const nextItem =
+    itemForReadinessCheck(failingCheck, items) ??
+    items.find((item) => item.state === "warn") ??
+    items.find((item) => item.state === "info") ??
+    items.find((item) => item.state === "stale");
+
+  if (readiness?.ok || (!readiness && readyCount === totalCount)) {
+    return {
+      actionLabel: tx("Open dashboard", "打开仪表盘"),
+      actionView: "dashboard",
+      detail: tx(
+        "Both primary quota sources have usable local data. Refresh before you make decisions from the numbers.",
+        "两个主要额度来源都有可用的本地数据。根据数字做判断前，建议先刷新一次。"
+      ),
+      state: "pass",
+      title: tx("Ready for a real-data trial", "真实数据试用已准备好")
+    };
+  }
+
+  return {
+    actionLabel: nextItem?.actionLabel ?? tx("Review setup", "查看设置"),
+    actionView: targetViewForSelector(nextItem?.target),
+    command: nextItem?.command,
+    detail:
+      nextItem?.nextAction ??
+      tx(
+        "Set up one trusted local quota source first; the dashboard will stay conservative until real data arrives.",
+        "先设置一个可信的本地额度来源；在真实数据到达前，仪表盘会保持保守状态。"
+      ),
+    state: nextItem?.state ?? "info",
+    target: nextItem?.target,
+    title: readiness
+      ? tx(
+          "Real-data trial is not ready yet",
+          "真实数据试用还没有准备好"
+        )
+      : realDataSummaryTitle(readyCount, totalCount)
+  };
+}
+
+function itemForReadinessCheck(check, items) {
+  if (!check) {
+    return undefined;
+  }
+
+  if (check.agent === "codex") {
+    return items.find((item) => item.id === "codex");
+  }
+
+  if (check.agent === "claude-code") {
+    return items.find((item) => item.id === "claude-code");
+  }
+
+  if (check.agent === "doctor") {
+    return {
+      actionLabel: tx("Open Doctor", "打开诊断"),
+      actionView: "doctor",
+      detail: localizedReadinessCheck(check).action ?? check.message,
+      label: "Doctor",
+      nextAction: localizedReadinessCheck(check).action ?? check.message,
+      state: "warn",
+      target: "#doctor-list"
+    };
+  }
+
+  return undefined;
+}
+
+function readinessDisplayName(check) {
+  if (!check?.displayName || currentLanguage !== "zh") {
+    return check?.displayName;
+  }
+
+  const labels = {
+    Mode: "模式"
+  };
+
+  return labels[check.displayName] ?? check.displayName;
+}
+
+function targetViewForSelector(target) {
+  return target?.includes("doctor") ? "doctor" : "settings";
+}
+
+function renderGuideAction(guide) {
+  if (!guide.actionView && !guide.target) {
+    return "";
+  }
+
+  return `
+    <button
+      class="button guide-button"
+      type="button"
+      ${guide.actionView ? `data-open-view="${escapeHtml(guide.actionView)}"` : ""}
+      ${guide.target ? `data-scroll-target="${escapeHtml(guide.target)}"` : ""}
+    >${escapeHtml(guide.actionLabel)}</button>
+  `;
+}
+
+function renderSourceCard(item) {
+  return `
+    <article class="source-card ${doctorBadgeClass(item.state)}">
+      <div class="source-card-header">
+        <strong>${escapeHtml(item.label)}</strong>
+        <span class="badge ${doctorBadgeClass(item.state)}">${escapeHtml(
+          statusLabel(item.state)
+        )}</span>
+      </div>
+      <div class="source-card-status">${escapeHtml(item.status)}</div>
+      <p>${escapeHtml(item.detail)}</p>
+    </article>
+  `;
+}
+
+function localizedReadinessCheck(check) {
+  if (currentLanguage !== "zh") {
+    return {
+      action: check.action,
+      message: check.message
+    };
+  }
+
+  if (check.agent === "codex" && check.status === "fail") {
+    return {
+      action: "打开 Codex 的 /status 或 Settings > Usage，把可见剩余百分比和 reset 时间保存到 Codex 手动快照。",
+      message: "Codex 还没有可用于试用的真实额度快照。"
+    };
+  }
+
+  if (check.agent === "claude-code" && check.status === "fail") {
+    return {
+      action: "安装本地 statusline sink 后打开 Claude Code 一次，等待它发送支持的 rate_limits 字段。",
+      message: "Claude Code 还没有收到真实额度数据。"
+    };
+  }
+
+  if (check.agent === "doctor" && check.status === "fail") {
+    return {
+      action: "打开诊断页查看失败项，然后重新刷新。",
+      message: "本地诊断还有失败项。"
+    };
+  }
+
+  return {
+    action: check.action,
+    message: check.message
+  };
 }
 
 function buildRealDataOverviewItems() {
@@ -1082,29 +1336,51 @@ function buildCodexOverviewItem() {
   const detailParts = [];
 
   if (typeof status?.latestRemainingPercent === "number") {
-    detailParts.push(`${Math.round(status.latestRemainingPercent)}% remaining`);
+    detailParts.push(
+      tx("{percent}% remaining", "剩余 {percent}%", {
+        percent: Math.round(status.latestRemainingPercent)
+      })
+    );
   }
 
   if (status?.latestResetAt) {
-    detailParts.push(`reported reset ${formatRelative(status.latestResetAt)}`);
+    detailParts.push(
+      tx("reported reset {time}", "报告 reset：{time}", {
+        time: formatRelative(status.latestResetAt)
+      })
+    );
   }
 
   return {
-    actionLabel: "Codex details",
+    actionLabel: tx("Codex details", "Codex 详情"),
     command: ready ? undefined : "/status",
     countsTowardReady: true,
     detail:
       detailParts.length > 0
         ? detailParts.join(" / ")
-        : "Save the visible Codex /status or Usage value in the form below.",
+        : tx(
+            "Save the visible Codex /status or Usage value in the form below.",
+            "把 Codex /status 或 Usage 页面可见的额度值保存到下方表单。"
+          ),
+    id: "codex",
     label: "Codex",
     nextAction: ready
-      ? "Codex manual quota is ready for the dashboard."
+      ? tx(
+          "Codex manual quota is ready for the dashboard.",
+          "Codex 手动额度已经可用于仪表盘。"
+        )
       : needsAttention
-        ? "Update the Codex manual snapshot with the currently visible quota value."
-        : "Open Codex /status, then save the visible remaining percent and reset time below.",
+        ? tx(
+            "Update the Codex manual snapshot with the currently visible quota value.",
+            "用当前可见的额度值更新 Codex 手动快照。"
+          )
+        : tx(
+            "Open Codex /status, then save the visible remaining percent and reset time below.",
+            "打开 Codex /status，然后把可见的剩余百分比和 reset 时间保存到下方。"
+          ),
     state: ready ? "pass" : needsAttention ? "warn" : "info",
-    status: status?.readinessLabel ?? "Waiting for visible quota",
+    status: localizedReadinessLabel(status?.readinessLabel) ??
+      tx("Waiting for visible quota", "等待可见额度"),
     target: "#codex-snapshot-content"
   };
 }
@@ -1116,26 +1392,45 @@ function buildClaudeOverviewItem() {
   const detailParts = [];
 
   if (status?.latestWindowTypes?.length > 0) {
-    detailParts.push(`windows ${status.latestWindowTypes.map(windowLabel).join(", ")}`);
+    detailParts.push(
+      tx("windows {windows}", "窗口：{windows}", {
+        windows: status.latestWindowTypes.map(windowLabel).join(", ")
+      })
+    );
   }
 
   if (typeof status?.latestAgeSeconds === "number") {
-    detailParts.push(`age ${formatDuration(status.latestAgeSeconds)}`);
+    detailParts.push(
+      tx("age {age}", "数据年龄：{age}", {
+        age: formatDuration(status.latestAgeSeconds)
+      })
+    );
   }
 
   return {
-    actionLabel: "Claude details",
+    actionLabel: tx("Claude details", "Claude 详情"),
     command: ready || waiting ? undefined : status?.writeCommand,
     countsTowardReady: true,
     detail:
       detailParts.length > 0
         ? detailParts.join(" / ")
-        : status?.nextAction ?? "Install the statusline sink, then open Claude Code once.",
+        : localizedNextAction(status?.nextAction) ??
+          tx(
+            "Install the statusline sink, then open Claude Code once.",
+            "安装 statusline sink，然后打开 Claude Code 一次。"
+          ),
+    id: "claude-code",
     label: "Claude Code",
     nextAction:
-      status?.nextAction ?? "Install the statusline sink, then open Claude Code once.",
+      localizedNextAction(status?.nextAction) ??
+      tx(
+        "Install the statusline sink, then open Claude Code once.",
+        "安装 statusline sink，然后打开 Claude Code 一次。"
+      ),
     state: ready ? "pass" : waiting ? "info" : "warn",
-    status: status?.readinessLabel ?? "Setup status unavailable",
+    status:
+      localizedReadinessLabel(status?.readinessLabel) ??
+      tx("Setup status unavailable", "设置状态不可用"),
     target: "#settings-content"
   };
 }
@@ -1149,20 +1444,30 @@ function buildPathOverviewItem() {
   );
 
   return {
-    actionLabel: "Path details",
+    actionLabel: tx("Path details", "路径详情"),
     command: hasLoadErrors ? status?.listCommand : undefined,
     countsTowardReady: false,
     detail: hasLoadErrors
-      ? status?.loadErrors?.join("\n") ?? "Local path config has warnings."
+      ? status?.loadErrors?.join("\n") ??
+        tx("Local path config has warnings.", "本地路径配置有警告。")
       : configuredCount > 0
-        ? `${configuredCount} configured scan root(s)`
-        : "Default local scan paths are active.",
-    label: "Local paths",
+        ? tx("{count} configured scan root(s)", "已配置 {count} 个扫描根目录", {
+            count: configuredCount
+          })
+        : tx("Default local scan paths are active.", "默认本地扫描路径已启用。"),
+    id: "local-paths",
+    label: tx("Local paths", "本地路径"),
     nextAction: hasLoadErrors
-      ? "Fix the local path config warning before relying on configured scan roots."
-      : "Path checks are available if a source needs a custom scan root.",
+      ? tx(
+          "Fix the local path config warning before relying on configured scan roots.",
+          "先修复本地路径配置警告，再依赖自定义扫描根目录。"
+        )
+      : tx(
+          "Path checks are available if a source needs a custom scan root.",
+          "如果某个来源需要自定义扫描根目录，可以在这里检查路径。"
+        ),
     state: hasLoadErrors ? "warn" : "pass",
-    status: hasLoadErrors ? "Check config" : "Ready",
+    status: hasLoadErrors ? tx("Check config", "检查配置") : tx("Ready", "就绪"),
     target: "#paths-content"
   };
 }
@@ -1178,7 +1483,7 @@ function renderRealDataOverviewItem(item) {
       </div>
       <div class="setup-overview-actions">
         <span class="badge ${doctorBadgeClass(item.state)}">${escapeHtml(
-          item.state
+          statusLabel(item.state)
         )}</span>
         <button
           class="copy-button"
@@ -1192,14 +1497,17 @@ function renderRealDataOverviewItem(item) {
 
 function realDataSummaryTitle(readyCount, totalCount) {
   if (readyCount === totalCount) {
-    return "Primary quota sources are ready";
+    return tx("Primary quota sources are ready", "主要额度来源已就绪");
   }
 
   if (readyCount === 0) {
-    return "No primary quota source is ready yet";
+    return tx(
+      "No primary quota source is ready yet",
+      "还没有主要额度来源就绪"
+    );
   }
 
-  return "One primary quota source is ready";
+  return tx("One primary quota source is ready", "已有一个主要额度来源就绪");
 }
 
 function renderCodexSnapshotForm(status) {
@@ -1216,7 +1524,7 @@ function renderCodexSnapshotForm(status) {
     <form id="codex-snapshot-form" class="settings-form">
       <div class="settings-form-grid">
         <label class="form-field">
-          <span>Remaining %</span>
+          <span>${escapeHtml(tx("Remaining %", "剩余百分比"))}</span>
           <input
             name="remainingPercent"
             type="number"
@@ -1229,7 +1537,7 @@ function renderCodexSnapshotForm(status) {
           >
         </label>
         <label class="form-field">
-          <span>Reported reset</span>
+          <span>${escapeHtml(tx("Reported reset", "报告 reset 时间"))}</span>
           <input
             name="resetAt"
             type="datetime-local"
@@ -1238,17 +1546,19 @@ function renderCodexSnapshotForm(status) {
           >
         </label>
         <label class="form-field">
-          <span>Label</span>
+          <span>${escapeHtml(tx("Label", "标签"))}</span>
           <input
             name="planLabel"
             type="text"
             maxlength="80"
-            value="Codex visible status"
+            value="${escapeHtml(tx("Codex visible status", "Codex 可见状态"))}"
           >
         </label>
       </div>
       <div class="form-actions">
-        <button class="button" type="submit">Save snapshot</button>
+        <button class="button" type="submit">${escapeHtml(
+          tx("Save snapshot", "保存快照")
+        )}</button>
         <span
           class="form-status ${saveStatus?.kind ?? ""}"
           data-codex-snapshot-form-status
@@ -1267,14 +1577,14 @@ function renderCodexSnapshotPostSaveActions(saveStatus) {
   return `
     <div class="setup-next-actions" aria-label="Codex snapshot next actions">
       <button class="copy-button" type="button" data-open-view="dashboard">
-        Open Dashboard
+        ${escapeHtml(tx("Open Dashboard", "打开仪表盘"))}
       </button>
       <button
         class="copy-button"
         type="button"
         data-open-view="doctor"
         data-scroll-target="#doctor-checklist"
-      >Doctor Checklist</button>
+      >${escapeHtml(tx("Doctor Checklist", "诊断清单"))}</button>
     </div>
   `;
 }
@@ -1295,23 +1605,27 @@ async function saveCodexSnapshotForm(form) {
   if (!Number.isFinite(remainingPercent)) {
     setCodexSnapshotFormStatus(
       form,
-      "Remaining percent must be a number.",
+      tx("Remaining percent must be a number.", "剩余百分比必须是数字。"),
       "error"
     );
     return;
   }
 
   if (!resetDate || Number.isNaN(resetDate.getTime())) {
-    setCodexSnapshotFormStatus(form, "Reported reset must be a valid time.", "error");
+    setCodexSnapshotFormStatus(
+      form,
+      tx("Reported reset must be a valid time.", "报告 reset 必须是有效时间。"),
+      "error"
+    );
     return;
   }
 
   if (button instanceof HTMLButtonElement) {
     button.disabled = true;
-    button.textContent = "Saving";
+    button.textContent = tx("Saving", "保存中");
   }
 
-  setCodexSnapshotFormStatus(form, "Saving snapshot", "pending");
+  setCodexSnapshotFormStatus(form, tx("Saving snapshot", "正在保存快照"), "pending");
 
   try {
     const response = await fetch("/api/setup/codex-snapshot", {
@@ -1328,7 +1642,9 @@ async function saveCodexSnapshotForm(form) {
     const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(payload.error ?? "Snapshot could not be saved.");
+      throw new Error(
+        payload.error ?? tx("Snapshot could not be saved.", "快照无法保存。")
+      );
     }
 
     state.codexSnapshotSaveStatus = {
@@ -1337,7 +1653,10 @@ async function saveCodexSnapshotForm(form) {
     };
     state.refreshStatus = refreshStatusFromResult(
       payload.refreshResult ?? {},
-      "Codex snapshot saved and dashboard refreshed."
+      tx(
+        "Codex snapshot saved and dashboard refreshed.",
+        "Codex 快照已保存，仪表盘已刷新。"
+      )
     );
     await load();
   } catch (error) {
@@ -1346,17 +1665,23 @@ async function saveCodexSnapshotForm(form) {
   } finally {
     if (button instanceof HTMLButtonElement) {
       button.disabled = false;
-      button.textContent = "Save snapshot";
+      button.textContent = tx("Save snapshot", "保存快照");
     }
   }
 }
 
 function codexSnapshotSaveMessage(refreshResult) {
   if ((refreshResult?.errors?.length ?? 0) > 0) {
-    return "Snapshot saved; refresh completed with warnings.";
+    return tx(
+      "Snapshot saved; refresh completed with warnings.",
+      "快照已保存；刷新完成但有警告。"
+    );
   }
 
-  return "Snapshot saved; dashboard is ready to check.";
+  return tx(
+    "Snapshot saved; dashboard is ready to check.",
+    "快照已保存；现在可以检查仪表盘。"
+  );
 }
 
 function formField(form, name) {
@@ -1380,34 +1705,51 @@ function renderCodexSnapshotSteps(status) {
   const steps = [
     {
       badge: "1",
-      title: "Check visible status",
-      detail: "Use Codex CLI /status or Codex Settings > Usage.",
+      title: tx("Check visible status", "查看可见状态"),
+      detail: tx(
+        "Use Codex CLI /status or Codex Settings > Usage.",
+        "使用 Codex CLI 的 /status，或打开 Codex Settings > Usage。"
+      ),
       command: "/status",
       state: status.latestHasQuota ? "pass" : "info"
     },
     {
       badge: "2",
-      title: "Record snapshot",
+      title: tx("Record snapshot", "记录快照"),
       detail: status.latestHasQuota
-        ? "A structured manual snapshot is available."
-        : "Write only the visible quota value and reported reset time.",
+        ? tx(
+            "A structured manual snapshot is available.",
+            "已经有结构化的手动快照。"
+          )
+        : tx(
+            "Write only the visible quota value and reported reset time.",
+            "只写入可见的额度值和报告的 reset 时间。"
+          ),
       command: status.writeCommand,
       state: status.latestHasQuota ? "pass" : "warn"
     },
     {
       badge: "3",
-      title: "Refresh dashboard",
+      title: tx("Refresh dashboard", "刷新仪表盘"),
       detail:
         status.readiness === "ready"
-          ? "The next refresh can load the Codex snapshot."
-          : "Refresh after recording a visible Codex quota value.",
+          ? tx(
+              "The next refresh can load the Codex snapshot.",
+              "下一次刷新可以读取 Codex 快照。"
+            )
+          : tx(
+              "Refresh after recording a visible Codex quota value.",
+              "记录可见 Codex 额度值之后再刷新。"
+            ),
       command: "node dist/index.js doctor",
       state: status.readiness === "ready" ? "pass" : "info"
     }
   ];
 
   return `
-    <div class="setup-flow" aria-label="Codex manual snapshot setup">
+    <div class="setup-flow" aria-label="${escapeHtml(
+      tx("Codex manual snapshot setup", "Codex 手动快照设置")
+    )}">
       ${steps
         .map(
           (step) => `
@@ -1419,7 +1761,7 @@ function renderCodexSnapshotSteps(status) {
                 ${renderInlineCommand(step.command)}
               </div>
               <span class="badge ${doctorBadgeClass(step.state)}">${escapeHtml(
-                step.state
+                statusLabel(step.state)
               )}</span>
             </div>
           `
@@ -1431,14 +1773,20 @@ function renderCodexSnapshotSteps(status) {
 
 function formatCodexSnapshotValue(status) {
   if (typeof status.latestRemainingPercent === "number") {
-    return `${Math.round(status.latestRemainingPercent)}% remaining`;
+    return tx("{percent}% remaining", "剩余 {percent}%", {
+      percent: Math.round(status.latestRemainingPercent)
+    });
   }
 
   if (typeof status.latestUsedPercent === "number") {
-    return `${Math.round(status.latestUsedPercent)}% used`;
+    return tx("{percent}% used", "已用 {percent}%", {
+      percent: Math.round(status.latestUsedPercent)
+    });
   }
 
-  return status.snapshotExists ? "No usable quota" : "Not recorded";
+  return status.snapshotExists
+    ? tx("No usable quota", "没有可用额度")
+    : tx("Not recorded", "未记录");
 }
 
 function formatCodexSnapshotDetail(status) {
@@ -1449,20 +1797,36 @@ function formatCodexSnapshotDetail(status) {
   const parts = [];
 
   if (typeof status.latestUsedPercent === "number") {
-    parts.push(`Used ${Math.round(status.latestUsedPercent)}%`);
+    parts.push(
+      tx("Used {percent}%", "已用 {percent}%", {
+        percent: Math.round(status.latestUsedPercent)
+      })
+    );
   }
 
   if (status.latestResetAt) {
-    parts.push(`Reported reset ${formatRelative(status.latestResetAt)}`);
+    parts.push(
+      tx("Reported reset {time}", "报告 reset：{time}", {
+        time: formatRelative(status.latestResetAt)
+      })
+    );
     parts.push(formatTimestamp(status.latestResetAt));
   }
 
   if (status.latestObservedAt) {
-    parts.push(`Observed ${formatRelative(status.latestObservedAt)}`);
+    parts.push(
+      tx("Observed {time}", "观测于 {time}", {
+        time: formatRelative(status.latestObservedAt)
+      })
+    );
   }
 
   if (typeof status.latestAgeSeconds === "number") {
-    parts.push(`Age ${formatDuration(status.latestAgeSeconds)}`);
+    parts.push(
+      tx("Age {age}", "数据年龄 {age}", {
+        age: formatDuration(status.latestAgeSeconds)
+      })
+    );
   }
 
   if (status.latestSource || status.latestConfidence) {
@@ -1492,7 +1856,9 @@ function renderSettings() {
   const status = state.setupStatus;
 
   if (!status) {
-    elements.settingsContent.innerHTML = `<p class="empty">Setup status unavailable.</p>`;
+    elements.settingsContent.innerHTML = `<p class="empty">${escapeHtml(
+      tx("Setup status unavailable.", "设置状态不可用。")
+    )}</p>`;
     return;
   }
 
@@ -1500,56 +1866,53 @@ function renderSettings() {
     ${renderRealDataSteps(status)}
     ${renderClaudeStatuslineWaitingNotice(status)}
 
-    <div class="settings-list">
-      ${settingsRow(
-        "Claude settings",
-        status.settingsExists ? "Found" : "Not found",
-        status.settingsPath,
-        status.settingsExists ? "healthy" : "stale"
-      )}
-      ${settingsRow(
-        "Statusline",
-        status.statusLineConfigured
-          ? status.statusLineManagedByApp
-            ? "Managed by AIQD"
-            : "Configured elsewhere"
-          : "Not configured",
-        status.statusLineCommand ?? "No statusLine command detected",
-        status.statusLineManagedByApp ? "healthy" : "warning"
-      )}
-      ${settingsRow(
-        "Snapshot",
-        status.latestHasRateLimits ? "Rate limits received" : "Waiting for data",
-        formatLatestSnapshotStatus(status),
-        status.latestHasRateLimits ? "healthy" : "stale"
-      )}
-      ${settingsRow(
-        "Readiness",
-        status.readinessLabel ?? "Unknown",
-        status.nextAction ?? "Run Doctor for setup details.",
-        readinessBadgeClass(status.readiness),
-        status.readiness ?? "unknown"
-      )}
-      ${renderSetupChecks(status.checks)}
-    </div>
+    ${renderAdvancedDetails(
+      tx("Claude Code technical details", "Claude Code 技术细节"),
+      `
+        <div class="settings-list">
+          ${settingsRow(
+            tx("Claude settings", "Claude 设置"),
+            status.settingsExists ? tx("Found", "已找到") : tx("Not found", "未找到"),
+            status.settingsPath,
+            status.settingsExists ? "healthy" : "stale"
+          )}
+          ${settingsRow(
+            tx("Statusline", "状态栏"),
+            status.statusLineConfigured
+              ? status.statusLineManagedByApp
+                ? tx("Managed by AIQD", "由 AIQD 管理")
+                : tx("Configured elsewhere", "由其他配置管理")
+              : tx("Not configured", "未配置"),
+            status.statusLineCommand ??
+              tx("No statusLine command detected", "没有检测到 statusLine 命令"),
+            status.statusLineManagedByApp ? "healthy" : "warning"
+          )}
+          ${settingsRow(
+            tx("Snapshot", "快照"),
+            status.latestHasRateLimits
+              ? tx("Rate limits received", "已收到 rate_limits")
+              : tx("Waiting for data", "等待数据"),
+            formatLatestSnapshotStatus(status),
+            status.latestHasRateLimits ? "healthy" : "stale"
+          )}
+          ${settingsRow(
+            tx("Readiness", "就绪状态"),
+            localizedReadinessLabel(status.readinessLabel) ?? tx("Unknown", "未知"),
+            localizedNextAction(status.nextAction) ??
+              tx("Run Doctor for setup details.", "运行诊断查看设置详情。"),
+            readinessBadgeClass(status.readiness),
+            statusLabel(status.readiness ?? "unknown")
+          )}
+          ${renderSetupChecks(status.checks)}
+        </div>
 
-    ${renderCommandBlock("Preview command", status.previewCommand)}
-    ${renderCommandBlock("Install command", status.writeCommand)}
+        ${renderCommandBlock(tx("Preview command", "预览命令"), status.previewCommand)}
+        ${renderCommandBlock(tx("Install command", "安装命令"), status.writeCommand)}
 
-    <div class="settings-row">
-      <strong>Stored</strong>
-      <div class="pill-list">${status.savedFields
-        .map((field) => `<span class="badge healthy">${escapeHtml(field)}</span>`)
-        .join("")}</div>
-      <span></span>
-    </div>
-    <div class="settings-row">
-      <strong>Not stored</strong>
-      <div class="pill-list">${status.notSavedFields
-        .map((field) => `<span class="badge stale">${escapeHtml(field)}</span>`)
-        .join("")}</div>
-      <span></span>
-    </div>
+        ${renderFieldPills(tx("Stored", "已保存"), status.savedFields, "healthy")}
+        ${renderFieldPills(tx("Not stored", "未保存"), status.notSavedFields, "stale")}
+      `
+    )}
   `;
 }
 
@@ -1561,12 +1924,22 @@ function renderClaudeStatuslineWaitingNotice(status) {
   return `
     <div class="setup-watch-notice">
       <div>
-        <strong>Waiting for first Claude Code quota payload</strong>
+        <strong>${escapeHtml(
+          tx(
+            "Waiting for first Claude Code quota payload",
+            "等待第一份 Claude Code 额度数据"
+          )
+        )}</strong>
         <div class="settings-detail">
-          Keep this dashboard open, then open Claude Code once. The dashboard will refresh when supported rate_limits fields arrive.
+          ${escapeHtml(
+            tx(
+              "Keep this dashboard open, then open Claude Code once. The dashboard will refresh when supported rate_limits fields arrive.",
+              "保持仪表盘打开，然后打开 Claude Code 一次。支持的 rate_limits 字段到达后，仪表盘会自动刷新。"
+            )
+          )}
         </div>
       </div>
-      <span class="badge stale">watching</span>
+      <span class="badge stale">${escapeHtml(tx("watching", "监听中"))}</span>
     </div>
   `;
 }
@@ -1575,15 +1948,21 @@ function renderRealDataSteps(status) {
   const steps = [
     {
       badge: "1",
-      title: "Build CLI",
-      detail: "Required before the installed statusline command can run.",
+      title: tx("Build CLI", "构建 CLI"),
+      detail: tx(
+        "Required before the installed statusline command can run.",
+        "安装后的 statusline 命令需要先完成构建。"
+      ),
       command: "npm run build",
       state: "info"
     },
     {
       badge: "2",
-      title: "Test sink",
-      detail: "Uses temporary files and a fake rate_limits payload; no real Claude data is read.",
+      title: tx("Test sink", "测试接收器"),
+      detail: tx(
+        "Uses temporary files and a fake rate_limits payload; no real Claude data is read.",
+        "只使用临时文件和假的 rate_limits 数据；不会读取真实 Claude 数据。"
+      ),
       command:
         status.selfTestCommand ??
         "node dist/index.js claude-statusline-sink --self-test",
@@ -1591,26 +1970,40 @@ function renderRealDataSteps(status) {
     },
     {
       badge: "3",
-      title: "Install statusline",
+      title: tx("Install statusline", "安装状态栏"),
       detail: status.statusLineManagedByApp
-        ? "Claude Code is configured to call the AIQD statusline sink."
-        : "Writes the managed statusline command into Claude Code settings.",
+        ? tx(
+            "Claude Code is configured to call the AIQD statusline sink.",
+            "Claude Code 已配置为调用 AIQD statusline sink。"
+          )
+        : tx(
+            "Writes the managed statusline command into Claude Code settings.",
+            "把托管的 statusline 命令写入 Claude Code 设置。"
+          ),
       command: status.writeCommand,
       state: status.statusLineManagedByApp ? "pass" : "warn"
     },
     {
       badge: "4",
-      title: "Refresh real data",
+      title: tx("Refresh real data", "刷新真实数据"),
       detail: status.readiness === "ready"
-        ? "Fresh Claude Code rate limits have been received."
-        : "Open Claude Code, then refresh the dashboard or run Doctor.",
+        ? tx(
+            "Fresh Claude Code rate limits have been received.",
+            "已经收到新鲜的 Claude Code rate limits。"
+          )
+        : tx(
+            "Open Claude Code, then refresh the dashboard or run Doctor.",
+            "打开 Claude Code，然后刷新仪表盘或运行诊断。"
+          ),
       command: "node dist/index.js doctor",
       state: status.readiness === "ready" ? "pass" : "info"
     }
   ];
 
   return `
-    <div class="setup-flow" aria-label="Claude Code real data setup">
+    <div class="setup-flow" aria-label="${escapeHtml(
+      tx("Claude Code real data setup", "Claude Code 真实数据设置")
+    )}">
       ${steps
         .map(
           (step) => `
@@ -1622,7 +2015,7 @@ function renderRealDataSteps(status) {
                 ${renderInlineCommand(step.command)}
               </div>
               <span class="badge ${doctorBadgeClass(step.state)}">${escapeHtml(
-                step.state
+                statusLabel(step.state)
               )}</span>
             </div>
           `
@@ -1644,7 +2037,7 @@ function renderSetupChecks(checks) {
         check.message,
         [check.detail, check.action].filter(Boolean).join("\n"),
         doctorBadgeClass(check.status),
-        check.status
+        statusLabel(check.status)
       )
     )
     .join("");
@@ -1654,17 +2047,29 @@ function formatLatestSnapshotStatus(status) {
   const parts = [];
 
   if (status.latestObservedAt) {
-    parts.push(`Last observed ${formatRelative(status.latestObservedAt)}`);
+    parts.push(
+      tx("Last observed {time}", "上次观测：{time}", {
+        time: formatRelative(status.latestObservedAt)
+      })
+    );
   } else {
     parts.push(status.latestPath);
   }
 
   if (status.latestWindowTypes?.length > 0) {
-    parts.push(`Windows ${status.latestWindowTypes.map(windowLabel).join(", ")}`);
+    parts.push(
+      tx("Windows {windows}", "窗口：{windows}", {
+        windows: status.latestWindowTypes.map(windowLabel).join(", ")
+      })
+    );
   }
 
   if (typeof status.latestAgeSeconds === "number") {
-    parts.push(`Age ${formatDuration(status.latestAgeSeconds)}`);
+    parts.push(
+      tx("Age {age}", "数据年龄 {age}", {
+        age: formatDuration(status.latestAgeSeconds)
+      })
+    );
   }
 
   return parts.join("\n");
@@ -1674,13 +2079,15 @@ function renderPathSettings() {
   const status = state.pathsStatus;
 
   if (!status) {
-    elements.pathsContent.innerHTML = `<p class="empty">Path setup unavailable.</p>`;
+    elements.pathsContent.innerHTML = `<p class="empty">${escapeHtml(
+      tx("Path setup unavailable.", "路径设置不可用。")
+    )}</p>`;
     return;
   }
 
   const errorRows = (status.loadErrors ?? [])
     .map((error) =>
-      settingsRow("Config warning", "Check file", error, "warning")
+      settingsRow(tx("Config warning", "配置警告"), tx("Check file", "检查文件"), error, "warning")
     )
     .join("");
   const agentRows = (status.agents ?? []).map(renderPathAgentRow).join("");
@@ -1700,8 +2107,8 @@ function renderPathSettings() {
   elements.pathsContent.innerHTML = `
     <div class="settings-list">
       ${settingsRow(
-        "Config file",
-        status.configExists ? "Found" : "Not found",
+        tx("Config file", "配置文件"),
+        status.configExists ? tx("Found", "已找到") : tx("Not found", "未找到"),
         status.configPath,
         status.configExists ? "healthy" : "stale"
       )}
@@ -1725,7 +2132,9 @@ function renderDesktopShortcutsSettings() {
   }
 
   if (!status) {
-    elements.desktopShortcutsContent.innerHTML = `<p class="empty">Desktop shortcut status unavailable.</p>`;
+    elements.desktopShortcutsContent.innerHTML = `<p class="empty">${escapeHtml(
+      tx("Desktop shortcut status unavailable.", "桌面快捷键状态不可用。")
+    )}</p>`;
     return;
   }
 
@@ -1733,10 +2142,13 @@ function renderDesktopShortcutsSettings() {
     .map((shortcut) =>
       settingsRow(
         shortcut.description,
-        shortcut.enabled ? formatShortcutValue(shortcut.value) : "Disabled",
-        `${shortcut.envVar} - default ${shortcut.defaultValue}`,
+        shortcut.enabled ? formatShortcutValue(shortcut.value) : tx("Disabled", "已关闭"),
+        tx("{envVar} - default {value}", "{envVar} - 默认 {value}", {
+          envVar: shortcut.envVar,
+          value: shortcut.defaultValue
+        }),
         shortcut.enabled ? "healthy" : "stale",
-        shortcut.enabled ? "enabled" : "off"
+        shortcut.enabled ? tx("enabled", "已启用") : tx("off", "关闭")
       )
     )
     .join("");
@@ -1744,26 +2156,31 @@ function renderDesktopShortcutsSettings() {
   elements.desktopShortcutsContent.innerHTML = `
     <div class="setup-watch-notice">
       <div>
-        <strong>AIQD-only shortcuts</strong>
+        <strong>${escapeHtml(tx("AIQD-only shortcuts", "仅作用于 AIQD 的快捷键"))}</strong>
         <div class="settings-detail">${escapeHtml(status.privacy?.note ?? "")}</div>
       </div>
-      <span class="badge healthy">safe</span>
+      <span class="badge healthy">${escapeHtml(tx("safe", "安全"))}</span>
     </div>
     <div class="settings-list">
       ${shortcutRows}
       ${settingsRow(
-        "Disable a shortcut",
+        tx("Disable a shortcut", "关闭某个快捷键"),
         status.disableValue ?? "off",
-        "Set any desktop shortcut environment variable to this value before launching the desktop app.",
+        tx(
+          "Set any desktop shortcut environment variable to this value before launching the desktop app.",
+          "启动桌面应用前，把任意桌面快捷键环境变量设置成这个值即可关闭。"
+        ),
         "stale",
-        "optional"
+        tx("optional", "可选")
       )}
     </div>
   `;
 }
 
 function formatShortcutValue(value) {
-  return value ? value.replaceAll("CommandOrControl", "Ctrl/Cmd") : "Disabled";
+  return value
+    ? value.replaceAll("CommandOrControl", "Ctrl/Cmd")
+    : tx("Disabled", "已关闭");
 }
 
 function renderActionHint(action) {
@@ -1786,7 +2203,11 @@ function renderActionHint(action) {
 function renderPathAgentRow(agent) {
   const configuredCount = agent.configuredDataPaths?.length ?? 0;
   const value =
-    configuredCount === 0 ? "Default paths" : `${configuredCount} configured`;
+    configuredCount === 0
+      ? tx("Default paths", "默认路径")
+      : tx("{count} configured", "已配置 {count} 个", {
+          count: configuredCount
+        });
 
   return `
     <div class="settings-row">
@@ -1817,6 +2238,29 @@ function renderCommandBlock(label, command) {
   `;
 }
 
+function renderAdvancedDetails(summary, content) {
+  return `
+    <details class="advanced-details">
+      <summary>${escapeHtml(summary)}</summary>
+      <div class="advanced-details-body">
+        ${content}
+      </div>
+    </details>
+  `;
+}
+
+function renderFieldPills(label, fields = [], badgeClass) {
+  return `
+    <div class="settings-row">
+      <strong>${escapeHtml(label)}</strong>
+      <div class="pill-list">${fields
+        .map((field) => `<span class="badge ${badgeClass}">${escapeHtml(field)}</span>`)
+        .join("")}</div>
+      <span></span>
+    </div>
+  `;
+}
+
 function renderInlineCommand(command) {
   return `
     <div class="inline-command">
@@ -1832,9 +2276,9 @@ function renderCopyButton(text) {
       class="copy-button"
       type="button"
       data-copy-text="${escapeHtml(text)}"
-      title="Copy command"
-      aria-label="Copy command"
-    >Copy</button>
+      title="${escapeHtml(tx("Copy command", "复制命令"))}"
+      aria-label="${escapeHtml(tx("Copy command", "复制命令"))}"
+    >${escapeHtml(tx("Copy", "复制"))}</button>
   `;
 }
 
@@ -1889,9 +2333,14 @@ function clearCommandSelection() {
 }
 
 function showCopyState(button, result) {
-  const originalText = button.dataset.defaultText ?? button.textContent ?? "Copy";
+  const originalText =
+    button.dataset.defaultText ?? button.textContent ?? tx("Copy", "复制");
   const label =
-    result === "copied" ? "Copied" : result === "selected" ? "Selected" : "Copy failed";
+    result === "copied"
+      ? tx("Copied", "已复制")
+      : result === "selected"
+        ? tx("Selected", "已选中")
+        : tx("Copy failed", "复制失败");
 
   button.dataset.defaultText = originalText;
   button.textContent = label;
@@ -1928,10 +2377,14 @@ function settingsRow(label, value, detail, badgeClass, badgeLabel = value) {
 
 function eventTitle(event) {
   if (event.eventType === "reset_anchor_changed") {
-    return `${windowLabel(event.windowType)} reset time changed`;
+    return tx("{window} reset time changed", "{window} reset 时间变化", {
+      window: windowLabel(event.windowType)
+    });
   }
 
-  return `${windowLabel(event.windowType)} quota replenished`;
+  return tx("{window} quota replenished", "{window} 额度恢复", {
+    window: windowLabel(event.windowType)
+  });
 }
 
 function eventDetail(event) {
@@ -1957,7 +2410,9 @@ function eventDetail(event) {
 
 function renderResetValue(value) {
   if (!value) {
-    return `<span class="reset-unavailable">No reported reset</span>`;
+    return `<span class="reset-unavailable">${escapeHtml(
+      tx("No reported reset", "没有报告 reset")
+    )}</span>`;
   }
 
   return `
@@ -2000,7 +2455,7 @@ function formatRelative(value) {
     ["minute", 60],
     ["second", 1]
   ];
-  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+  const formatter = new Intl.RelativeTimeFormat(locale(), { numeric: "auto" });
 
   for (const [unit, seconds] of units) {
     if (absoluteSeconds >= seconds || unit === "second") {
@@ -2008,11 +2463,11 @@ function formatRelative(value) {
     }
   }
 
-  return date.toLocaleString();
+  return date.toLocaleString(locale());
 }
 
 function formatTimestamp(value) {
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(locale(), {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
@@ -2035,12 +2490,12 @@ function toDateTimeLocalValue(value) {
 
 function windowLabel(windowType) {
   const labels = {
-    session_5h: "5h window",
-    daily: "Daily",
-    weekly: "Weekly",
-    monthly: "Monthly",
-    billing_cycle: "Billing cycle",
-    credits: "Credits"
+    session_5h: tx("5h window", "5 小时窗口"),
+    daily: tx("Daily", "每日"),
+    weekly: tx("Weekly", "每周"),
+    monthly: tx("Monthly", "每月"),
+    billing_cycle: tx("Billing cycle", "计费周期"),
+    credits: tx("Credits", "点数")
   };
 
   return labels[windowType] ?? windowType;
@@ -2048,22 +2503,146 @@ function windowLabel(windowType) {
 
 function sourceLabel(source) {
   const labels = {
-    official_api: "Official API",
-    official_cli: "Official CLI",
-    official_statusline: "Official statusline",
-    local_quota_snapshot: "Local snapshot",
-    local_usage_log: "Local log",
-    estimated: "Estimated",
-    manual: "Manual",
-    demo: "Demo",
-    unavailable: "Unavailable"
+    official_api: tx("Official API", "官方 API"),
+    official_cli: tx("Official CLI", "官方 CLI"),
+    official_statusline: tx("Official statusline", "官方状态栏"),
+    local_quota_snapshot: tx("Local snapshot", "本地快照"),
+    local_usage_log: tx("Local log", "本地日志"),
+    estimated: tx("Estimated", "估算"),
+    manual: tx("Manual", "手动"),
+    demo: tx("Demo", "演示"),
+    unavailable: tx("Unavailable", "不可用")
   };
 
   return labels[source] ?? source;
 }
 
 function confidenceLabel(confidence) {
-  return confidence ?? "unknown";
+  const labels = {
+    estimated: tx("estimated", "估算"),
+    high: tx("high", "高"),
+    medium: tx("medium", "中"),
+    official: tx("official", "官方"),
+    unknown: tx("unknown", "未知")
+  };
+
+  return labels[confidence] ?? confidence ?? statusLabel("unknown");
+}
+
+function statusLabel(status) {
+  const labels = {
+    critical: tx("critical", "严重"),
+    fail: tx("fail", "失败"),
+    healthy: tx("healthy", "正常"),
+    info: tx("info", "提示"),
+    needs_attention: tx("needs attention", "需要处理"),
+    pass: tx("pass", "通过"),
+    ready: tx("ready", "就绪"),
+    stale: tx("stale", "过期"),
+    unknown: tx("unknown", "未知"),
+    waiting_for_data: tx("waiting", "等待中"),
+    warn: tx("warn", "警告"),
+    warning: tx("warning", "警告")
+  };
+
+  return labels[status] ?? status ?? labels.unknown;
+}
+
+function localizedReadinessLabel(label) {
+  if (!label) {
+    return undefined;
+  }
+
+  if (currentLanguage !== "zh") {
+    return label;
+  }
+
+  const labels = new Map([
+    ["Ready", "就绪"],
+    ["Waiting for data", "等待数据"],
+    ["Needs attention", "需要处理"],
+    ["Expired", "已过期"],
+    ["Unknown", "未知"],
+    ["Setup status unavailable", "设置状态不可用"],
+    ["Waiting for visible quota", "等待可见额度"],
+    ["No Codex snapshot yet", "还没有 Codex 快照"],
+    ["Waiting for Claude Code data", "等待 Claude Code 数据"],
+    ["Claude Code setup needed", "需要设置 Claude Code"],
+    ["Codex manual snapshot ready", "Codex 手动快照已就绪"],
+    ["Claude Code data ready", "Claude Code 数据已就绪"]
+  ]);
+
+  return labels.get(label) ?? label;
+}
+
+function localizedNextAction(action) {
+  if (!action || currentLanguage !== "zh") {
+    return action;
+  }
+
+  const translations = [
+    [
+      "Open Codex /status",
+      "打开 Codex /status，然后把可见的剩余百分比和 reset 时间保存到下方。"
+    ],
+    [
+      "Install the statusline sink",
+      "安装 statusline sink，然后打开 Claude Code 一次。"
+    ],
+    [
+      "Open Claude Code",
+      "打开 Claude Code，然后刷新仪表盘或运行诊断。"
+    ],
+    [
+      "Run Doctor",
+      "运行诊断查看设置详情。"
+    ],
+    [
+      "Record a visible Codex quota value",
+      "记录一个可见的 Codex 额度值。"
+    ]
+  ];
+
+  const match = translations.find(([needle]) => action.includes(needle));
+
+  return match?.[1] ?? action;
+}
+
+function agentEmptyText(agent) {
+  if (currentLanguage !== "zh") {
+    return {
+      detail:
+        agent.emptyState?.detail ??
+        "The latest refresh did not produce a quota snapshot for this agent.",
+      title: agent.emptyState?.title ?? "No quota data yet"
+    };
+  }
+
+  if (agent.emptyState?.reason === "waiting_for_statusline_data") {
+    return {
+      detail: "打开 Claude Code 一次，等待它发送支持的 rate_limits 字段。",
+      title: "等待 Claude Code 数据"
+    };
+  }
+
+  if (agent.emptyState?.reason === "adapter_error") {
+    return {
+      detail: "打开诊断页查看失败的适配器。",
+      title: "扫描失败"
+    };
+  }
+
+  if (agent.agent === "codex") {
+    return {
+      detail: "保存 Codex /status 或 Usage 中可见的额度和 reset 时间。",
+      title: "需要 Codex 手动快照"
+    };
+  }
+
+  return {
+    detail: "最近一次刷新没有为这个 Agent 生成额度快照。",
+    title: "还没有额度数据"
+  };
 }
 
 function doctorBadgeClass(status) {
@@ -2099,7 +2678,7 @@ function readinessBadgeClass(status) {
 }
 
 function compactNumber(value) {
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(locale(), {
     notation: "compact",
     maximumFractionDigits: 1
   }).format(value);

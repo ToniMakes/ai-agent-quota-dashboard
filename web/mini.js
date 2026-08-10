@@ -1,3 +1,6 @@
+const languageStorageKey = "aiqd.language";
+let currentLanguage = resolveInitialLanguage();
+
 const state = {
   agents: [],
   generatedAt: undefined,
@@ -107,6 +110,61 @@ function dashboardHref(view, target) {
   return `/?view=${encodeURIComponent(view)}${hash}`;
 }
 
+function resolveInitialLanguage() {
+  const savedLanguage = window.localStorage?.getItem(languageStorageKey);
+
+  if (savedLanguage === "zh" || savedLanguage === "en") {
+    return savedLanguage;
+  }
+
+  return navigator.language?.toLowerCase().startsWith("zh") ? "zh" : "en";
+}
+
+function locale() {
+  return currentLanguage === "zh" ? "zh-CN" : "en-US";
+}
+
+function tx(english, chinese, values = {}) {
+  const template = currentLanguage === "zh" ? chinese : english;
+
+  return Object.entries(values).reduce(
+    (text, [key, value]) => text.replaceAll(`{${key}}`, String(value)),
+    template
+  );
+}
+
+function applyStaticTranslations() {
+  document.documentElement.lang = currentLanguage === "zh" ? "zh-Hans" : "en";
+  document.title = tx("AI Agent Quota Mini", "AI Agent Quota Mini");
+
+  for (const item of document.querySelectorAll("[data-i18n-en]")) {
+    item.textContent =
+      currentLanguage === "zh" ? item.dataset.i18nZh : item.dataset.i18nEn;
+  }
+
+  for (const item of document.querySelectorAll("[data-i18n-title-en]")) {
+    const value =
+      currentLanguage === "zh"
+        ? item.dataset.i18nTitleZh
+        : item.dataset.i18nTitleEn;
+
+    if (value) {
+      item.setAttribute("title", value);
+    }
+  }
+
+  for (const item of document.querySelectorAll("[data-i18n-aria-label-en]")) {
+    const value =
+      currentLanguage === "zh"
+        ? item.dataset.i18nAriaLabelZh
+        : item.dataset.i18nAriaLabelEn;
+
+    if (value) {
+      item.setAttribute("aria-label", value);
+    }
+  }
+}
+
 await load();
 window.setInterval(load, refreshIntervalMs);
 
@@ -118,6 +176,7 @@ document.addEventListener("visibilitychange", () => {
 
 async function load(options = {}) {
   const allowRefresh = options.allowRefresh ?? true;
+  currentLanguage = resolveInitialLanguage();
 
   try {
     const [
@@ -156,10 +215,13 @@ async function load(options = {}) {
 }
 
 function render() {
+  applyStaticTranslations();
   const agents = sortAgents(state.agents);
 
   if (agents.length === 0) {
-    elements.grid.innerHTML = `<p class="mini-empty">No agents</p>`;
+    elements.grid.innerHTML = `<p class="mini-empty">${escapeHtml(
+      tx("No agents", "没有 Agent")
+    )}</p>`;
   } else {
     elements.grid.innerHTML = agents.map(renderAgent).join("");
   }
@@ -173,7 +235,9 @@ function renderAgent(agent) {
   const guidance = primary ? undefined : emptyStateGuidance(agent);
   const detail = primary ? snapshotDetail(primary) : guidance.detail;
   const label = primary
-    ? `${windowLabel(primary.windowType)} left`
+    ? tx("{window} left", "{window} 剩余", {
+        window: windowLabel(primary.windowType)
+      })
     : guidance.label;
 
   return `
@@ -207,7 +271,7 @@ async function refreshNow() {
     await fetchJson("/api/refresh", { method: "POST" });
     await load({ allowRefresh: false });
   } catch {
-    state.lastError = "Refresh failed";
+    state.lastError = tx("Refresh failed", "刷新失败");
     renderError();
   } finally {
     state.isRefreshing = false;
@@ -223,17 +287,18 @@ function renderError() {
         <strong>Offline</strong>
         <span class="mini-remaining">--</span>
       </div>
-      <div class="mini-primary-label">offline</div>
+      <div class="mini-primary-label">${escapeHtml(tx("offline", "离线"))}</div>
       <div class="mini-window-list">
         <div class="mini-empty-state">
-          <strong>Local service unavailable</strong>
-          <span>Restart the dashboard</span>
+          <strong>${escapeHtml(tx("Local service unavailable", "本地服务不可用"))}</strong>
+          <span>${escapeHtml(tx("Restart the dashboard", "重启仪表盘"))}</span>
         </div>
       </div>
-      <div class="mini-detail">Waiting for local service</div>
+      <div class="mini-detail">${escapeHtml(tx("Waiting for local service", "等待本地服务"))}</div>
     </article>
   `;
-  state.lastError = state.lastError ?? "Local service unavailable";
+  state.lastError =
+    state.lastError ?? tx("Local service unavailable", "本地服务不可用");
   renderFooter();
 }
 
@@ -276,7 +341,7 @@ function footerState() {
   if (state.isRefreshing) {
     return {
       kind: "pending",
-      text: "Refreshing now"
+      text: tx("Refreshing now", "正在刷新")
     };
   }
 
@@ -292,10 +357,10 @@ function footerState() {
   if ((latestRun?.errors?.length ?? 0) > 0) {
     return {
       action: "doctor",
-      ariaLabel: "Open Doctor for refresh warning",
+      ariaLabel: tx("Open Doctor for refresh warning", "打开诊断查看刷新警告"),
       kind: "warning",
       target: "refresh-run-list",
-      text: "Refresh warning - open Doctor",
+      text: tx("Refresh warning - open Doctor", "刷新有警告 - 打开诊断"),
       title: refreshRunTitle(latestRun)
     };
   }
@@ -306,20 +371,42 @@ function footerState() {
     if (latestRun && latestRun.snapshotsSaved > 0) {
       return {
         action: setup.action,
-        ariaLabel: readinessActionLabel(setup.action, "finish real data setup"),
+        ariaLabel: readinessActionLabel(
+          setup.action,
+          tx("finish real data setup", "完成真实数据设置")
+        ),
         kind: "info",
         target: setup.target,
-        text: `${setup.ready}/${setup.total} ready - finish ${setup.missingText}`,
+        text: tx(
+          "{ready}/{total} ready - finish {missing}",
+          "{ready}/{total} 就绪 - 完成 {missing}",
+          {
+            missing: setup.missingText,
+            ready: setup.ready,
+            total: setup.total
+          }
+        ),
         title: [setup.title, refreshRunTitle(latestRun)].join("\n")
       };
     }
 
     return {
       action: setup.action,
-      ariaLabel: readinessActionLabel(setup.action, "set up real data"),
+      ariaLabel: readinessActionLabel(
+        setup.action,
+        tx("set up real data", "设置真实数据")
+      ),
       kind: "info",
       target: setup.target,
-      text: `${setup.ready}/${setup.total} ready - finish ${setup.missingText}`,
+      text: tx(
+        "{ready}/{total} ready - finish {missing}",
+        "{ready}/{total} 就绪 - 完成 {missing}",
+        {
+          missing: setup.missingText,
+          ready: setup.ready,
+          total: setup.total
+        }
+      ),
       title: latestRun ? [setup.title, refreshRunTitle(latestRun)].join("\n") : setup.title
     };
   }
@@ -329,10 +416,18 @@ function footerState() {
 
     return {
       action: "settings",
-      ariaLabel: "Open Settings to set up real data",
+      ariaLabel: tx("Open Settings to set up real data", "打开设置配置真实数据"),
       kind: "info",
       target: setup.target,
-      text: `${setup.ready}/${setup.total} ready - finish ${setup.missingText}`,
+      text: tx(
+        "{ready}/{total} ready - finish {missing}",
+        "{ready}/{total} 就绪 - 完成 {missing}",
+        {
+          missing: setup.missingText,
+          ready: setup.ready,
+          total: setup.total
+        }
+      ),
       title: latestRun ? [setup.title, refreshRunTitle(latestRun)].join("\n") : setup.title
     };
   }
@@ -340,12 +435,12 @@ function footerState() {
   if (hasClaudeWaitingState(state.agents)) {
     return {
       action: state.setupStatus?.statusLineManagedByApp ? undefined : "settings",
-      ariaLabel: "Open Settings for Claude Code setup",
+      ariaLabel: tx("Open Settings for Claude Code setup", "打开设置配置 Claude Code"),
       kind: "info",
       target: "settings-content",
       text: state.setupStatus?.statusLineManagedByApp
-        ? "Watching Claude Code for rate_limits"
-        : "Claude Code setup needed",
+        ? tx("Watching Claude Code for rate_limits", "正在监听 Claude Code rate_limits")
+        : tx("Claude Code setup needed", "需要设置 Claude Code"),
       title: latestRun ? refreshRunTitle(latestRun) : undefined
     };
   }
@@ -353,21 +448,26 @@ function footerState() {
   if (latestRun) {
     return {
       kind: "success",
-      text: `${snapshotCountText(latestRun.snapshotsSaved)} - updated ${formatRelative(
-        latestRun.observedAt
-      )}`,
+      text: tx("{snapshots} - updated {time}", "{snapshots} - 更新于 {time}", {
+        snapshots: snapshotCountText(latestRun.snapshotsSaved),
+        time: formatRelative(latestRun.observedAt)
+      }),
       title: refreshRunTitle(latestRun)
     };
   }
 
   return {
     kind: "success",
-    text: `Updated ${formatRelative(state.generatedAt)}`
+    text: tx("Updated {time}", "更新于 {time}", {
+      time: formatRelative(state.generatedAt)
+    })
   };
 }
 
 function readinessActionLabel(action, reason) {
-  return action === "doctor" ? `Open Doctor to ${reason}` : `Open Settings to ${reason}`;
+  return action === "doctor"
+    ? tx("Open Doctor to {reason}", "打开诊断以{reason}", { reason })
+    : tx("Open Settings to {reason}", "打开设置以{reason}", { reason });
 }
 
 function latestRefreshRun() {
@@ -377,13 +477,27 @@ function latestRefreshRun() {
 }
 
 function snapshotCountText(count) {
-  return `${count} snapshot${count === 1 ? "" : "s"}`;
+  return tx("{count} snapshot{plural}", "{count} 个快照", {
+    count,
+    plural: count === 1 ? "" : "s"
+  });
 }
 
 function refreshRunTitle(run) {
   const lines = [
-    `Last refresh ${formatRelative(run.observedAt)}`,
-    `${run.snapshotsSaved} snapshots / ${run.usageEventsSaved} usage events / ${run.doctorChecksSaved} doctor checks / ${run.resetEventsSaved} reset events`
+    tx("Last refresh {time}", "上次刷新：{time}", {
+      time: formatRelative(run.observedAt)
+    }),
+    tx(
+      "{snapshots} snapshots / {usage} usage events / {doctor} doctor checks / {reset} reset events",
+      "{snapshots} 个快照 / {usage} 条使用事件 / {doctor} 条诊断检查 / {reset} 条 reset 事件",
+      {
+        doctor: run.doctorChecksSaved,
+        reset: run.resetEventsSaved,
+        snapshots: run.snapshotsSaved,
+        usage: run.usageEventsSaved
+      }
+    )
   ];
 
   if (run.errors?.length > 0) {
@@ -416,11 +530,14 @@ function renderWindowRows(agent) {
   const visibleSnapshots = snapshots.slice(0, 2);
   const rows = visibleSnapshots.map(renderWindowRow).join("");
   const hiddenCount = snapshots.length - visibleSnapshots.length;
-  const more =
+      const more =
     hiddenCount > 0
-      ? `<div class="mini-window-more">+${hiddenCount} more ${
-          hiddenCount === 1 ? "window" : "windows"
-        }</div>`
+      ? `<div class="mini-window-more">${escapeHtml(
+          tx("+{count} more {unit}", "另有 {count} 个{unit}", {
+            count: hiddenCount,
+            unit: tx(hiddenCount === 1 ? "window" : "windows", "窗口")
+          })
+        )}</div>`
       : "";
 
   return rows + more;
@@ -429,8 +546,10 @@ function renderWindowRows(agent) {
 function renderWindowRow(snapshot) {
   const reset = resetSummary(snapshot.resetAt);
   const resetTitle = snapshot.resetAt
-    ? `Reported reset ${formatTimestamp(snapshot.resetAt, { long: true })}`
-    : "No reported reset";
+    ? tx("Reported reset {time}", "报告 reset：{time}", {
+        time: formatTimestamp(snapshot.resetAt, { long: true })
+      })
+    : tx("No reported reset", "没有报告 reset");
 
   return `
     <div class="mini-window-row" title="${escapeHtml(resetTitle)}">
@@ -483,8 +602,8 @@ function strictReadinessProgress() {
   const total = checks.length || state.agents.length;
   const ready = checks.filter((check) => check.status === "pass").length;
   const missingText =
-    failedChecks.map((check) => check.displayName).filter(Boolean).join(", ") ||
-    "real data";
+    failedChecks.map(readinessDisplayName).filter(Boolean).join(", ") ||
+    tx("real data", "真实数据");
   const target = readinessCheckTarget(firstFailedCheck);
 
   return {
@@ -492,7 +611,15 @@ function strictReadinessProgress() {
     missingText,
     ready,
     target: target.target,
-    title: `${ready}/${total} strict trial checks ready. Missing: ${missingText}.`,
+    title: tx(
+      "{ready}/{total} strict trial checks ready. Missing: {missing}.",
+      "{ready}/{total} 项严格试用检查就绪。缺少：{missing}。",
+      {
+        missing: missingText,
+        ready,
+        total
+      }
+    ),
     total
   };
 }
@@ -525,6 +652,18 @@ function readinessCheckTarget(check) {
   };
 }
 
+function readinessDisplayName(check) {
+  if (!check?.displayName || currentLanguage !== "zh") {
+    return check?.displayName;
+  }
+
+  const labels = {
+    Mode: "模式"
+  };
+
+  return labels[check.displayName] ?? check.displayName;
+}
+
 function setupProgress(agents) {
   const setupAgents = sortAgents(agents).filter((agent) =>
     ["codex", "claude-code"].includes(agent.agent)
@@ -533,14 +672,23 @@ function setupProgress(agents) {
   const total = setupAgents.length || agents.length;
   const ready = Math.max(total - missing.length, 0);
   const missingNames = missing.map((agent) => setupAgentName(agent)).filter(Boolean);
-  const missingText = missingNames.length > 0 ? missingNames.join(", ") : "real data";
+  const missingText =
+    missingNames.length > 0 ? missingNames.join(", ") : tx("real data", "真实数据");
   const target = missing[0] ? setupAgentTarget(missing[0]) : undefined;
 
   return {
     missingText,
     ready,
     target,
-    title: `${ready}/${total} quota sources ready. Missing: ${missingText}.`,
+    title: tx(
+      "{ready}/{total} quota sources ready. Missing: {missing}.",
+      "{ready}/{total} 个额度来源就绪。缺少：{missing}。",
+      {
+        missing: missingText,
+        ready,
+        total
+      }
+    ),
     total
   };
 }
@@ -552,7 +700,7 @@ function setupAgentName(agent) {
 
   if (agent.agent === "claude-code") {
     if (agent.emptyState?.reason === "waiting_for_statusline_data") {
-      return "Claude data";
+      return tx("Claude data", "Claude 数据");
     }
 
     return "Claude";
@@ -577,54 +725,54 @@ function emptyStateGuidance(agent) {
   if (agent.emptyState?.reason === "waiting_for_statusline_data") {
     return {
       action: "settings",
-      actionLabel: "Settings",
-      detail: "Open Claude Code once",
-      label: "waiting",
+      actionLabel: tx("Settings", "设置"),
+      detail: tx("Open Claude Code once", "打开 Claude Code 一次"),
+      label: tx("waiting", "等待中"),
       target: "settings-content",
-      title: "Claude listening"
+      title: tx("Claude listening", "正在监听 Claude")
     };
   }
 
   if (agent.emptyState?.reason === "adapter_error") {
     return {
       action: "doctor",
-      actionLabel: "Doctor",
-      detail: "Check the failing adapter",
-      label: "check",
+      actionLabel: tx("Doctor", "诊断"),
+      detail: tx("Check the failing adapter", "检查失败的适配器"),
+      label: tx("check", "检查"),
       target: "doctor-list",
-      title: "Scan failed"
+      title: tx("Scan failed", "扫描失败")
     };
   }
 
   if (agent.agent === "codex") {
     return {
       action: "settings",
-      actionLabel: "Save /status",
-      detail: "Paste visible quota + reset",
-      label: "setup 1",
+      actionLabel: tx("Save /status", "保存 /status"),
+      detail: tx("Paste visible quota + reset", "粘贴可见额度和 reset"),
+      label: tx("setup 1", "设置 1"),
       target: "codex-snapshot-content",
-      title: "Codex /status needed"
+      title: tx("Codex /status needed", "需要 Codex /status")
     };
   }
 
   if (agent.agent === "claude-code") {
     return {
       action: "settings",
-      actionLabel: "Install setup",
-      detail: "Add local statusline sink",
-      label: "setup 2",
+      actionLabel: tx("Install setup", "安装设置"),
+      detail: tx("Add local statusline sink", "添加本地 statusline sink"),
+      label: tx("setup 2", "设置 2"),
       target: "settings-content",
-      title: "Claude statusline needed"
+      title: tx("Claude statusline needed", "需要 Claude 状态栏")
     };
   }
 
   return {
     action: "doctor",
-    actionLabel: "Doctor",
-    detail: agent.emptyState?.detail ?? "No quota data yet",
-    label: "unavailable",
+    actionLabel: tx("Doctor", "诊断"),
+    detail: agent.emptyState?.detail ?? tx("No quota data yet", "还没有额度数据"),
+    label: tx("unavailable", "不可用"),
     target: "doctor-list",
-    title: agent.emptyState?.title ?? "No quota data"
+    title: agent.emptyState?.title ?? tx("No quota data", "没有额度数据")
   };
 }
 
@@ -678,7 +826,7 @@ function meterValue(snapshot) {
 
 function resetSummary(value) {
   if (!value) {
-    return "reset --";
+    return tx("reset --", "reset --");
   }
 
   return `${formatResetDistance(value)} / ${formatTimestamp(value)}`;
@@ -687,7 +835,9 @@ function resetSummary(value) {
 function snapshotDetail(snapshot) {
   const parts = [
     `${sourceLabel(snapshot.source)} / ${confidenceLabel(snapshot.confidence)}`,
-    `seen ${formatRelative(snapshot.observedAt)}`
+    tx("seen {time}", "观测于 {time}", {
+      time: formatRelative(snapshot.observedAt)
+    })
   ];
 
   if (snapshot.freshness?.status === "stale") {
@@ -727,7 +877,7 @@ function formatRelative(value) {
     ["minute", 60],
     ["second", 1]
   ];
-  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
+  const formatter = new Intl.RelativeTimeFormat(locale(), { numeric: "auto" });
 
   for (const [unit, seconds] of units) {
     if (absoluteSeconds >= seconds || unit === "second") {
@@ -735,7 +885,7 @@ function formatRelative(value) {
     }
   }
 
-  return date.toLocaleString();
+  return date.toLocaleString(locale());
 }
 
 function formatResetDistance(value) {
@@ -746,7 +896,8 @@ function formatResetDistance(value) {
   const date = new Date(value);
   const deltaSeconds = Math.round((date.getTime() - Date.now()) / 1000);
   const absoluteSeconds = Math.abs(deltaSeconds);
-  const suffix = deltaSeconds < 0 ? "ago" : "left";
+  const suffix =
+    deltaSeconds < 0 ? tx("ago", "前") : tx("left", "后");
 
   if (absoluteSeconds >= 86400) {
     return `${Math.round(absoluteSeconds / 86400)}d ${suffix}`;
@@ -769,7 +920,7 @@ function formatTimestamp(value, options = {}) {
   }
 
   const date = new Date(value);
-  const formatter = new Intl.DateTimeFormat(undefined, {
+  const formatter = new Intl.DateTimeFormat(locale(), {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
@@ -784,12 +935,12 @@ function formatTimestamp(value, options = {}) {
 
 function windowLabel(windowType) {
   const labels = {
-    billing_cycle: "Billing",
-    credits: "Credits",
-    daily: "Daily",
-    monthly: "Monthly",
+    billing_cycle: tx("Billing", "计费"),
+    credits: tx("Credits", "点数"),
+    daily: tx("Daily", "每日"),
+    monthly: tx("Monthly", "每月"),
     session_5h: "5h",
-    weekly: "Weekly"
+    weekly: tx("Weekly", "每周")
   };
 
   return labels[windowType] ?? windowType;
@@ -797,15 +948,15 @@ function windowLabel(windowType) {
 
 function sourceLabel(source) {
   const labels = {
-    official_api: "Official API",
-    official_cli: "Official CLI",
-    official_statusline: "Statusline",
-    local_quota_snapshot: "Local snapshot",
-    local_usage_log: "Local log",
-    estimated: "Estimated",
-    manual: "Manual",
-    demo: "Demo",
-    unavailable: "Unavailable"
+    official_api: tx("Official API", "官方 API"),
+    official_cli: tx("Official CLI", "官方 CLI"),
+    official_statusline: tx("Statusline", "状态栏"),
+    local_quota_snapshot: tx("Local snapshot", "本地快照"),
+    local_usage_log: tx("Local log", "本地日志"),
+    estimated: tx("Estimated", "估算"),
+    manual: tx("Manual", "手动"),
+    demo: tx("Demo", "演示"),
+    unavailable: tx("Unavailable", "不可用")
   };
 
   return labels[source] ?? source;
@@ -813,18 +964,18 @@ function sourceLabel(source) {
 
 function confidenceLabel(confidence) {
   const labels = {
-    estimated: "estimated",
-    high: "high",
-    medium: "medium",
-    official: "official",
-    unknown: "unknown"
+    estimated: tx("estimated", "估算"),
+    high: tx("high", "高"),
+    medium: tx("medium", "中"),
+    official: tx("official", "官方"),
+    unknown: tx("unknown", "未知")
   };
 
   return labels[confidence] ?? confidence;
 }
 
 function compactNumber(value) {
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat(locale(), {
     maximumFractionDigits: 1,
     notation: "compact"
   }).format(value);

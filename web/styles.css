@@ -45,6 +45,9 @@ body {
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  text-rendering: geometricPrecision;
 }
 
 button {
@@ -59,7 +62,7 @@ button {
 
 .topbar {
   display: flex;
-  align-items: end;
+  align-items: start;
   justify-content: space-between;
   gap: 16px;
   padding-bottom: 18px;
@@ -84,15 +87,24 @@ p {
 
 h1 {
   margin-bottom: 0;
-  font-size: clamp(1.85rem, 1.4rem + 1.2vw, 2.65rem);
-  line-height: 1.08;
+  font-size: 2.35rem;
+  line-height: 1.12;
   letter-spacing: 0;
 }
 
 h2 {
   margin-bottom: 0;
   font-size: 1rem;
+  line-height: 1.25;
   letter-spacing: 0;
+}
+
+.topbar-subtitle {
+  max-width: 520px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .topbar-actions {
@@ -113,7 +125,7 @@ h2 {
   min-height: 20px;
   color: var(--muted);
   font-size: 0.82rem;
-  font-weight: 750;
+  font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -147,8 +159,13 @@ h2 {
   align-items: center;
   justify-content: center;
   padding: 0 14px;
-  font-weight: 700;
+  font-weight: 680;
   text-decoration: none;
+}
+
+.language-toggle {
+  min-width: 54px;
+  padding: 0 12px;
 }
 
 .button:hover,
@@ -237,7 +254,7 @@ h2 {
   background: var(--surface-muted);
   color: var(--muted);
   font-size: 0.76rem;
-  font-weight: 800;
+  font-weight: 720;
   white-space: nowrap;
 }
 
@@ -289,8 +306,8 @@ h2 {
 
 .remaining {
   margin-bottom: 8px;
-  font-size: clamp(2.2rem, 1.8rem + 1vw, 3.15rem);
-  font-weight: 800;
+  font-size: 2.85rem;
+  font-weight: 760;
   line-height: 1;
   letter-spacing: 0;
 }
@@ -362,7 +379,7 @@ h2 {
 }
 
 .value {
-  font-weight: 760;
+  font-weight: 700;
   text-align: right;
 }
 
@@ -376,8 +393,9 @@ h2 {
 
 .panel-header {
   display: flex;
-  align-items: center;
+  align-items: start;
   justify-content: space-between;
+  gap: 14px;
   margin-bottom: 12px;
 }
 
@@ -442,6 +460,7 @@ h2 {
 .settings-detail {
   color: var(--muted);
   font-size: 0.82rem;
+  line-height: 1.45;
   overflow-wrap: anywhere;
 }
 
@@ -488,6 +507,114 @@ h2 {
   white-space: pre-line;
 }
 
+.onboarding-guide {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: start;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.guide-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.guide-kicker {
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.guide-copy strong {
+  font-size: 1.08rem;
+  line-height: 1.3;
+}
+
+.guide-copy p {
+  max-width: 680px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.guide-actions {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+  min-width: 176px;
+}
+
+.guide-actions .inline-command {
+  width: min(360px, 42vw);
+}
+
+.source-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.source-card {
+  display: grid;
+  gap: 8px;
+  min-height: 136px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.source-card-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.source-card-header strong {
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+.source-card-status {
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.source-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.advanced-details {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.advanced-details summary {
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.advanced-details-body {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
 .setup-flow {
   display: grid;
   gap: 10px;
@@ -529,7 +656,7 @@ h2 {
   margin-top: 4px;
   color: var(--muted);
   font-size: 0.72rem;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .setup-overview-list {
@@ -596,7 +723,7 @@ h2 {
   min-width: 0;
   color: var(--muted);
   font-size: 0.82rem;
-  font-weight: 750;
+  font-weight: 700;
 }
 
 .form-field input {
@@ -661,7 +788,7 @@ h2 {
   border-radius: 999px;
   color: var(--accent-strong);
   font-size: 0.82rem;
-  font-weight: 850;
+  font-weight: 740;
 }
 
 .command-block {
@@ -727,7 +854,7 @@ h2 {
   color: var(--text);
   cursor: pointer;
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .copy-button:hover {
@@ -767,6 +894,10 @@ h2 {
     flex-direction: column;
   }
 
+  h1 {
+    font-size: 2rem;
+  }
+
   .topbar-actions {
     justify-content: start;
     width: 100%;
@@ -777,11 +908,16 @@ h2 {
     white-space: normal;
   }
 
+  .remaining {
+    font-size: 2.35rem;
+  }
+
   .quota-line,
   .reset-row,
   .doctor-row,
   .event-row,
   .refresh-run-row,
+  .onboarding-guide,
   .real-data-summary,
   .settings-row,
   .setup-overview-row,
@@ -817,5 +953,18 @@ h2 {
 
   .setup-overview-actions {
     justify-content: start;
+  }
+
+  .guide-actions {
+    justify-items: start;
+    min-width: 0;
+  }
+
+  .guide-actions .inline-command {
+    width: 100%;
+  }
+
+  .source-card-grid {
+    grid-template-columns: 1fr;
   }
 }
