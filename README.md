@@ -37,6 +37,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Mini setup progress text for first-run Codex and Claude Code onboarding
 - Clickable mini footer actions for refresh warnings and setup guidance
 - Mini and tray first-run actions that open Settings or Doctor directly
+- Mini first-run actions deep-link to the exact Settings or Doctor section
 - Dashboard guidance for missing quota data
 - CLI `doctor` command for one-shot local diagnostics
 - CLI export command for normalized JSON/CSV output

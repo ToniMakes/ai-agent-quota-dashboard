@@ -23,6 +23,7 @@ const { tmpdir } = require("node:os");
 const path = require("node:path");
 const {
   buildTrayMenuTemplate,
+  dashboardPath,
   resolveDesktopShortcuts,
   resolveWidgetBounds: resolveSavedWidgetBounds,
   shouldRefreshForClaudeStatusline,
@@ -197,8 +198,8 @@ function backendEnv() {
 }
 
 function registerIpc() {
-  ipcMain.handle("open-dashboard", (_event, view) => {
-    openDashboardWindow(view);
+  ipcMain.handle("open-dashboard", (_event, view, target) => {
+    openDashboardWindow(view, target);
     panelWindow?.hide();
   });
 
@@ -405,7 +406,7 @@ function toggleWidgetWindow() {
   updateTrayStatus();
 }
 
-function openDashboardWindow(view) {
+function openDashboardWindow(view, target) {
   if (!dashboardWindow) {
     dashboardWindow = new BrowserWindow({
       width: 1180,
@@ -424,20 +425,14 @@ function openDashboardWindow(view) {
     });
   }
 
-  dashboardWindow.loadURL(dashboardUrl(view));
+  dashboardWindow.loadURL(dashboardUrl(view, target));
   dashboardWindow.show();
   dashboardWindow.focus();
   updateTrayStatus();
 }
 
-function dashboardUrl(view) {
-  const allowedViews = new Set(["dashboard", "doctor", "settings"]);
-
-  if (!allowedViews.has(view)) {
-    return baseUrl;
-  }
-
-  return `${baseUrl}/?view=${encodeURIComponent(view)}`;
+function dashboardUrl(view, target) {
+  return `${baseUrl}${dashboardPath(view, target)}`;
 }
 
 function secureWebPreferences() {

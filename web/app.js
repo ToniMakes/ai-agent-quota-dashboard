@@ -94,10 +94,7 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
-  window.requestAnimationFrame(() => {
-    const scrollTarget = document.querySelector(selector);
-    scrollTarget?.scrollIntoView({ behavior: "smooth", block: "start" });
-  });
+  scrollToSelector(selector);
 });
 
 document.addEventListener("submit", async (event) => {
@@ -114,6 +111,7 @@ document.addEventListener("submit", async (event) => {
 activateView(requestedViewName());
 
 await load();
+scrollToRequestedTarget();
 
 function activateView(viewName, options = {}) {
   if (!viewName || !isKnownView(viewName)) {
@@ -143,11 +141,41 @@ function requestedViewName() {
     return queryView;
   }
 
-  return window.location.hash.replace("#", "");
+  const hashView = window.location.hash.replace("#", "");
+
+  return isKnownView(hashView) ? hashView : "dashboard";
 }
 
 function isKnownView(viewName) {
   return [...elements.tabs].some((tab) => tab.dataset.view === viewName);
+}
+
+function requestedTargetId() {
+  const target = window.location.hash.replace("#", "");
+
+  return target && !isKnownView(target) ? target : "";
+}
+
+function scrollToRequestedTarget() {
+  const targetId = requestedTargetId();
+
+  if (!targetId) {
+    return;
+  }
+
+  window.requestAnimationFrame(() => {
+    document.getElementById(targetId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  });
+}
+
+function scrollToSelector(selector) {
+  window.requestAnimationFrame(() => {
+    const scrollTarget = document.querySelector(selector);
+    scrollTarget?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 }
 
 async function load() {
