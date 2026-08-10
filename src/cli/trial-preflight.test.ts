@@ -177,8 +177,12 @@ function claudeStatus(
     claudeCliAvailable: true,
     claudeCliCommand: "claude",
     claudeCliDocsUrl: "https://docs.anthropic.com/en/docs/claude-code/quickstart",
+    claudeCliExampleProjectOpenCommand:
+      "Set-Location -LiteralPath 'C:\\Users\\hitomi\\Desktop\\vibecoding\\AI Agent Quota Dashboard'\nclaude",
+    claudeCliExampleProjectPath:
+      "C:\\Users\\hitomi\\Desktop\\vibecoding\\AI Agent Quota Dashboard",
     claudeCliInstallCommand: "irm https://claude.ai/install.ps1 | iex",
-    claudeCliOpenCommand: "cd C:\\path\\to\\your-project\nclaude",
+    claudeCliOpenCommand: "Set-Location -LiteralPath 'C:\\path\\to\\your-project'\nclaude",
     claudeCliPath: "C:\\Users\\hitomi\\AppData\\Local\\Programs\\Claude\\claude.exe",
     settingsPath: "C:\\Users\\hitomi\\.claude\\settings.json",
     settingsExists: overrides.readiness !== "needs_setup",

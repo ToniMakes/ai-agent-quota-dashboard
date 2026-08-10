@@ -31,6 +31,8 @@ export type ClaudeStatuslineSetupStatus = {
   claudeCliAvailable: boolean;
   claudeCliCommand: string;
   claudeCliDocsUrl: string;
+  claudeCliExampleProjectOpenCommand: string;
+  claudeCliExampleProjectPath: string;
   claudeCliInstallCommand: string;
   claudeCliOpenCommand: string;
   claudeCliPath?: string;
@@ -97,11 +99,15 @@ export async function getClaudeStatuslineSetupStatus(
     latestAgeSeconds !== undefined &&
     latestAgeSeconds <= freshStatuslineSnapshotSeconds;
   const claudeCli = await (options.claudeCliLookup?.() ?? detectClaudeCli());
+  const exampleProjectPath = process.cwd();
 
   const status: ClaudeStatuslineSetupStatus = {
     claudeCliAvailable: claudeCli.available,
     claudeCliCommand: "claude",
     claudeCliDocsUrl: "https://docs.anthropic.com/en/docs/claude-code/quickstart",
+    claudeCliExampleProjectOpenCommand:
+      claudeOpenCommandForProject(exampleProjectPath),
+    claudeCliExampleProjectPath: exampleProjectPath,
     claudeCliInstallCommand: defaultClaudeInstallCommand(),
     claudeCliOpenCommand: defaultClaudeOpenCommand(),
     settingsPath,
@@ -656,6 +662,22 @@ function defaultClaudeInstallCommand(): string {
 
 function defaultClaudeOpenCommand(): string {
   return process.platform === "win32"
-    ? "cd C:\\path\\to\\your-project\nclaude"
+    ? "Set-Location -LiteralPath 'C:\\path\\to\\your-project'\nclaude"
     : "cd /path/to/your-project\nclaude";
+}
+
+function claudeOpenCommandForProject(path: string): string {
+  if (process.platform === "win32") {
+    return `Set-Location -LiteralPath ${quotePowerShellLiteral(path)}\nclaude`;
+  }
+
+  return `cd ${quotePosixShellLiteral(path)}\nclaude`;
+}
+
+function quotePowerShellLiteral(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`;
+}
+
+function quotePosixShellLiteral(value: string): string {
+  return `'${value.replace(/'/g, "'\\''")}'`;
 }

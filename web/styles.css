@@ -668,6 +668,35 @@ h2 {
   margin: 0;
 }
 
+.step-helper-methods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.step-helper-method {
+  display: grid;
+  gap: 6px;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.step-helper-method strong {
+  font-size: 0.82rem;
+}
+
+.step-helper-method ol {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
 .step-helper-commands {
   display: grid;
   gap: 8px;
@@ -1180,6 +1209,10 @@ h2 {
   .step-helper-command {
     grid-template-columns: 1fr;
     gap: 4px;
+  }
+
+  .step-helper-methods {
+    grid-template-columns: 1fr;
   }
 
   .value {

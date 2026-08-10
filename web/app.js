@@ -1281,7 +1281,11 @@ function buildInitialSetupModel(items, readiness) {
   const claudeWaiting = claudeManaged && !claudeComplete;
   const claudeCliAvailable = Boolean(state.setupStatus?.claudeCliAvailable);
   const claudeCliOpenCommand =
-    state.setupStatus?.claudeCliOpenCommand ?? "cd C:\\path\\to\\your-project\nclaude";
+    state.setupStatus?.claudeCliOpenCommand ??
+    "Set-Location -LiteralPath 'C:\\path\\to\\your-project'\nclaude";
+  const claudeCliExampleProjectOpenCommand =
+    state.setupStatus?.claudeCliExampleProjectOpenCommand ??
+    claudeCliOpenCommand;
   const claudeCliInstallCommand =
     state.setupStatus?.claudeCliInstallCommand ??
     "irm https://claude.ai/install.ps1 | iex";
@@ -1304,22 +1308,71 @@ function buildInitialSetupModel(items, readiness) {
             label: tx("Check the CLI command", "检查 CLI 命令是否可用")
           },
           {
-            command: claudeCliOpenCommand,
-            label: tx("Open Claude Code in a project", "在项目里打开 Claude Code")
+            command: claudeCliExampleProjectOpenCommand,
+            label: tx("Try with this project", "用当前项目试一次")
+          },
+          {
+            command: "claude",
+            label: tx(
+              "Run when terminal is already in a project",
+              "终端已经在项目里时运行"
+            )
           }
         ],
         detail: claudeCliAvailable
           ? tx(
-              "AIQD detected the claude command on this computer. Open PowerShell or VS Code Terminal, enter any project folder, then run claude.",
-              "AIQD 已检测到本机有 claude 命令。打开 PowerShell 或 VS Code 终端，进入任意项目文件夹，然后运行 claude。"
+              "A project folder is the folder Claude Code will work inside. Choose any code folder you are comfortable letting Claude read, then open a terminal in that folder and run claude.",
+              "项目文件夹就是 Claude Code 将要工作的文件夹。选择一个你愿意让 Claude 读取的代码文件夹，在这个文件夹里打开终端，然后运行 claude。"
             )
           : tx(
-              "AIQD did not find the claude command on PATH. Claude Code CLI is not the Claude desktop window; it is the standalone terminal command named claude.",
-              "AIQD 没有在 PATH 里找到 claude 命令。Claude Code CLI 不是 Claude 桌面窗口，而是名为 claude 的独立终端命令。"
+              "AIQD did not find the claude command on PATH. Install Claude Code CLI first, then open a terminal in a project folder and run claude.",
+              "AIQD 没有在 PATH 里找到 claude 命令。先安装 Claude Code CLI，然后在项目文件夹里打开终端并运行 claude。"
             ),
+        methods: [
+          {
+            steps: [
+              tx(
+                "Open the project folder in File Explorer.",
+                "在资源管理器里打开你的项目文件夹。"
+              ),
+              tx(
+                "Click the address bar, type powershell, then press Enter.",
+                "点击顶部地址栏，输入 powershell，然后按 Enter。"
+              ),
+              tx(
+                "The terminal opens inside that folder. Type claude and press Enter.",
+                "新终端会自动进入这个文件夹；输入 claude 并回车。"
+              )
+            ],
+            title: tx(
+              "Easiest: open terminal from the folder",
+              "最简单：从文件夹打开终端"
+            )
+          },
+          {
+            steps: [
+              tx(
+                "Open PowerShell or Windows Terminal.",
+                "打开 PowerShell 或 Windows Terminal。"
+              ),
+              tx(
+                "Paste the project command below to enter a folder.",
+                "粘贴下面的项目命令，进入一个项目文件夹。"
+              ),
+              tx(
+                "When the prompt changes to that folder, run claude.",
+                "看到提示符路径变成该文件夹后，运行 claude。"
+              )
+            ],
+            title: tx(
+              "Alternative: enter the folder from terminal",
+              "另一种：从终端进入文件夹"
+            )
+          }
+        ],
         title: tx(
-          "What is Claude Code CLI?",
-          "什么是 Claude Code CLI？"
+          "How do I open Claude Code CLI?",
+          "怎么打开 Claude Code CLI？"
         )
       }
     : undefined;
@@ -1623,6 +1676,7 @@ function renderStepHelper(helper) {
     <div class="step-helper">
       <strong>${escapeHtml(helper.title)}</strong>
       <p>${escapeHtml(helper.detail)}</p>
+      ${renderStepHelperMethods(helper.methods)}
       <div class="step-helper-commands">
         ${helper.commands
           .map(
@@ -1636,6 +1690,31 @@ function renderStepHelper(helper) {
           )
           .join("")}
       </div>
+    </div>
+  `;
+}
+
+function renderStepHelperMethods(methods = []) {
+  if (!methods.length) {
+    return "";
+  }
+
+  return `
+    <div class="step-helper-methods">
+      ${methods
+        .map(
+          (method) => `
+            <article class="step-helper-method">
+              <strong>${escapeHtml(method.title)}</strong>
+              <ol>
+                ${method.steps
+                  .map((step) => `<li>${escapeHtml(step)}</li>`)
+                  .join("")}
+              </ol>
+            </article>
+          `
+        )
+        .join("")}
     </div>
   `;
 }
