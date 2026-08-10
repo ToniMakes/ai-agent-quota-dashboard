@@ -97,6 +97,38 @@ function firstRunGuideTarget(agents) {
   };
 }
 
+function formatStartupError(input = {}) {
+  const lines = [
+    input.reason ?? "AIQD desktop could not start.",
+    "",
+    "Try:",
+    "- Close any older AIQD desktop process, then launch again.",
+    "- Run npm install, then npm run build.",
+    "- Run npm run doctor for local diagnostics.",
+    "- Run npm run desktop:smoke and share the output if this persists."
+  ];
+
+  if (input.portRange) {
+    lines.push(`- Ensure localhost ports ${input.portRange} are available.`);
+  }
+
+  const details = [
+    input.detail ? `Detail: ${input.detail}` : undefined,
+    input.backendExit ? `Backend: ${input.backendExit}` : undefined,
+    input.backendStderr ? `Backend stderr:\n${trimLogTail(input.backendStderr)}` : undefined
+  ].filter(Boolean);
+
+  return details.length > 0 ? [...lines, "", ...details].join("\n") : lines.join("\n");
+}
+
+function trimLogTail(value, maxLength = 1600) {
+  if (typeof value !== "string" || value.length <= maxLength) {
+    return value;
+  }
+
+  return `...${value.slice(value.length - maxLength)}`;
+}
+
 function summarizeAgent(agent, options = {}) {
   const snapshot = agent.primarySnapshot;
   const name = agent.shortName ?? agent.displayName ?? agent.agent;
@@ -281,6 +313,7 @@ module.exports = {
   clampBoundsToWorkArea,
   dashboardPath,
   formatResetDistance,
+  formatStartupError,
   firstRunGuideTarget,
   hasClaudeWaitingState,
   isSavedWidgetBounds,

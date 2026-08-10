@@ -1,6 +1,7 @@
 const {
   app,
   BrowserWindow,
+  dialog,
   Menu,
   Tray,
   globalShortcut,
@@ -25,6 +26,7 @@ const {
   buildTrayMenuTemplate,
   dashboardPath,
   firstRunGuideTarget,
+  formatStartupError,
   resolveDesktopShortcuts,
   resolveWidgetBounds: resolveSavedWidgetBounds,
   shouldRefreshForClaudeStatusline,
@@ -45,6 +47,8 @@ const smokeUserDataDir = smokeLikeMode
 const trayStatusIntervalMs = 30_000;
 
 let backend;
+let backendFailure;
+let backendStderrTail = "";
 let baseUrl;
 let desktopStatePath;
 let tray;
@@ -72,6 +76,7 @@ if (smokeUserDataDir) {
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
 
 if (!hasSingleInstanceLock) {
+  console.log("AIQD desktop is already running; focusing the existing instance.");
   app.quit();
 } else {
   app.on("second-instance", () => {
@@ -87,83 +92,127 @@ if (!hasSingleInstanceLock) {
     showPanelWindow();
   });
 
-  app.whenReady().then(async () => {
-    desktopStatePath = path.join(app.getPath("userData"), "desktop-state.json");
-    const port = await findFreePort(4317, 4399);
-    baseUrl = `http://127.0.0.1:${port}`;
-    backend = spawn(process.env.AIQD_NODE_PATH ?? "node", backendArgs(port), {
-      cwd: projectRoot,
-      env: backendEnv(),
-      stdio: ["ignore", "pipe", "pipe"],
-      windowsHide: true
-    });
+  app.whenReady().then(startDesktopApp).catch(reportStartupFailure);
 
-    backend.stdout.on("data", (chunk) => process.stdout.write(chunk));
-    backend.stderr.on("data", (chunk) => process.stderr.write(chunk));
-    backend.on("exit", (code) => {
-      if (!isQuitting) {
-        console.error(`AIQD backend exited with code ${code ?? "unknown"}`);
-      }
-    });
+  app.on("before-quit", shutdownDesktopRuntime);
 
-    await waitForHealth(`${baseUrl}/api/health`);
-
-    if (smokeMode) {
-      console.log(`AIQD desktop smoke ready at ${baseUrl}`);
-      app.quit();
-      return;
-    }
-
-    if (firstRunGuideSmokeMode) {
-      await runFirstRunGuideSmoke();
-      app.quit();
-      return;
-    }
-
-    registerIpc();
-    desktopShortcuts = resolveDesktopShortcuts(process.env);
-    createTray();
-    createPanelWindow();
-    registerGlobalShortcuts(desktopShortcuts);
-    updateTrayStatus();
-    trayStatusTimer = setInterval(() => {
-      void updateTrayStatus();
-    }, trayStatusIntervalMs);
-
-    if (showPanelWhenReady) {
-      showPanelWhenReady = false;
-      showPanelWindow();
-    } else {
-      void openFirstRunGuide();
-    }
-  });
-
-  app.on("before-quit", () => {
-    isQuitting = true;
-    if (trayStatusTimer) {
-      clearInterval(trayStatusTimer);
-    }
-    if (backend && !backend.killed) {
-      backend.kill();
-    }
-    globalShortcut.unregisterAll();
-  });
-
-  app.on("will-quit", () => {
-    if (!smokeUserDataDir) {
-      return;
-    }
-
-    try {
-      rmSync(smokeUserDataDir, { force: true, recursive: true });
-    } catch {
-      // A locked Electron file should not fail smoke validation.
-    }
-  });
+  app.on("will-quit", cleanupSmokeUserDataDir);
 
   app.on("window-all-closed", () => {
     // Keep the tray app alive until the user chooses Quit from the tray menu.
   });
+}
+
+async function startDesktopApp() {
+  desktopStatePath = path.join(app.getPath("userData"), "desktop-state.json");
+  const port = await findFreePort(4317, 4399);
+  baseUrl = `http://127.0.0.1:${port}`;
+  backend = spawn(process.env.AIQD_NODE_PATH ?? "node", backendArgs(port), {
+    cwd: projectRoot,
+    env: backendEnv(),
+    stdio: ["ignore", "pipe", "pipe"],
+    windowsHide: true
+  });
+
+  backend.stdout.on("data", (chunk) => process.stdout.write(chunk));
+  backend.stderr.on("data", (chunk) => {
+    const text = chunk.toString();
+    backendStderrTail = `${backendStderrTail}${text}`.slice(-4000);
+    process.stderr.write(chunk);
+  });
+  backend.on("error", (error) => {
+    backendFailure = `Backend process failed to start: ${error.message}`;
+  });
+  backend.on("exit", (code, signal) => {
+    const status = signal ? `signal ${signal}` : `code ${code ?? "unknown"}`;
+
+    if (!isQuitting) {
+      backendFailure = `Backend exited with ${status}.`;
+      console.error(`AIQD backend exited with ${status}`);
+    }
+  });
+
+  await waitForHealth(`${baseUrl}/api/health`, {
+    getFailure: () => backendFailure
+  });
+
+  if (smokeMode) {
+    console.log(`AIQD desktop smoke ready at ${baseUrl}`);
+    app.quit();
+    return;
+  }
+
+  if (firstRunGuideSmokeMode) {
+    await runFirstRunGuideSmoke();
+    app.quit();
+    return;
+  }
+
+  registerIpc();
+  desktopShortcuts = resolveDesktopShortcuts(process.env);
+  createTray();
+  createPanelWindow();
+  registerGlobalShortcuts(desktopShortcuts);
+  updateTrayStatus();
+  trayStatusTimer = setInterval(() => {
+    void updateTrayStatus();
+  }, trayStatusIntervalMs);
+
+  if (showPanelWhenReady) {
+    showPanelWhenReady = false;
+    showPanelWindow();
+  } else {
+    void openFirstRunGuide();
+  }
+}
+
+function reportStartupFailure(error) {
+  const detail = error instanceof Error ? error.message : String(error);
+  const message = formatStartupError({
+    backendExit: backendFailure,
+    backendStderr: backendStderrTail,
+    detail: detail === backendFailure ? undefined : detail,
+    portRange: "4317-4399",
+    reason: "AIQD desktop could not start the local backend."
+  });
+
+  console.error(message);
+  process.exitCode = 1;
+  shutdownDesktopRuntime();
+
+  if (!smokeLikeMode) {
+    dialog.showErrorBox("AIQD could not start", message);
+  }
+
+  cleanupSmokeUserDataDir();
+  app.exit(1);
+}
+
+function shutdownDesktopRuntime() {
+  isQuitting = true;
+
+  if (trayStatusTimer) {
+    clearInterval(trayStatusTimer);
+    trayStatusTimer = undefined;
+  }
+
+  if (backend && !backend.killed) {
+    backend.kill();
+  }
+
+  globalShortcut.unregisterAll();
+}
+
+function cleanupSmokeUserDataDir() {
+  if (!smokeUserDataDir) {
+    return;
+  }
+
+  try {
+    rmSync(smokeUserDataDir, { force: true, recursive: true });
+  } catch {
+    // A locked Electron file should not fail smoke validation.
+  }
 }
 
 function showPanelWindow() {
@@ -701,11 +750,18 @@ function isPortFree(port) {
   });
 }
 
-function waitForHealth(url) {
+function waitForHealth(url, options = {}) {
   const startedAt = Date.now();
 
   return new Promise((resolve, reject) => {
     const check = () => {
+      const failure = options.getFailure?.();
+
+      if (failure) {
+        reject(new Error(failure));
+        return;
+      }
+
       http
         .get(url, (response) => {
           response.resume();
@@ -715,16 +771,23 @@ function waitForHealth(url) {
             return;
           }
 
-          retry(check, startedAt, reject);
+          retry(check, startedAt, reject, options);
         })
-        .on("error", () => retry(check, startedAt, reject));
+        .on("error", () => retry(check, startedAt, reject, options));
     };
 
     check();
   });
 }
 
-function retry(callback, startedAt, reject) {
+function retry(callback, startedAt, reject, options = {}) {
+  const failure = options.getFailure?.();
+
+  if (failure) {
+    reject(new Error(failure));
+    return;
+  }
+
   if (Date.now() - startedAt > 10_000) {
     reject(new Error("AIQD backend did not become ready within 10 seconds"));
     return;

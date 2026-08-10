@@ -27,6 +27,15 @@ Expected first launch behavior:
 
 The guide is one-time per desktop user data directory. After that, use the tray menu or mini panel actions to open Settings, Doctor, Dashboard, or the always-on-top widget.
 
+If the desktop app does not open, run:
+
+```bash
+npm run desktop:smoke
+npm run doctor
+```
+
+Startup failures should show recovery guidance with the backend error tail. The smoke command checks whether the desktop shell can launch its local backend without touching real Codex or Claude Code data.
+
 ## 3. Record Codex
 
 Open Codex and check a visible quota value, such as `/status` or Codex Settings > Usage.

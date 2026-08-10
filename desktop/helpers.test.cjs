@@ -4,6 +4,7 @@ const {
   buildTrayMenuTemplate,
   clampBoundsToWorkArea,
   dashboardPath,
+  formatStartupError,
   firstRunGuideTarget,
   hasClaudeWaitingState,
   isSavedWidgetBounds,
@@ -155,6 +156,32 @@ describe("desktop helpers", () => {
       ]),
       undefined
     );
+  });
+
+  it("formats desktop startup recovery guidance", () => {
+    const message = formatStartupError({
+      detail: "No free localhost port between 4317 and 4399",
+      portRange: "4317-4399",
+      reason: "AIQD desktop could not find a port."
+    });
+
+    assert.match(message, /AIQD desktop could not find a port/);
+    assert.match(message, /npm run desktop:smoke/);
+    assert.match(message, /localhost ports 4317-4399/);
+    assert.match(message, /Detail: No free localhost port/);
+  });
+
+  it("includes backend exit and stderr details in startup guidance", () => {
+    const message = formatStartupError({
+      backendExit: "exited with code 1",
+      backendStderr: "node: bad things happened",
+      reason: "AIQD backend failed."
+    });
+
+    assert.match(message, /AIQD backend failed/);
+    assert.match(message, /Backend: exited with code 1/);
+    assert.match(message, /Backend stderr/);
+    assert.match(message, /bad things happened/);
   });
 
   it("summarizes compact agent status for tray text", () => {

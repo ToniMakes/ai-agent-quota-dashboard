@@ -21,6 +21,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Development desktop shell with a tray mini panel and optional always-on-top widget
 - One-time desktop first-run guide that opens the exact setup or Doctor section
 - Desktop smoke coverage for the first-run guide deep-link and local state write
+- Desktop startup diagnostics with recovery guidance for backend failures
 - Desktop global shortcuts for AIQD mini panel, refresh, and widget actions
 - Local trial scripts for desktop launch, Doctor, and Claude statusline self-test
 - Settings view status for desktop shortcut bindings and overrides
