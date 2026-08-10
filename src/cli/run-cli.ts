@@ -346,6 +346,7 @@ async function startServer(argv: string[], entryPointUrl: string): Promise<void>
   const server = createHttpServer({
     config,
     configErrors: userConfig.errors,
+    entryPointUrl,
     service,
     staticDir,
     store

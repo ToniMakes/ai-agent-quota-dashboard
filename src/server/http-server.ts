@@ -17,6 +17,7 @@ import {
   sanitizeQuotaSnapshot
 } from "../core/export-data.js";
 import { buildRealDataReadiness } from "../core/real-data-readiness.js";
+import { runClaudeAutoSetup } from "../setup/claude-auto-setup.js";
 import { getCodexSnapshotSetupStatus } from "../setup/codex-snapshot-status.js";
 import { getClaudeStatuslineSetupStatus } from "../setup/claude-statusline-status.js";
 import { getDesktopShortcutsStatus } from "../setup/desktop-shortcuts-status.js";
@@ -25,6 +26,7 @@ import { getLocalPathsSetupStatus } from "../setup/local-paths-status.js";
 export type ServerContext = {
   config: AppConfig;
   configErrors?: readonly string[];
+  entryPointUrl: string;
   service: AgentQuotaService;
   staticDir: string;
   store: SqliteStore;
@@ -178,6 +180,21 @@ async function handleApiRequest(
     sendJson(response, 200, {
       generatedAt: new Date().toISOString(),
       status: await getClaudeStatuslineSetupStatus()
+    });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/setup/claude-auto") {
+    const setup = await runClaudeAutoSetup({
+      entryPointUrl: context.entryPointUrl
+    });
+    const refreshResult = await context.service.refresh();
+
+    sendJson(response, 200, {
+      generatedAt: new Date().toISOString(),
+      refreshResult,
+      result: setup.result,
+      status: setup.status
     });
     return;
   }
