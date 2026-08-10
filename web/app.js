@@ -1113,7 +1113,6 @@ function renderRealDataOverview() {
   const sourceItems = items.filter((item) => item.countsTowardReady);
   const readyCount = sourceItems.filter((item) => item.state === "pass").length;
   const totalCount = sourceItems.length;
-  const guide = buildRealDataGuide(readiness, items, readyCount, totalCount);
 
   if (elements.realDataScore) {
     elements.realDataScore.textContent = readiness
@@ -1136,20 +1135,6 @@ function renderRealDataOverview() {
   }
 
   elements.realDataContent.innerHTML = `
-    <div class="onboarding-guide">
-      <div class="guide-copy">
-        <span class="guide-kicker">${escapeHtml(
-          tx("Initial setup", "初始配置")
-        )}</span>
-        <strong>${escapeHtml(guide.title)}</strong>
-        <p>${escapeHtml(guide.detail)}</p>
-      </div>
-      <div class="guide-actions">
-        ${renderGuideAction(guide)}
-        ${guide.command ? renderInlineCommand(guide.command) : ""}
-      </div>
-    </div>
-
     ${renderInitialSetupFlow(items, readiness)}
 
     ${renderAdvancedDetails(
@@ -1200,77 +1185,6 @@ function renderTrialReadinessCheck(check) {
   `;
 }
 
-function buildRealDataGuide(readiness, items, readyCount, totalCount) {
-  const failingCheck = (readiness?.checks ?? []).find(
-    (check) => check.status === "fail"
-  );
-  const nextItem =
-    itemForReadinessCheck(failingCheck, items) ??
-    items.find((item) => item.state === "warn") ??
-    items.find((item) => item.state === "info") ??
-    items.find((item) => item.state === "stale");
-
-  if (readiness?.ok || (!readiness && readyCount === totalCount)) {
-    return {
-      actionLabel: tx("Open dashboard", "打开仪表盘"),
-      actionView: "dashboard",
-      detail: tx(
-        "Both primary quota sources have usable local data. Refresh before you make decisions from the numbers.",
-        "两个主要额度来源都有可用的本地数据。根据数字做判断前，建议先刷新一次。"
-      ),
-      state: "pass",
-      title: tx("Ready for a real-data trial", "真实数据试用已准备好")
-    };
-  }
-
-  return {
-    actionLabel:
-      nextItem?.actionLabel ?? tx("Review setup", "查看设置"),
-    actionView: targetViewForSelector(nextItem?.target),
-    command: nextItem?.command,
-    detail: tx(
-      "This is not an account login. AIQD needs one visible Codex quota snapshot and one Claude Code statusline payload before it can show real numbers.",
-      "这不是账号登录。AIQD 需要一份你能看见的 Codex 额度快照，以及一份 Claude Code statusline 数据，之后才会显示真实额度。"
-    ),
-    state: nextItem?.state ?? "info",
-    target: nextItem?.target,
-    title: readiness
-      ? tx(
-          "Connect real local quota data first",
-          "先接入真实本地额度数据"
-        )
-      : realDataSummaryTitle(readyCount, totalCount)
-  };
-}
-
-function itemForReadinessCheck(check, items) {
-  if (!check) {
-    return undefined;
-  }
-
-  if (check.agent === "codex") {
-    return items.find((item) => item.id === "codex");
-  }
-
-  if (check.agent === "claude-code") {
-    return items.find((item) => item.id === "claude-code");
-  }
-
-  if (check.agent === "doctor") {
-    return {
-      actionLabel: tx("Open Doctor", "打开诊断"),
-      actionView: "doctor",
-      detail: localizedReadinessCheck(check).action ?? check.message,
-      label: "Doctor",
-      nextAction: localizedReadinessCheck(check).action ?? check.message,
-      state: "warn",
-      target: "#doctor-list"
-    };
-  }
-
-  return undefined;
-}
-
 function readinessDisplayName(check) {
   if (!check?.displayName || currentLanguage !== "zh") {
     return check?.displayName;
@@ -1283,47 +1197,6 @@ function readinessDisplayName(check) {
   return labels[check.displayName] ?? check.displayName;
 }
 
-function targetViewForSelector(target) {
-  return target?.includes("doctor") ? "doctor" : "settings";
-}
-
-function renderGuideAction(guide) {
-  if (!guide.actionView && !guide.target) {
-    return "";
-  }
-
-  return `
-    <button
-      class="button guide-button"
-      type="button"
-      ${guide.actionView ? `data-open-view="${escapeHtml(guide.actionView)}"` : ""}
-      ${guide.target ? `data-scroll-target="${escapeHtml(guide.target)}"` : ""}
-    >${escapeHtml(guide.actionLabel)}</button>
-  `;
-}
-
-function renderSourceCard(item) {
-  return `
-    <article class="source-card ${doctorBadgeClass(item.state)}">
-      <div class="source-card-header">
-        <strong>${escapeHtml(item.label)}</strong>
-        <span class="badge ${doctorBadgeClass(item.state)}">${escapeHtml(
-          statusLabel(item.state)
-        )}</span>
-      </div>
-      <div class="source-card-status">${escapeHtml(item.status)}</div>
-      <p>${escapeHtml(item.detail)}</p>
-      <div class="source-card-actions">
-        <button
-          class="copy-button"
-          type="button"
-          data-scroll-target="${escapeHtml(item.target)}"
-        >${escapeHtml(item.actionLabel)}</button>
-      </div>
-    </article>
-  `;
-}
-
 function renderInitialSetupFlow(items, readiness) {
   const model = buildInitialSetupModel(items, readiness);
 
@@ -1333,12 +1206,12 @@ function renderInitialSetupFlow(items, readiness) {
     )}">
       <div class="setup-flow-intro">
         <strong>${escapeHtml(
-          tx("Real-data setup path", "真实数据设置路径")
+          tx("First-time setup", "首次设置")
         )}</strong>
         <p>${escapeHtml(
           tx(
-            "Follow the current step. AIQD connects to local evidence, not your accounts.",
-            "只按当前步骤往下走。AIQD 接入的是本地证据，不是你的账号。"
+            "Complete these steps once. The dashboard will show real Codex and Claude Code quota after the check passes.",
+            "按下面步骤做一次。检查通过后，仪表盘会显示真实的 Codex 和 Claude Code 额度。"
           )
         )}</p>
       </div>
@@ -1360,7 +1233,25 @@ function buildInitialSetupModel(items, readiness) {
     {
       actionLabel: codexComplete
         ? tx("Review Codex", "查看 Codex")
-        : tx("Fill Codex snapshot", "填写 Codex 快照"),
+        : tx("Go to Codex form", "去填写 Codex 表单"),
+      actionTitle: tx(
+        "Fill the Codex value you can see",
+        "填写你能看见的 Codex 额度"
+      ),
+      checklist: [
+        tx(
+          "Open Codex /status or Settings > Usage.",
+          "打开 Codex 的 /status 或 Settings > Usage。"
+        ),
+        tx(
+          "Copy the remaining percent into the Codex form below.",
+          "把剩余百分比填到下面的 Codex 表单。"
+        ),
+        tx(
+          "Choose the reset date. Leave reset time blank if Codex only shows a date.",
+          "选择 reset 日期；如果 Codex 只显示日期，时间留空。"
+        )
+      ],
       complete: codexComplete,
       detail: tx(
         "Copy the visible Codex remaining percent and reset date. Leave reset time blank if Codex only shows a date.",
@@ -1368,6 +1259,13 @@ function buildInitialSetupModel(items, readiness) {
       ),
       id: "codex",
       number: "1",
+      outcome: tx(
+        "After saving, AIQD can use this Codex value and will move you to Claude Code.",
+        "保存后，AIQD 就能使用这条 Codex 额度，并带你进入 Claude Code 步骤。"
+      ),
+      progressDetail: codexComplete
+        ? buildCodexDoneDetail(codex)
+        : tx("Not filled yet.", "还没有填写。"),
       status: codexComplete
         ? tx("Done", "已完成")
         : codex?.status ?? tx("Waiting for visible quota", "等待可见额度"),
@@ -1382,20 +1280,76 @@ function buildInitialSetupModel(items, readiness) {
       actionLabel: claudeComplete
         ? tx("Review Claude", "查看 Claude")
         : state.setupStatus?.statusLineManagedByApp
-          ? tx("View Claude step", "查看 Claude 步骤")
+          ? tx(
+              "I opened Claude Code; check now",
+              "我已打开 Claude Code，检查是否收到数据"
+            )
           : tx("Open Claude setup", "打开 Claude 设置"),
+      actionTitle: state.setupStatus?.statusLineManagedByApp
+        ? tx("Open Claude Code once", "打开 Claude Code 一次")
+        : tx("Turn on Claude Code data capture", "启用 Claude Code 数据接入"),
+      checklist: state.setupStatus?.statusLineManagedByApp
+        ? [
+            tx(
+              "Switch to the Claude Code app or terminal.",
+              "切到 Claude Code 应用或终端。"
+            ),
+            tx(
+              "Open any project or session and wait for the statusline to appear.",
+              "打开任意项目或会话，等状态栏出现一次。"
+            ),
+            tx(
+              "Come back here and click the check button.",
+              "回到这里，点击检查按钮。"
+            )
+          ]
+        : [
+            tx(
+              "Open the Claude Code setup section below.",
+              "打开下面的 Claude Code 设置区域。"
+            ),
+            tx(
+              "Review the generated local command.",
+              "检查生成的本地命令。"
+            ),
+            tx(
+              "Install it only if you approve the change.",
+              "确认后再安装。"
+            )
+          ],
       complete: claudeComplete,
       detail: state.setupStatus?.statusLineManagedByApp
         ? tx(
-            "Open Claude Code once so its statusline can send supported rate_limits to AIQD.",
-            "打开 Claude Code 一次，让状态栏把支持的 rate_limits 发给 AIQD。"
+            "Open Claude Code once, then come back and check whether AIQD received quota data.",
+            "打开 Claude Code 一次，然后回到这里检查 AIQD 是否收到额度数据。"
           )
         : tx(
             "Review the generated command, then install the local statusline hook only if you approve it.",
             "先检查生成的命令；只有你确认后才安装本地 statusline hook。"
-          ),
+      ),
       id: "claude-code",
       number: "2",
+      outcome: tx(
+        "When data is received, this step becomes done and the next step verifies the dashboard.",
+        "收到数据后，这一步会变成完成，下一步会验证仪表盘。"
+      ),
+      progressDetail: claudeComplete
+        ? tx("Claude Code quota data received.", "已收到 Claude Code 额度数据。")
+        : state.setupStatus?.statusLineManagedByApp
+          ? tx(
+              "Waiting for you to open Claude Code once.",
+              "正在等待你打开 Claude Code 一次。"
+            )
+          : tx("Setup is not enabled yet.", "尚未启用设置。"),
+      refreshAction: state.setupStatus?.statusLineManagedByApp && !claudeComplete,
+      secondaryActionLabel:
+        state.setupStatus?.statusLineManagedByApp && !claudeComplete
+          ? tx("Show setup details", "查看设置细节")
+          : undefined,
+      secondaryTarget:
+        state.setupStatus?.statusLineManagedByApp && !claudeComplete
+          ? "#settings-content"
+          : undefined,
       status: claudeComplete
         ? tx("Done", "已完成")
         : claude?.status ?? tx("Waiting for Claude Code data", "等待 Claude Code 数据"),
@@ -1409,7 +1363,25 @@ function buildInitialSetupModel(items, readiness) {
     {
       actionLabel: readinessComplete
         ? tx("Open dashboard", "打开仪表盘")
-        : tx("Refresh check", "刷新检查"),
+        : tx("Verify real data", "验证真实数据"),
+      actionTitle: tx(
+        "Verify the dashboard is using real data",
+        "验证仪表盘正在使用真实数据"
+      ),
+      checklist: [
+        tx(
+          "Make sure Codex and Claude Code both show done.",
+          "确认 Codex 和 Claude Code 都显示完成。"
+        ),
+        tx(
+          "Run the check from this page.",
+          "在这个页面运行检查。"
+        ),
+        tx(
+          "Open Dashboard after it passes.",
+          "通过后打开仪表盘。"
+        )
+      ],
       complete: readinessComplete,
       detail: tx(
         "Refresh once both sources are ready. This confirms the dashboard is using real, non-demo data.",
@@ -1417,6 +1389,15 @@ function buildInitialSetupModel(items, readiness) {
       ),
       id: "verify",
       number: "3",
+      outcome: tx(
+        "After it passes, the dashboard can show real remaining quota and reset dates.",
+        "通过后，仪表盘会显示真实剩余额度和 reset 日期。"
+      ),
+      progressDetail: readinessComplete
+        ? tx("Real-data check passed.", "真实数据检查已通过。")
+        : codexComplete && claudeComplete
+          ? tx("Ready to run the final check.", "可以运行最后检查。")
+          : tx("Locked until Codex and Claude Code are done.", "等 Codex 和 Claude Code 完成后再进行。"),
       refreshAction: !readinessComplete,
       status: readinessComplete
         ? tx("Ready for trial", "可以开始试用")
@@ -1449,6 +1430,10 @@ function buildInitialSetupModel(items, readiness) {
   };
 }
 
+function buildCodexDoneDetail(codex) {
+  return codex?.detail ?? tx("Codex value is saved.", "Codex 额度已保存。");
+}
+
 function renderSetupCurrentAction(model) {
   const step = model.currentStep;
   const allDone = model.completedCount === model.totalCount;
@@ -1460,7 +1445,7 @@ function renderSetupCurrentAction(model) {
 
   return `
     <section class="current-step-panel ${allDone ? "complete" : ""}">
-      <div>
+      <div class="current-step-copy">
         <span class="guide-kicker">${escapeHtml(
           allDone
             ? tx("Ready", "已就绪")
@@ -1472,22 +1457,62 @@ function renderSetupCurrentAction(model) {
         <strong>${escapeHtml(
           allDone
             ? tx("Real-data dashboard is ready", "真实数据仪表盘已就绪")
-            : step.title
+            : step.actionTitle
         )}</strong>
-        <p>${escapeHtml(
+        ${
+          allDone
+            ? `<p>${escapeHtml(
+                tx(
+                  "Open the dashboard and refresh before making decisions from the numbers.",
+                  "打开仪表盘，并在根据数字做判断前刷新一次。"
+                )
+              )}</p>`
+            : renderActionChecklist(step.checklist)
+        }
+        <p class="outcome-note">${escapeHtml(
           allDone
             ? tx(
-                "Open the dashboard and refresh before making decisions from the numbers.",
-                "打开仪表盘，并在根据数字做判断前刷新一次。"
+                "Result: you can now read real quota and reset dates.",
+                "结果：现在可以查看真实额度和 reset 日期。"
               )
-            : step.detail
+            : tx("Result: {result}", "结果：{result}", {
+                result: step.outcome
+              })
         )}</p>
       </div>
       <div class="current-step-actions">
-        <span>${escapeHtml(remainingLabel)}</span>
+        <span>${escapeHtml(
+          tx("Progress: {done}/{total} done, {left}", "进度：已完成 {done}/{total}，{left}", {
+            done: model.completedCount,
+            left: remainingLabel,
+            total: model.totalCount
+          })
+        )}</span>
         ${renderGuidedStepAction(step, allDone)}
+        ${renderGuidedSecondaryAction(step)}
       </div>
     </section>
+  `;
+}
+
+function renderActionChecklist(items = []) {
+  if (!items.length) {
+    return "";
+  }
+
+  return `
+    <div class="action-checklist">
+      ${items
+        .map(
+          (item, index) => `
+            <div class="action-step">
+              <span>${escapeHtml(String(index + 1))}</span>
+              <p>${escapeHtml(item)}</p>
+            </div>
+          `
+        )
+        .join("")}
+    </div>
   `;
 }
 
@@ -1501,7 +1526,7 @@ function renderGuidedStep(step) {
       </div>
       <div>
         <strong>${escapeHtml(step.title)}</strong>
-        <p>${escapeHtml(step.detail)}</p>
+        <p>${escapeHtml(step.progressDetail ?? step.detail)}</p>
       </div>
       <div class="guided-step-state">
         <span class="badge ${doctorBadgeClass(step.state)}">${escapeHtml(
@@ -1533,6 +1558,20 @@ function renderGuidedStepAction(step, allDone = false, className = "button") {
       ${step.refreshAction ? "data-refresh-action" : ""}
       ${step.target ? `data-scroll-target="${escapeHtml(step.target)}"` : ""}
     >${escapeHtml(step.actionLabel)}</button>
+  `;
+}
+
+function renderGuidedSecondaryAction(step) {
+  if (!step.secondaryActionLabel || !step.secondaryTarget) {
+    return "";
+  }
+
+  return `
+    <button
+      class="copy-button"
+      type="button"
+      data-scroll-target="${escapeHtml(step.secondaryTarget)}"
+    >${escapeHtml(step.secondaryActionLabel)}</button>
   `;
 }
 
@@ -1880,16 +1919,18 @@ function renderCodexSnapshotPostSaveActions(saveStatus) {
         <strong>${escapeHtml(
           allDone
             ? tx("Open the real-data dashboard", "打开真实数据仪表盘")
-            : step.title
+            : step.actionTitle
         )}</strong>
-        <p>${escapeHtml(
+        ${
           allDone
-            ? tx(
-                "Both quota sources are ready. Open the dashboard and refresh before relying on the numbers.",
-                "两个额度来源都已就绪。打开仪表盘，并在依赖数字前刷新一次。"
-              )
-            : step.detail
-        )}</p>
+            ? `<p>${escapeHtml(
+                tx(
+                  "Both quota sources are ready. Open the dashboard and refresh before relying on the numbers.",
+                  "两个额度来源都已就绪。打开仪表盘，并在依赖数字前刷新一次。"
+                )
+              )}</p>`
+            : renderActionChecklist(step.checklist)
+        }
         <p class="why-note">${escapeHtml(
           allDone
             ? tx(
@@ -1901,13 +1942,7 @@ function renderCodexSnapshotPostSaveActions(saveStatus) {
       </div>
       <div class="next-step-actions">
         ${renderGuidedStepAction(step, allDone)}
-        ${
-          !allDone && step.id === "claude-code"
-            ? `<button class="copy-button" type="button" data-refresh-action>${escapeHtml(
-                tx("I opened Claude Code; refresh", "我已打开 Claude Code，刷新检查")
-              )}</button>`
-            : ""
-        }
+        ${renderGuidedSecondaryAction(step)}
       </div>
     </section>
   `;
