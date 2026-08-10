@@ -1371,6 +1371,21 @@ function buildInitialSetupModel(items, readiness) {
               eyebrow: tx("Copy this one now", "现在复制这一条"),
               title: tx("Install Claude Code CLI", "安装 Claude Code CLI")
             },
+        tip: claudeCliAvailable
+          ? {
+              text: tx(
+                "If PowerShell will not accept paste, its title may say Select Windows PowerShell. Press Esc once, then paste again.",
+                "如果 PowerShell 不接受粘贴，标题栏可能显示“选择 Windows PowerShell”。按一次 Esc，再重新粘贴。"
+              ),
+              title: tx("Paste not working?", "粘贴不进去？")
+            }
+          : {
+              text: tx(
+                "If the title says Select Windows PowerShell, press Esc. While the install command is running, do not paste claude --version; wait until a new PS ...> prompt appears.",
+                "如果标题栏显示“选择 Windows PowerShell”，按 Esc。安装命令运行期间不要粘贴 claude --version；等重新出现新的 PS ...> 提示符后再检查。"
+              ),
+              title: tx("If PowerShell looks stuck", "如果 PowerShell 看起来卡住")
+            },
         secondaryCommands: claudeCliAvailable
           ? [
               {
@@ -1727,6 +1742,7 @@ function renderStepHelper(helper) {
       <p>${escapeHtml(helper.detail)}</p>
       ${renderStepHelperMethods(helper.methods)}
       ${renderStepHelperPrimaryCommand(helper.primaryCommand)}
+      ${renderStepHelperTip(helper.tip)}
       ${renderStepHelperSecondaryCommands(
         helper.secondaryCommands,
         helper.secondarySummary
@@ -1749,6 +1765,19 @@ function renderStepHelperPrimaryCommand(command) {
         <code>${escapeHtml(command.command)}</code>
         ${renderCopyButton(command.command, command.copyLabel)}
       </div>
+    </div>
+  `;
+}
+
+function renderStepHelperTip(tip) {
+  if (!tip) {
+    return "";
+  }
+
+  return `
+    <div class="step-helper-tip">
+      <strong>${escapeHtml(tip.title)}</strong>
+      <p>${escapeHtml(tip.text)}</p>
     </div>
   `;
 }
