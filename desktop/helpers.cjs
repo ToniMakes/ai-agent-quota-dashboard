@@ -53,6 +53,50 @@ function dashboardPath(view, target) {
   return `/?view=${encodeURIComponent(view)}${hash ? `#${hash}` : ""}`;
 }
 
+function firstRunGuideTarget(agents) {
+  if (!Array.isArray(agents) || agents.length === 0) {
+    return {
+      target: "real-data-content",
+      view: "settings"
+    };
+  }
+
+  const setupAgents = sortSetupAgents(agents).filter((agent) =>
+    ["codex", "claude-code"].includes(agent.agent)
+  );
+  const missing = setupAgents.find((agent) => !agent.primarySnapshot);
+
+  if (!missing) {
+    return undefined;
+  }
+
+  if (missing.emptyState?.reason === "adapter_error") {
+    return {
+      target: "doctor-list",
+      view: "doctor"
+    };
+  }
+
+  if (missing.agent === "codex") {
+    return {
+      target: "codex-snapshot-content",
+      view: "settings"
+    };
+  }
+
+  if (missing.agent === "claude-code") {
+    return {
+      target: "settings-content",
+      view: "settings"
+    };
+  }
+
+  return {
+    target: "real-data-content",
+    view: "settings"
+  };
+}
+
 function summarizeAgent(agent, options = {}) {
   const snapshot = agent.primarySnapshot;
   const name = agent.shortName ?? agent.displayName ?? agent.agent;
@@ -181,6 +225,18 @@ function normalizeDashboardTarget(target) {
   return encodeURIComponent(normalized);
 }
 
+function sortSetupAgents(agents) {
+  const order = new Map([
+    ["codex", 0],
+    ["claude-code", 1]
+  ]);
+
+  return [...agents].sort(
+    (left, right) =>
+      (order.get(left.agent) ?? 99) - (order.get(right.agent) ?? 99)
+  );
+}
+
 function resolveWidgetBounds(input) {
   const { savedBounds, widgetSize, workArea } = input;
   const clampToWorkArea = input.clampToWorkArea ?? true;
@@ -225,6 +281,7 @@ module.exports = {
   clampBoundsToWorkArea,
   dashboardPath,
   formatResetDistance,
+  firstRunGuideTarget,
   hasClaudeWaitingState,
   isSavedWidgetBounds,
   resolveWidgetBounds,

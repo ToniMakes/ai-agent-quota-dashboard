@@ -30,6 +30,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Dashboard and Doctor views
 - Mini panel page for tray-sized quota checks
 - Electron desktop shell with a tray mini panel and optional always-on-top widget
+- One-time desktop first-run guide that opens the exact setup or Doctor section
 - Desktop global shortcuts for AIQD mini panel, refresh, and widget actions
 - Settings view status for desktop shortcut bindings and overrides
 - Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
@@ -114,6 +115,7 @@ It starts the local backend, adds an AI Agent Quota tray icon, and provides:
 - an optional always-on-top desktop widget
 - a tray tooltip and menu summary for the current quota state
 - tray menu shortcuts for Refresh, Doctor, Settings, and Dashboard
+- a one-time first-run guide that opens the exact Settings or Doctor section when real data is not ready, or shows the mini panel when it is ready
 - safe global shortcuts for AIQD itself: `Ctrl+Alt+Q` toggles the mini panel, `Ctrl+Alt+R` refreshes quota data, and `Ctrl+Alt+W` toggles the desktop widget
 - compact per-window quota rows and manual refresh in mini surfaces
 - single-instance behavior: launching the desktop app again focuses the existing mini panel

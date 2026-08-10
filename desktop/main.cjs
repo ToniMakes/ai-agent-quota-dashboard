@@ -24,6 +24,7 @@ const path = require("node:path");
 const {
   buildTrayMenuTemplate,
   dashboardPath,
+  firstRunGuideTarget,
   resolveDesktopShortcuts,
   resolveWidgetBounds: resolveSavedWidgetBounds,
   shouldRefreshForClaudeStatusline,
@@ -124,6 +125,8 @@ if (!hasSingleInstanceLock) {
     if (showPanelWhenReady) {
       showPanelWhenReady = false;
       showPanelWindow();
+    } else {
+      void openFirstRunGuide();
     }
   });
 
@@ -433,6 +436,33 @@ function openDashboardWindow(view, target) {
 
 function dashboardUrl(view, target) {
   return `${baseUrl}${dashboardPath(view, target)}`;
+}
+
+async function openFirstRunGuide() {
+  const state = readDesktopState();
+
+  if (state.firstRunGuideShownAt) {
+    return;
+  }
+
+  try {
+    const payload = await getJson(`${baseUrl}/api/agents`);
+    const guideTarget = firstRunGuideTarget(payload.agents ?? []);
+
+    writeDesktopState({
+      ...readDesktopState(),
+      firstRunGuideShownAt: new Date().toISOString()
+    });
+
+    if (guideTarget) {
+      openDashboardWindow(guideTarget.view, guideTarget.target);
+      return;
+    }
+
+    showPanelWindow();
+  } catch {
+    // Keep startup quiet if the guide cannot be resolved.
+  }
 }
 
 function secureWebPreferences() {
