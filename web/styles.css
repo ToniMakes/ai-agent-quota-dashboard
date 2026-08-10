@@ -668,6 +668,72 @@ h2 {
   margin: 0;
 }
 
+.auto-setup-result {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.auto-setup-result.is-pending {
+  border-color: rgba(126, 231, 183, 0.42);
+}
+
+.auto-setup-result.has-error {
+  border-color: rgba(246, 188, 87, 0.42);
+}
+
+.auto-setup-result-header,
+.auto-setup-step {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.auto-setup-result-header .badge {
+  justify-self: end;
+}
+
+.auto-setup-step-list {
+  display: grid;
+  gap: 8px;
+}
+
+.auto-setup-step {
+  grid-template-columns: auto minmax(0, 1fr);
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.auto-setup-step:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.auto-setup-step p {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.auto-setup-step pre {
+  max-height: 160px;
+  margin: 8px 0 0;
+  padding: 8px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono",
+    monospace;
+  font-size: 0.74rem;
+  white-space: pre-wrap;
+}
+
 .step-helper-methods {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
