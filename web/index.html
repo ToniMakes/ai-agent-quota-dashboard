@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AI Agent Quota</title>
-    <link rel="stylesheet" href="/styles.css?v=20260810-real-data-overview" />
+    <link rel="stylesheet" href="/styles.css?v=20260810-doctor-checklist" />
   </head>
   <body>
     <main class="shell">
@@ -45,6 +45,16 @@
       </section>
 
       <section id="doctor-view" class="view">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>First Run Checklist</h2>
+              <p class="panel-note">Local setup signals for the first real-data experience.</p>
+            </div>
+            <span id="doctor-checklist-score" class="badge stale">--</span>
+          </div>
+          <div id="doctor-checklist" class="settings-content"></div>
+        </div>
         <div class="panel">
           <div class="panel-header">
             <h2>Doctor</h2>
@@ -100,6 +110,6 @@
       </section>
     </main>
 
-    <script src="/app.js?v=20260810-real-data-overview" type="module"></script>
+    <script src="/app.js?v=20260810-doctor-checklist" type="module"></script>
   </body>
 </html>

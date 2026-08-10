@@ -13,6 +13,8 @@ const state = {
 const elements = {
   agentGrid: document.querySelector("#agent-grid"),
   codexSnapshotContent: document.querySelector("#codex-snapshot-content"),
+  doctorChecklist: document.querySelector("#doctor-checklist"),
+  doctorChecklistScore: document.querySelector("#doctor-checklist-score"),
   doctorList: document.querySelector("#doctor-list"),
   eventList: document.querySelector("#event-list"),
   lastRefresh: document.querySelector("#last-refresh"),
@@ -72,16 +74,35 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
-  const scrollButton = target.closest("[data-scroll-target]");
+  const refreshActionButton = target.closest("[data-refresh-action]");
 
-  if (!(scrollButton instanceof HTMLButtonElement)) {
+  if (refreshActionButton instanceof HTMLButtonElement) {
+    elements.refreshButton.click();
     return;
   }
 
-  const selector = scrollButton.dataset.scrollTarget;
-  const scrollTarget = selector ? document.querySelector(selector) : undefined;
+  const navigationButton = target.closest("[data-open-view], [data-scroll-target]");
 
-  scrollTarget?.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (!(navigationButton instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const viewName = navigationButton.dataset.openView;
+
+  if (viewName) {
+    activateView(viewName, { updateUrl: true });
+  }
+
+  const selector = navigationButton.dataset.scrollTarget;
+
+  if (!selector) {
+    return;
+  }
+
+  window.requestAnimationFrame(() => {
+    const scrollTarget = document.querySelector(selector);
+    scrollTarget?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 });
 
 document.addEventListener("submit", async (event) => {
@@ -177,6 +198,7 @@ function render() {
   renderAgents();
   renderResets();
   renderEvents();
+  renderDoctorChecklist();
   renderDoctor();
   renderRefreshRuns();
   renderRealDataOverview();
@@ -432,6 +454,192 @@ function renderDoctorCheck(check) {
       )}</span>
     </div>
   `;
+}
+
+function renderDoctorChecklist() {
+  if (!elements.doctorChecklist) {
+    return;
+  }
+
+  const items = buildDoctorChecklistItems();
+  const sourceItems = items.filter((item) => item.countsTowardReady);
+  const readyCount = sourceItems.filter((item) => item.state === "pass").length;
+  const totalCount = sourceItems.length;
+  const hasSupportingIssue = items.some(
+    (item) =>
+      !item.countsTowardReady && (item.state === "fail" || item.state === "warn")
+  );
+  const nextItem =
+    items.find((item) => item.state === "fail") ??
+    items.find((item) => item.state === "warn") ??
+    items.find((item) => item.state === "info");
+
+  if (elements.doctorChecklistScore) {
+    elements.doctorChecklistScore.textContent = `${readyCount}/${totalCount} ready`;
+    elements.doctorChecklistScore.className = `badge ${
+      readyCount === totalCount && !hasSupportingIssue ? "healthy" : "warning"
+    }`;
+  }
+
+  elements.doctorChecklist.innerHTML = `
+    <div class="real-data-summary doctor-checklist-summary">
+      <div class="setup-score">
+        <strong>${readyCount}/${totalCount}</strong>
+        <span>quota sources ready</span>
+      </div>
+      <div>
+        <strong>${escapeHtml(
+          doctorChecklistSummaryTitle(readyCount, totalCount, hasSupportingIssue)
+        )}</strong>
+        <div class="settings-detail">${escapeHtml(
+          nextItem?.nextAction ?? "Real-data sources are ready for a local trial."
+        )}</div>
+        ${nextItem?.command ? renderInlineCommand(nextItem.command) : ""}
+      </div>
+    </div>
+    <div class="setup-overview-list doctor-checklist-list">
+      ${items.map(renderDoctorChecklistItem).join("")}
+    </div>
+  `;
+}
+
+function buildDoctorChecklistItems() {
+  return [
+    buildDoctorCodexChecklistItem(),
+    buildDoctorClaudeChecklistItem(),
+    buildDoctorRefreshChecklistItem(),
+    buildDoctorPathChecklistItem()
+  ];
+}
+
+function buildDoctorCodexChecklistItem() {
+  const item = buildCodexOverviewItem();
+
+  return {
+    ...item,
+    actionLabel: item.state === "pass" ? "Review" : "Settings",
+    actionView: "settings",
+    label: "Codex manual snapshot",
+    target: "#codex-snapshot-content"
+  };
+}
+
+function buildDoctorClaudeChecklistItem() {
+  const item = buildClaudeOverviewItem();
+
+  return {
+    ...item,
+    actionLabel: item.state === "pass" ? "Review" : "Settings",
+    actionView: "settings",
+    label: "Claude Code statusline",
+    target: "#settings-content"
+  };
+}
+
+function buildDoctorRefreshChecklistItem() {
+  const latestRun = state.refreshRuns
+    .slice()
+    .sort((left, right) => Date.parse(right.observedAt) - Date.parse(left.observedAt))[0];
+
+  if (!latestRun) {
+    return {
+      actionLabel: "Refresh now",
+      countsTowardReady: false,
+      detail: "No local refresh run has been recorded in this workspace yet.",
+      label: "Refresh pipeline",
+      nextAction: "Run one refresh after setting up at least one quota source.",
+      refreshAction: true,
+      state: "info",
+      status: "Not run yet"
+    };
+  }
+
+  const hasErrors = (latestRun.errors?.length ?? 0) > 0;
+
+  return {
+    actionLabel: hasErrors ? "View details" : "Refresh now",
+    actionView: hasErrors ? "doctor" : undefined,
+    countsTowardReady: false,
+    detail: formatRefreshRunDetail(latestRun),
+    label: "Refresh pipeline",
+    nextAction: hasErrors
+      ? "Review the latest refresh errors before relying on the dashboard."
+      : "Refresh is recording source diagnostics and saved-count summaries.",
+    refreshAction: !hasErrors,
+    state: hasErrors ? "warn" : "pass",
+    status: `Last run ${formatRelative(latestRun.observedAt)}`,
+    target: hasErrors ? "#refresh-run-list" : undefined
+  };
+}
+
+function buildDoctorPathChecklistItem() {
+  const item = buildPathOverviewItem();
+
+  return {
+    ...item,
+    actionLabel: "Path settings",
+    actionView: "settings",
+    label: "Local path config",
+    target: "#paths-content"
+  };
+}
+
+function renderDoctorChecklistItem(item) {
+  return `
+    <div class="setup-overview-row doctor-checklist-row">
+      <div>
+        <strong>${escapeHtml(item.label)}</strong>
+        <div>${escapeHtml(item.status)}</div>
+        <div class="settings-detail">${escapeHtml(item.detail)}</div>
+        ${item.command ? renderInlineCommand(item.command) : ""}
+      </div>
+      <div class="setup-overview-actions doctor-checklist-actions">
+        <span class="badge ${doctorBadgeClass(item.state)}">${escapeHtml(
+          item.state
+        )}</span>
+        ${renderDoctorChecklistAction(item)}
+      </div>
+    </div>
+  `;
+}
+
+function renderDoctorChecklistAction(item) {
+  if (item.refreshAction) {
+    return `
+      <button class="copy-button" type="button" data-refresh-action="true">
+        ${escapeHtml(item.actionLabel)}
+      </button>
+    `;
+  }
+
+  if (!item.actionView && !item.target) {
+    return "";
+  }
+
+  return `
+    <button
+      class="copy-button"
+      type="button"
+      ${item.actionView ? `data-open-view="${escapeHtml(item.actionView)}"` : ""}
+      ${item.target ? `data-scroll-target="${escapeHtml(item.target)}"` : ""}
+    >${escapeHtml(item.actionLabel)}</button>
+  `;
+}
+
+function doctorChecklistSummaryTitle(readyCount, totalCount, hasSupportingIssue) {
+  if (readyCount === totalCount && hasSupportingIssue) {
+    return "Quota sources are ready; review setup warnings";
+  }
+
+  if (readyCount === totalCount) {
+    return "Ready for a real-data trial";
+  }
+
+  if (readyCount === 0) {
+    return "Real-data setup is not ready yet";
+  }
+
+  return "One quota source is ready";
 }
 
 function renderRefreshRuns() {

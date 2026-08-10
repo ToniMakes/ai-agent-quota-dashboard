@@ -21,6 +21,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Manual Codex snapshot command and Settings form for visible `/status` or Usage values
 - Settings view status for Codex manual snapshots
 - Settings real-data overview for first-run Codex and Claude Code setup
+- Doctor first-run checklist for real-data readiness
 - Claude Code statusline setup helper with explicit opt-in
 - Reset event timeline for changed reset anchors and sharp replenishment
 - Dashboard reset display with relative and absolute reported reset times

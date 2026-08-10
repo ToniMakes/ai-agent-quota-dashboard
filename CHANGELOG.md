@@ -14,6 +14,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Settings view form to save visible Codex manual snapshots and refresh dashboard data
 - Settings view status and copyable commands for Codex manual snapshots
 - Settings real-data overview for first-run Codex and Claude Code setup
+- Doctor first-run checklist for real-data readiness
 - Development desktop shell with a tray mini panel and optional always-on-top widget
 - Tray tooltip/menu quota summaries for the desktop shell
 - Mini and tray first-run actions that open Settings or Doctor directly
