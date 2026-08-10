@@ -1431,12 +1431,12 @@ function buildInitialSetupModel(items, readiness) {
         detail: claudeCliAvailable
           ? claudeCliOnPath
             ? tx(
-                "This command enters the AIQD project folder, then starts Claude Code CLI.",
-                "这条命令会进入 AIQD 项目文件夹，然后启动 Claude Code CLI。"
+                "It starts Claude Code so AIQD can receive quota data.",
+                "它会启动 Claude Code，让 AIQD 接收额度数据。"
               )
             : tx(
-                "This command uses the full Claude Code path; no PATH change is needed.",
-                "这条命令会用完整路径启动 Claude Code；不用改 PATH。"
+                "It starts Claude Code so AIQD can receive quota data. No PATH change is needed.",
+                "它会启动 Claude Code，让 AIQD 接收额度数据；不用改 PATH。"
               )
           : tx(
               "Install first. A short quiet wait in the terminal can be normal.",
@@ -1447,12 +1447,14 @@ function buildInitialSetupModel(items, readiness) {
               command: claudeCliExampleProjectOpenCommand,
               copyLabel: tx("Copy command", "复制命令"),
               eyebrow: tx("Command to copy", "要复制的命令"),
+              hideCommandText: true,
               title: tx("Terminal command", "终端命令")
             }
           : {
               command: claudeCliInstallCommand,
               copyLabel: tx("Copy command", "复制命令"),
               eyebrow: tx("Command to copy", "要复制的命令"),
+              hideCommandText: true,
               title: tx("Install command", "安装命令")
             },
         title: tx("What does this command do?", "这条命令做什么？")
@@ -1665,8 +1667,8 @@ function buildInitialSetupModel(items, readiness) {
             )
         : claudeManaged
           ? tx(
-              "Waiting for Claude Code CLI statusline data.",
-              "正在等待 Claude Code CLI statusline 数据。"
+              "Waiting for Claude data.",
+              "正在等待 Claude 数据。"
             )
           : tx("Setup is not enabled yet.", "尚未启用设置。"),
       claudeAutoSetupAction: canAutoSetupClaude,
@@ -2014,6 +2016,23 @@ function formatClaudeAutoSetupDetail(result) {
 function renderStepHelperPrimaryCommand(command) {
   if (!command) {
     return "";
+  }
+
+  if (command.hideCommandText) {
+    return `
+      <div class="step-helper-primary-command is-copy-only">
+        <span>${escapeHtml(command.eyebrow)}</span>
+        <strong>${escapeHtml(command.title)}</strong>
+        ${command.detail ? `<p>${escapeHtml(command.detail)}</p>` : ""}
+        <div class="step-helper-copy-row">
+          ${renderCopyButton(command.command, command.copyLabel)}
+        </div>
+        <details class="step-helper-command-details">
+          <summary>${escapeHtml(tx("Show command text", "查看命令内容"))}</summary>
+          <code>${escapeHtml(command.command)}</code>
+        </details>
+      </div>
+    `;
   }
 
   return `
@@ -3073,8 +3092,8 @@ function renderClaudeStatuslineWaitingNotice(status) {
       <div>
         <strong>${escapeHtml(
           tx(
-            "Waiting for first Claude Code CLI quota payload",
-            "等待第一份 Claude Code CLI 额度数据"
+            "Waiting for Claude quota data",
+            "等待 Claude 额度数据"
           )
         )}</strong>
         <div class="settings-detail">
@@ -3128,10 +3147,6 @@ function renderClaudeMaintenanceCommands(status) {
 }
 
 function renderRealDataSteps(status) {
-  const openCommand =
-    status.claudeCliExampleProjectOpenCommand ??
-    status.claudeCliOpenCommand ??
-    "Set-Location -LiteralPath 'C:\\path\\to\\your-project'\nclaude";
   const steps = [
     {
       badge: "1",
@@ -3149,7 +3164,7 @@ function renderRealDataSteps(status) {
     },
     {
       badge: "2",
-      title: tx("Open Claude Code CLI", "打开 Claude Code CLI"),
+      title: tx("Start Claude from Terminal", "从终端启动 Claude"),
       detail: status.latestHasRateLimits
         ? tx(
             "Claude Code has already sent quota data.",
@@ -3164,10 +3179,6 @@ function renderRealDataSteps(status) {
               "AIQD cannot see the claude command yet. Install or open Claude Code from your normal terminal, then refresh.",
               "AIQD 还看不到 claude 命令。请先安装或从你平时的终端打开 Claude Code，然后刷新。"
             ),
-      command:
-        !status.latestHasRateLimits && status.claudeCliAvailable
-          ? openCommand
-          : undefined,
       state: status.latestHasRateLimits
         ? "pass"
         : status.claudeCliAvailable
@@ -3807,8 +3818,8 @@ function localizedReadinessLabel(label) {
     ["No Codex snapshot yet", "还没有 Codex 兜底"],
     ["No Codex fallback yet", "还没有 Codex 兜底"],
     ["Manual Codex fallback ready", "Codex 手动兜底已就绪"],
-    ["Waiting for Claude Code data", "等待 Claude Code 数据"],
-    ["Waiting for Claude Code CLI command", "等待 Claude Code CLI 命令"],
+    ["Waiting for Claude Code data", "等待 Claude 数据"],
+    ["Waiting for Claude Code CLI command", "等待 Claude 命令"],
     ["Claude Code setup needed", "需要设置 Claude Code"],
     ["Codex manual snapshot ready", "Codex 手动兜底已就绪"],
     ["Claude Code data ready", "Claude Code 数据已就绪"]
@@ -3870,8 +3881,8 @@ function agentEmptyText(agent) {
 
   if (agent.emptyState?.reason === "waiting_for_statusline_data") {
     return {
-      detail: "从 CLI/终端项目会话打开 Claude Code，等待它发送支持的 rate_limits 字段。普通 Claude 桌面应用不会触发这里。",
-      title: "等待 Claude Code CLI 数据"
+      detail: "按设置页当前步骤，从终端启动 Claude Code 一次。",
+      title: "等待 Claude 数据"
     };
   }
 
