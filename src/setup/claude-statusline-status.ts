@@ -400,7 +400,7 @@ function buildLatestSnapshotCheck(input: {
 async function readSettings(path: string): Promise<Record<string, unknown> | undefined> {
   try {
     const raw = await readFile(path, "utf8");
-    const parsed: unknown = JSON.parse(raw);
+    const parsed: unknown = JSON.parse(stripJsonBom(raw));
     return isRecord(parsed) ? parsed : undefined;
   } catch {
     return undefined;
@@ -427,7 +427,7 @@ async function readLatestSnapshot(path: string): Promise<LatestSnapshotStatus> {
     }
 
     const raw = await readFile(path, "utf8");
-    const parsed: unknown = JSON.parse(raw);
+    const parsed: unknown = JSON.parse(stripJsonBom(raw));
 
     if (!isRecord(parsed)) {
       return {
@@ -463,6 +463,10 @@ async function readLatestSnapshot(path: string): Promise<LatestSnapshotStatus> {
 
     return { hasRateLimits: false, windowTypes: [] };
   }
+}
+
+function stripJsonBom(value: string): string {
+  return value.charCodeAt(0) === 0xfeff ? value.slice(1) : value;
 }
 
 function readRateLimitWindowTypes(

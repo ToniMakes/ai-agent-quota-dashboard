@@ -15,6 +15,8 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Settings view status and copyable commands for Codex manual snapshots
 - Settings real-data overview for first-run Codex and Claude Code setup
 - Doctor first-run checklist for real-data readiness
+- Setup refresh feedback for Codex saves, Claude Code waiting state, and manual refreshes
+- Environment overrides for Claude Code setup paths
 - Development desktop shell with a tray mini panel and optional always-on-top widget
 - Tray tooltip/menu quota summaries for the desktop shell
 - Mini and tray first-run actions that open Settings or Doctor directly
@@ -44,6 +46,11 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Dashboard watches for the first Claude Code statusline snapshot while waiting for real data
 - Copy buttons for setup commands, local path commands, and command-backed empty states, with selection fallback when clipboard access is unavailable
 - Diagnostics guide and issue template prompts for privacy-safe bug reports
+
+### Fixed
+
+- Codex manual snapshot files saved by the Settings form now refresh into the Dashboard
+- Claude Code setup status tolerates UTF-8 BOM in settings and latest snapshot JSON
 
 ### Privacy
 

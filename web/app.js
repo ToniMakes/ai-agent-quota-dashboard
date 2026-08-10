@@ -5,6 +5,7 @@ const state = {
   doctorChecks: [],
   pathsStatus: undefined,
   refreshRuns: [],
+  refreshStatus: undefined,
   resetEvents: [],
   setupStatus: undefined,
   generatedAt: undefined
@@ -22,6 +23,7 @@ const elements = {
   realDataContent: document.querySelector("#real-data-content"),
   realDataScore: document.querySelector("#real-data-score"),
   refreshButton: document.querySelector("#refresh-button"),
+  refreshStatus: document.querySelector("#refresh-status"),
   refreshRunList: document.querySelector("#refresh-run-list"),
   resetList: document.querySelector("#reset-list"),
   settingsContent: document.querySelector("#settings-content"),
@@ -34,17 +36,8 @@ const statuslineWatchIntervalMs = 10_000;
 let statuslineWatchTimer;
 let statuslineWatchInFlight = false;
 
-elements.refreshButton.addEventListener("click", async () => {
-  elements.refreshButton.disabled = true;
-  elements.refreshButton.textContent = "Refreshing";
-
-  try {
-    await fetch("/api/refresh", { method: "POST" });
-    await load();
-  } finally {
-    elements.refreshButton.disabled = false;
-    elements.refreshButton.textContent = "Refresh";
-  }
+elements.refreshButton.addEventListener("click", () => {
+  void runRefresh("Dashboard refreshed.");
 });
 
 for (const tab of elements.tabs) {
@@ -77,7 +70,7 @@ document.addEventListener("click", async (event) => {
   const refreshActionButton = target.closest("[data-refresh-action]");
 
   if (refreshActionButton instanceof HTMLButtonElement) {
-    elements.refreshButton.click();
+    await runRefresh("Checklist refresh completed.");
     return;
   }
 
@@ -195,6 +188,7 @@ async function load() {
 
 function render() {
   elements.lastRefresh.textContent = `Last refresh: ${formatRelative(state.generatedAt)}`;
+  renderRefreshStatus();
   renderAgents();
   renderResets();
   renderEvents();
@@ -206,6 +200,98 @@ function render() {
   renderSettings();
   renderPathSettings();
   scheduleStatuslineWatch();
+}
+
+async function runRefresh(successMessage) {
+  if (elements.refreshButton.disabled) {
+    return;
+  }
+
+  elements.refreshButton.disabled = true;
+  elements.refreshButton.textContent = "Refreshing";
+  state.refreshStatus = {
+    kind: "pending",
+    message: "Refreshing local quota sources."
+  };
+  renderRefreshStatus();
+
+  try {
+    const result = await postRefresh();
+    state.refreshStatus = refreshStatusFromResult(result, successMessage);
+    await load();
+  } catch (error) {
+    state.refreshStatus = {
+      detail: error instanceof Error ? error.message : String(error),
+      kind: "error",
+      message: "Refresh failed."
+    };
+    renderRefreshStatus();
+  } finally {
+    elements.refreshButton.disabled = false;
+    elements.refreshButton.textContent = "Refresh";
+  }
+}
+
+async function postRefresh() {
+  const response = await fetch("/api/refresh", { method: "POST" });
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload.error ?? "Refresh request failed.");
+  }
+
+  return payload;
+}
+
+function refreshStatusFromResult(result, successMessage) {
+  const errors = result.errors ?? [];
+  const detail = formatRefreshStatusDetail(result);
+
+  if (errors.length > 0) {
+    return {
+      detail: [detail, ...errors].filter(Boolean).join("\n"),
+      kind: "warning",
+      message: `${successMessage} ${errors.length} warning${errors.length === 1 ? "" : "s"}.`
+    };
+  }
+
+  return {
+    detail,
+    kind: "success",
+    message: successMessage
+  };
+}
+
+function formatRefreshStatusDetail(result) {
+  if (typeof result.snapshotsSaved !== "number") {
+    return "";
+  }
+
+  return formatRefreshRunDetail(result);
+}
+
+function renderRefreshStatus() {
+  if (!elements.refreshStatus) {
+    return;
+  }
+
+  const status = state.refreshStatus;
+
+  if (!status) {
+    elements.refreshStatus.textContent = "";
+    elements.refreshStatus.className = "refresh-status";
+    elements.refreshStatus.removeAttribute("title");
+    return;
+  }
+
+  elements.refreshStatus.textContent = status.message;
+  elements.refreshStatus.className = `refresh-status ${status.kind}`;
+
+  if (status.detail) {
+    elements.refreshStatus.title = status.detail;
+  } else {
+    elements.refreshStatus.removeAttribute("title");
+  }
 }
 
 function scheduleStatuslineWatch() {
@@ -247,8 +333,7 @@ async function pollClaudeStatusline() {
     state.setupStatus = setupPayload.status;
 
     if (state.setupStatus?.latestHasRateLimits) {
-      await fetch("/api/refresh", { method: "POST" });
-      await load();
+      await runRefresh("Claude Code quota data received.");
       return;
     }
 
@@ -1037,7 +1122,28 @@ function renderCodexSnapshotForm(status) {
           data-codex-snapshot-form-status
         >${escapeHtml(saveStatus?.message ?? "")}</span>
       </div>
+      ${renderCodexSnapshotPostSaveActions(saveStatus)}
     </form>
+  `;
+}
+
+function renderCodexSnapshotPostSaveActions(saveStatus) {
+  if (saveStatus?.kind !== "success") {
+    return "";
+  }
+
+  return `
+    <div class="setup-next-actions" aria-label="Codex snapshot next actions">
+      <button class="copy-button" type="button" data-open-view="dashboard">
+        Open Dashboard
+      </button>
+      <button
+        class="copy-button"
+        type="button"
+        data-open-view="doctor"
+        data-scroll-target="#doctor-checklist"
+      >Doctor Checklist</button>
+    </div>
   `;
 }
 
@@ -1095,8 +1201,12 @@ async function saveCodexSnapshotForm(form) {
 
     state.codexSnapshotSaveStatus = {
       kind: "success",
-      message: "Snapshot saved and dashboard refreshed."
+      message: codexSnapshotSaveMessage(payload.refreshResult)
     };
+    state.refreshStatus = refreshStatusFromResult(
+      payload.refreshResult ?? {},
+      "Codex snapshot saved and dashboard refreshed."
+    );
     await load();
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -1107,6 +1217,14 @@ async function saveCodexSnapshotForm(form) {
       button.textContent = "Save snapshot";
     }
   }
+}
+
+function codexSnapshotSaveMessage(refreshResult) {
+  if ((refreshResult?.errors?.length ?? 0) > 0) {
+    return "Snapshot saved; refresh completed with warnings.";
+  }
+
+  return "Snapshot saved; dashboard is ready to check.";
 }
 
 function formField(form, name) {
@@ -1248,6 +1366,7 @@ function renderSettings() {
 
   elements.settingsContent.innerHTML = `
     ${renderRealDataSteps(status)}
+    ${renderClaudeStatuslineWaitingNotice(status)}
 
     <div class="settings-list">
       ${settingsRow(
@@ -1298,6 +1417,24 @@ function renderSettings() {
         .map((field) => `<span class="badge stale">${escapeHtml(field)}</span>`)
         .join("")}</div>
       <span></span>
+    </div>
+  `;
+}
+
+function renderClaudeStatuslineWaitingNotice(status) {
+  if (status.readiness !== "waiting_for_data") {
+    return "";
+  }
+
+  return `
+    <div class="setup-watch-notice">
+      <div>
+        <strong>Waiting for first Claude Code quota payload</strong>
+        <div class="settings-detail">
+          Keep this dashboard open, then open Claude Code once. The dashboard will refresh when supported rate_limits fields arrive.
+        </div>
+      </div>
+      <span class="badge stale">watching</span>
     </div>
   `;
 }
