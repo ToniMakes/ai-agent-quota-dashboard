@@ -14,6 +14,7 @@ const state = {
 const elements = {
   footer: document.querySelector("#mini-footer"),
   grid: document.querySelector("#mini-grid"),
+  languageToggle: document.querySelector("#mini-language-toggle"),
   refreshButton: document.querySelector('[data-desktop-action="refresh"]'),
   shell: document.querySelector(".mini-shell")
 };
@@ -22,6 +23,12 @@ const refreshIntervalMs = 15_000;
 const mode = new URLSearchParams(window.location.search).get("mode") ?? "panel";
 
 elements.shell.dataset.mode = mode;
+
+elements.languageToggle?.addEventListener("click", () => {
+  currentLanguage = currentLanguage === "zh" ? "en" : "zh";
+  window.localStorage?.setItem(languageStorageKey, currentLanguage);
+  render();
+});
 
 document.addEventListener("click", async (event) => {
   const target = event.target;
@@ -136,6 +143,10 @@ function tx(english, chinese, values = {}) {
 function applyStaticTranslations() {
   document.documentElement.lang = currentLanguage === "zh" ? "zh-Hans" : "en";
   document.title = tx("AI Agent Quota Mini", "AI Agent Quota Mini");
+
+  if (elements.languageToggle instanceof HTMLButtonElement) {
+    elements.languageToggle.textContent = currentLanguage === "zh" ? "EN" : "中";
+  }
 
   for (const item of document.querySelectorAll("[data-i18n-en]")) {
     item.textContent =
