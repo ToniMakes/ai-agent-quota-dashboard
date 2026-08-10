@@ -4,6 +4,7 @@ let currentLanguage = resolveInitialLanguage();
 
 const state = {
   agents: [],
+  claudeCheckFeedback: undefined,
   codexSnapshotFormDraft: undefined,
   codexSnapshotSaveStatus: undefined,
   codexSnapshotStatus: undefined,
@@ -114,6 +115,13 @@ document.addEventListener("click", async (event) => {
 
   if (refreshActionButton instanceof HTMLButtonElement) {
     await runRefresh(tx("Checklist refresh completed.", "清单刷新完成。"));
+    return;
+  }
+
+  const claudeCheckActionButton = target.closest("[data-claude-check-action]");
+
+  if (claudeCheckActionButton instanceof HTMLButtonElement) {
+    await runClaudeStatuslineCheck();
     return;
   }
 
@@ -346,7 +354,7 @@ function render() {
 
 async function runRefresh(successMessage) {
   if (elements.refreshButton.disabled) {
-    return;
+    return undefined;
   }
 
   elements.refreshButton.disabled = true;
@@ -361,6 +369,7 @@ async function runRefresh(successMessage) {
     const result = await postRefresh();
     state.refreshStatus = refreshStatusFromResult(result, successMessage);
     await load();
+    return result;
   } catch (error) {
     state.refreshStatus = {
       detail: error instanceof Error ? error.message : String(error),
@@ -368,10 +377,49 @@ async function runRefresh(successMessage) {
       message: tx("Refresh failed.", "刷新失败。")
     };
     renderRefreshStatus();
+    return undefined;
   } finally {
     elements.refreshButton.disabled = false;
     elements.refreshButton.textContent = tx("Refresh", "刷新");
   }
+}
+
+async function runClaudeStatuslineCheck() {
+  state.claudeCheckFeedback = undefined;
+  const result = await runRefresh(
+    tx("Claude Code data check completed.", "Claude Code 数据检查完成。")
+  );
+
+  if (!result) {
+    return;
+  }
+
+  if (state.setupStatus?.latestHasRateLimits) {
+    state.claudeCheckFeedback = {
+      kind: "success",
+      message: tx(
+        "Received Claude Code quota data. Continue to verify the dashboard.",
+        "已收到 Claude Code 额度数据。继续验证仪表盘。"
+      )
+    };
+    state.refreshStatus = {
+      kind: "success",
+      message: state.claudeCheckFeedback.message
+    };
+    render();
+    return;
+  }
+
+  state.claudeCheckFeedback = {
+    detail: state.setupStatus?.latestPath,
+    kind: "warning",
+    message: tx(
+      "Checked, but no Claude Code statusline data was received. Open Claude Code in a CLI/terminal session, not the Claude desktop app, then try again.",
+      "已检查，但还没有收到 Claude Code statusline 数据。请打开 Claude Code CLI/终端会话，不是普通 Claude 桌面应用，然后再试。"
+    )
+  };
+  state.refreshStatus = state.claudeCheckFeedback;
+  render();
 }
 
 async function postRefresh() {
@@ -483,6 +531,7 @@ async function pollClaudeStatusline() {
     state.setupStatus = setupPayload.status;
 
     if (state.setupStatus?.latestHasRateLimits) {
+      state.claudeCheckFeedback = undefined;
       await runRefresh(
         tx("Claude Code quota data received.", "已收到 Claude Code 额度数据。")
       );
@@ -1228,6 +1277,20 @@ function buildInitialSetupModel(items, readiness) {
   const claude = items.find((item) => item.id === "claude-code");
   const codexComplete = codex?.state === "pass";
   const claudeComplete = claude?.state === "pass";
+  const claudeManaged = Boolean(state.setupStatus?.statusLineManagedByApp);
+  const claudeWaiting = claudeManaged && !claudeComplete;
+  const claudeWaitingNotice =
+    state.claudeCheckFeedback ??
+    (claudeWaiting
+      ? {
+          detail: state.setupStatus?.latestPath,
+          kind: "warning",
+          message: tx(
+            "Current check: no Claude Code statusline file has been received yet. Opening the Claude desktop app will not trigger this step.",
+            "当前检测结果：还没有收到 Claude Code statusline 文件。打开普通 Claude 桌面应用不会触发这一步。"
+          )
+        }
+      : undefined);
   const readinessComplete = Boolean(readiness?.ok);
   const steps = [
     {
@@ -1279,28 +1342,31 @@ function buildInitialSetupModel(items, readiness) {
     {
       actionLabel: claudeComplete
         ? tx("Review Claude", "查看 Claude")
-        : state.setupStatus?.statusLineManagedByApp
+        : claudeManaged
           ? tx(
-              "I opened Claude Code; check now",
-              "我已打开 Claude Code，检查是否收到数据"
+              "I opened Claude Code CLI; check now",
+              "我已打开 Claude Code CLI，检查是否收到数据"
             )
           : tx("Open Claude setup", "打开 Claude 设置"),
-      actionTitle: state.setupStatus?.statusLineManagedByApp
-        ? tx("Open Claude Code once", "打开 Claude Code 一次")
+      actionTitle: claudeManaged
+        ? tx(
+            "Open Claude Code CLI once",
+            "打开 Claude Code CLI 一次"
+          )
         : tx("Turn on Claude Code data capture", "启用 Claude Code 数据接入"),
-      checklist: state.setupStatus?.statusLineManagedByApp
+      checklist: claudeManaged
         ? [
             tx(
-              "Switch to the Claude Code app or terminal.",
-              "切到 Claude Code 应用或终端。"
+              "Open Claude Code from a terminal or CLI project session, not the Claude desktop app.",
+              "从终端或 CLI 项目会话打开 Claude Code，不是普通 Claude 桌面应用。"
             ),
             tx(
-              "Open any project or session and wait for the statusline to appear.",
-              "打开任意项目或会话，等状态栏出现一次。"
+              "Enter any project or session and wait until Claude Code renders its statusline once.",
+              "进入任意项目或会话，等 Claude Code 的 statusline 出现一次。"
             ),
             tx(
-              "Come back here and click the check button.",
-              "回到这里，点击检查按钮。"
+              "Come back here and click the check button. If no data arrived, AIQD will explain why.",
+              "回到这里点击检查按钮；如果没收到数据，AIQD 会说明原因。"
             )
           ]
         : [
@@ -1318,10 +1384,10 @@ function buildInitialSetupModel(items, readiness) {
             )
           ],
       complete: claudeComplete,
-      detail: state.setupStatus?.statusLineManagedByApp
+      detail: claudeManaged
         ? tx(
-            "Open Claude Code once, then come back and check whether AIQD received quota data.",
-            "打开 Claude Code 一次，然后回到这里检查 AIQD 是否收到额度数据。"
+            "Open Claude Code from a CLI/terminal session, then come back and check whether AIQD received quota data.",
+            "从 CLI/终端会话打开 Claude Code，然后回到这里检查 AIQD 是否收到额度数据。"
           )
         : tx(
             "Review the generated command, then install the local statusline hook only if you approve it.",
@@ -1335,19 +1401,20 @@ function buildInitialSetupModel(items, readiness) {
       ),
       progressDetail: claudeComplete
         ? tx("Claude Code quota data received.", "已收到 Claude Code 额度数据。")
-        : state.setupStatus?.statusLineManagedByApp
+        : claudeManaged
           ? tx(
-              "Waiting for you to open Claude Code once.",
-              "正在等待你打开 Claude Code 一次。"
+              "Waiting for Claude Code CLI statusline data.",
+              "正在等待 Claude Code CLI statusline 数据。"
             )
           : tx("Setup is not enabled yet.", "尚未启用设置。"),
-      refreshAction: state.setupStatus?.statusLineManagedByApp && !claudeComplete,
+      claudeCheckAction: claudeWaiting,
+      notice: claudeWaitingNotice,
       secondaryActionLabel:
-        state.setupStatus?.statusLineManagedByApp && !claudeComplete
+        claudeWaiting
           ? tx("Show setup details", "查看设置细节")
           : undefined,
       secondaryTarget:
-        state.setupStatus?.statusLineManagedByApp && !claudeComplete
+        claudeWaiting
           ? "#settings-content"
           : undefined,
       status: claudeComplete
@@ -1469,6 +1536,7 @@ function renderSetupCurrentAction(model) {
               )}</p>`
             : renderActionChecklist(step.checklist)
         }
+        ${allDone ? "" : renderStepNotice(step.notice)}
         <p class="outcome-note">${escapeHtml(
           allDone
             ? tx(
@@ -1492,6 +1560,18 @@ function renderSetupCurrentAction(model) {
         ${renderGuidedSecondaryAction(step)}
       </div>
     </section>
+  `;
+}
+
+function renderStepNotice(notice) {
+  if (!notice?.message) {
+    return "";
+  }
+
+  return `
+    <p class="step-notice ${escapeHtml(notice.kind ?? "info")}" ${
+      notice.detail ? `title="${escapeHtml(notice.detail)}"` : ""
+    }>${escapeHtml(notice.message)}</p>
   `;
 }
 
@@ -1555,6 +1635,7 @@ function renderGuidedStepAction(step, allDone = false, className = "button") {
     <button
       class="${className}"
       type="button"
+      ${step.claudeCheckAction ? "data-claude-check-action" : ""}
       ${step.refreshAction ? "data-refresh-action" : ""}
       ${step.target ? `data-scroll-target="${escapeHtml(step.target)}"` : ""}
     >${escapeHtml(step.actionLabel)}</button>
@@ -1592,7 +1673,7 @@ function localizedReadinessCheck(check) {
 
   if (check.agent === "claude-code" && check.status === "fail") {
     return {
-      action: "安装本地 statusline sink 后打开 Claude Code 一次，等待它发送支持的 rate_limits 字段。",
+      action: "安装本地 statusline sink 后，从 CLI/终端项目会话打开 Claude Code；普通 Claude 桌面应用不会发送这些字段。",
       message: "Claude Code 还没有收到真实额度数据。"
     };
   }
@@ -1706,16 +1787,16 @@ function buildClaudeOverviewItem() {
         ? detailParts.join(" / ")
         : localizedNextAction(status?.nextAction) ??
           tx(
-            "Install the statusline sink, then open Claude Code once.",
-            "安装 statusline sink，然后打开 Claude Code 一次。"
+            "Install the statusline sink, then open Claude Code from a CLI/terminal session.",
+            "安装 statusline sink，然后从 CLI/终端会话打开 Claude Code。"
           ),
     id: "claude-code",
     label: "Claude Code",
     nextAction:
       localizedNextAction(status?.nextAction) ??
       tx(
-        "Install the statusline sink, then open Claude Code once.",
-        "安装 statusline sink，然后打开 Claude Code 一次。"
+        "Install the statusline sink, then open Claude Code from a CLI/terminal session.",
+        "安装 statusline sink，然后从 CLI/终端会话打开 Claude Code。"
       ),
     state: ready ? "pass" : waiting ? "info" : "warn",
     status:
@@ -2358,15 +2439,15 @@ function renderClaudeStatuslineWaitingNotice(status) {
       <div>
         <strong>${escapeHtml(
           tx(
-            "Waiting for first Claude Code quota payload",
-            "等待第一份 Claude Code 额度数据"
+            "Waiting for first Claude Code CLI quota payload",
+            "等待第一份 Claude Code CLI 额度数据"
           )
         )}</strong>
         <div class="settings-detail">
           ${escapeHtml(
             tx(
-              "Keep this dashboard open, then open Claude Code once. The dashboard will refresh when supported rate_limits fields arrive.",
-              "保持仪表盘打开，然后打开 Claude Code 一次。支持的 rate_limits 字段到达后，仪表盘会自动刷新。"
+              "Keep this dashboard open, then open Claude Code from a CLI/terminal session. The Claude desktop app does not send these statusline fields.",
+              "保持仪表盘打开，然后从 CLI/终端会话打开 Claude Code。普通 Claude 桌面应用不会发送这些 statusline 字段。"
             )
           )}
         </div>
@@ -2424,8 +2505,8 @@ function renderRealDataSteps(status) {
             "已经收到新鲜的 Claude Code rate limits。"
           )
         : tx(
-            "Open Claude Code, then refresh the dashboard or run Doctor.",
-            "打开 Claude Code，然后刷新仪表盘或运行诊断。"
+            "Open Claude Code from a CLI/terminal session, then refresh the dashboard or run Doctor.",
+            "从 CLI/终端会话打开 Claude Code，然后刷新仪表盘或运行诊断。"
           ),
       command: "node dist/index.js doctor",
       state: status.readiness === "ready" ? "pass" : "info"
@@ -3052,11 +3133,11 @@ function localizedNextAction(action) {
     ],
     [
       "Install the statusline sink",
-      "安装 statusline sink，然后打开 Claude Code 一次。"
+      "安装 statusline sink，然后从 CLI/终端项目会话打开 Claude Code。"
     ],
     [
       "Open Claude Code",
-      "打开 Claude Code，然后刷新仪表盘或运行诊断。"
+      "从 CLI/终端项目会话打开 Claude Code；普通 Claude 桌面应用不会发送这些字段。"
     ],
     [
       "Run Doctor",
@@ -3085,8 +3166,8 @@ function agentEmptyText(agent) {
 
   if (agent.emptyState?.reason === "waiting_for_statusline_data") {
     return {
-      detail: "打开 Claude Code 一次，等待它发送支持的 rate_limits 字段。",
-      title: "等待 Claude Code 数据"
+      detail: "从 CLI/终端项目会话打开 Claude Code，等待它发送支持的 rate_limits 字段。普通 Claude 桌面应用不会触发这里。",
+      title: "等待 Claude Code CLI 数据"
     };
   }
 
