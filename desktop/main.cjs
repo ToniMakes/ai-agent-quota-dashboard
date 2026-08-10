@@ -138,8 +138,8 @@ function backendArgs(port) {
 }
 
 function registerIpc() {
-  ipcMain.handle("open-dashboard", () => {
-    openDashboardWindow();
+  ipcMain.handle("open-dashboard", (_event, view) => {
+    openDashboardWindow(view);
     panelWindow?.hide();
   });
 
@@ -190,6 +190,7 @@ function updateTrayMenu() {
       { label: "Open Mini Panel", click: togglePanelWindow },
       { label: "Toggle Desktop Widget", click: toggleWidgetWindow },
       { label: "Open Dashboard", click: openDashboardWindow },
+      { label: "Open Settings", click: () => openDashboardWindow("settings") },
       { type: "separator" },
       {
         label: "Quit",
@@ -275,7 +276,7 @@ function toggleWidgetWindow() {
   updateTrayStatus();
 }
 
-function openDashboardWindow() {
+function openDashboardWindow(view) {
   if (!dashboardWindow) {
     dashboardWindow = new BrowserWindow({
       width: 1180,
@@ -294,10 +295,20 @@ function openDashboardWindow() {
     });
   }
 
-  dashboardWindow.loadURL(baseUrl);
+  dashboardWindow.loadURL(dashboardUrl(view));
   dashboardWindow.show();
   dashboardWindow.focus();
   updateTrayStatus();
+}
+
+function dashboardUrl(view) {
+  const allowedViews = new Set(["dashboard", "doctor", "settings"]);
+
+  if (!allowedViews.has(view)) {
+    return baseUrl;
+  }
+
+  return `${baseUrl}/?view=${encodeURIComponent(view)}`;
 }
 
 function secureWebPreferences() {

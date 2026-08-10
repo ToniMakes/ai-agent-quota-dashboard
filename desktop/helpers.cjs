@@ -17,6 +17,18 @@ function summarizeAgent(agent, options = {}) {
       return `${name}: waiting`;
     }
 
+    if (agent.emptyState?.reason === "adapter_error") {
+      return `${name}: check`;
+    }
+
+    if (
+      agent.emptyState?.reason === "no_readable_paths" ||
+      agent.emptyState?.reason === "no_supported_source" ||
+      agent.emptyState?.reason === "no_quota_data"
+    ) {
+      return `${name}: setup`;
+    }
+
     return `${name}: --`;
   }
 
