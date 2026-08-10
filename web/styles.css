@@ -304,8 +304,13 @@ h2 {
   background: var(--stale);
 }
 
-.remaining {
+.remaining-wrap {
+  display: inline-grid;
+  gap: 3px;
   margin-bottom: 8px;
+}
+
+.remaining {
   font-size: 2.85rem;
   font-weight: 760;
   line-height: 1;
@@ -316,6 +321,14 @@ h2 {
   color: var(--muted);
   font-size: 1rem;
   font-weight: 700;
+}
+
+.remaining-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .quota-lines,
@@ -541,6 +554,7 @@ h2 {
   justify-items: end;
 }
 
+.quota-used,
 .quota-reset,
 .reset-absolute,
 .reset-unavailable,

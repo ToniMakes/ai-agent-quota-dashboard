@@ -664,7 +664,18 @@ function renderAgentCard(agent) {
       </div>
 
       <div>
-        <div class="remaining">${remaining}</div>
+        <div
+          class="remaining-wrap"
+          title="${escapeHtml(
+            tx(
+              "AIQD shows remaining quota. Some official pages show used quota.",
+              "AIQD 显示剩余额度；有些官方页面显示已用额度。"
+            )
+          )}"
+        >
+          <div class="remaining">${remaining}</div>
+          <div class="remaining-label">${escapeHtml(tx("remaining", "剩余"))}</div>
+        </div>
         <div class="meter" aria-hidden="true">
           <div class="meter-fill ${status}" style="--value: ${meterValue}%"></div>
         </div>
@@ -749,7 +760,10 @@ function renderSnapshotLines(agent) {
         <div class="quota-line">
           <span class="label">${escapeHtml(windowLabel(snapshot.windowType))}</span>
           <span class="value quota-value">
-            <span>${formatRemaining(snapshot)}</span>
+            <span class="quota-primary">${escapeHtml(
+              tx("Remaining", "剩余")
+            )} ${formatRemaining(snapshot)}</span>
+            ${renderUsedValue(snapshot)}
             <span class="quota-reset">${escapeHtml(
               tx("reported reset", "报告 reset")
             )} ${renderResetValue(snapshot.resetAt)}</span>
@@ -758,6 +772,16 @@ function renderSnapshotLines(agent) {
       `;
     })
     .join("");
+}
+
+function renderUsedValue(snapshot) {
+  const used = formatUsed(snapshot);
+
+  if (!used) {
+    return "";
+  }
+
+  return `<span class="quota-used">${escapeHtml(tx("used", "已用"))} ${used}</span>`;
 }
 
 function renderResets() {
@@ -3919,6 +3943,22 @@ function formatRemaining(snapshot) {
   }
 
   return `--<span>${escapeHtml(snapshot.unit)}</span>`;
+}
+
+function formatUsed(snapshot) {
+  if (!snapshot) {
+    return "";
+  }
+
+  if (typeof snapshot.usedPercent === "number") {
+    return `${Math.round(snapshot.usedPercent)}%`;
+  }
+
+  if (typeof snapshot.used === "number") {
+    return `${compactNumber(snapshot.used)} ${escapeHtml(snapshot.unit ?? "")}`.trim();
+  }
+
+  return "";
 }
 
 function formatRelative(value) {
