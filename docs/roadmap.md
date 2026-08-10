@@ -1,33 +1,54 @@
 # Roadmap
 
-## v0.1
+Last updated: 2026-08-11
+
+## Current Milestone: v0.1 Developer Preview
+
+The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and Claude Code quota experience trustworthy enough for early public testers, without expanding the provider surface.
+
+### Done
 
 - Codex and Claude Code adapter boundaries
 - Fixture-driven parser tests
-- Claude Code statusline rate limit parser
-- Claude Code statusline setup helper
-- Conservative Codex structured quota snapshot parser
-- Reset event timeline for changed reset anchors
-- Localhost Web Dashboard
-- Read-only Settings view for Claude Code statusline onboarding
-- SQLite snapshot storage
-- Doctor view
-- Source confidence labels
-- Low quota and stale state logic
+- Claude Code official statusline `rate_limits` parser and local sink
+- Claude Code setup helper, readiness checks, and first-data waiting states
+- Codex structured quota parser and automatic local CLI `rate_limits` detection
+- Manual Codex visible-status fallback with expiry at reported reset time
+- SQLite snapshot, reset event, and refresh run storage
+- Localhost Web Dashboard, Doctor, Settings, reset timeline, and refresh history
+- Source confidence, stale state, low quota state, and reported-reset labels
+- JSON and CSV export with private identifiers and raw source references excluded
+- Strict real-data readiness shared by CLI, Settings, tray, and mini surfaces
+- Electron desktop shell with tray mini panel and always-on-top widget
+- Safe AIQD-only global shortcuts for mini panel, refresh, and widget
+- One-time first-run desktop guide with deep links to exact setup or Doctor sections
+- Chinese/English language switching in the main dashboard and mini surfaces
+- CI on Windows and Ubuntu with Node 24
+
+### Remaining Before First Public Developer Preview
+
+- Fresh-machine real-data trial from clone to Codex + Claude Code readiness
+- Beginner onboarding copy pass for Windows, macOS, and Linux
+- Release screenshots or short GIFs for dashboard, mini panel, widget, and setup flow
+- Decide distribution shape: source-only preview, zip artifact, or packaged Electron build
+- Update release notes and tag the first preview after the release checklist passes
 
 ## v0.2
 
-- Real Codex quota source discovery once a stable structured source is confirmed
-- JSON and CSV export (initial normalized snapshot export in Unreleased)
-- Setup flow for local paths and statusline sources (initial local path config in Unreleased)
+- Packaged desktop build and installer story
+- System notification for low quota, stale data, and refresh warnings
+- Simple historical usage trend from stored snapshots and refresh runs
+- Optional forecast based on observed usage habits
+- More polished setup wizard and troubleshooting copy
+- Local API documentation for dashboard/CLI integration
 
 ## Later
 
-- Usage forecast based on historical habits
-- Gemini CLI
-- Cursor local connector
-- macOS menu bar or Windows tray shell
+- Gemini CLI, only if reliable local or official quota data is available
+- Cursor local connector, only if privacy boundaries stay narrow
 - VS Code sidebar
+- macOS menu bar polish beyond the current Electron tray surface
+- Multi-device sync, only after the local-first personal MVP is trusted
 
 ## Non-goals
 
@@ -35,4 +56,5 @@
 - Automatic login
 - Hidden API scraping
 - Multi-account limit avoidance
+- Prompt, response, transcript, or source-code upload
 - Team management in the personal MVP

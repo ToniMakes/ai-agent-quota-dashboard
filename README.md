@@ -11,13 +11,16 @@ Unlike general token or cost trackers, this project is quota-first. It focuses o
 
 ## Status
 
-This repository is at the v0.1 scaffold stage. The current app includes:
+This repository is at the v0.1 developer-preview stage. The core MVP is implemented enough for local real-data dogfooding, but packaging, release screenshots, and beginner-facing distribution docs are still in progress.
+
+See [docs/status.md](docs/status.md) for the current project snapshot. The current app includes:
 
 - Local Node.js service bound to `127.0.0.1`
 - SQLite storage using Node's built-in `node:sqlite`
 - Codex and Claude Code adapter boundaries
 - Fixture-driven parsers for Claude Code statusline rate limits
 - A conservative Codex parser for explicit structured quota snapshots
+- Automatic Codex CLI `rate_limits` detection when supported structured local events are available
 - Manual Codex snapshot command and Settings form for visible `/status` or Usage values
 - Settings view status for Codex CLI quota detection with a manual fallback
 - Settings real-data overview for first-run Codex and Claude Code setup
@@ -29,6 +32,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Reset event timeline for changed reset anchors and sharp replenishment
 - Dashboard reset display with relative and absolute reported reset times
 - Dashboard data freshness display with observed timestamps and freshness reasons per agent
+- Dashboard labels clarify remaining quota versus official pages that may show used quota
 - Dashboard and Doctor views
 - Mini panel page for tray-sized quota checks
 - Electron desktop shell with a tray mini panel and optional always-on-top widget
@@ -47,6 +51,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Clickable mini footer actions for refresh warnings and setup guidance
 - Mini and tray first-run actions that open Settings or Doctor directly
 - Mini first-run actions deep-link to the exact Settings or Doctor section
+- Chinese/English language switching in the main dashboard and mini surfaces
 - Dashboard guidance for missing quota data
 - CLI `doctor` command for one-shot local diagnostics
 - CLI export command for normalized JSON/CSV output

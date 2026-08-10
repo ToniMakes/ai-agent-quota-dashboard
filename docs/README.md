@@ -8,3 +8,4 @@
 - [Roadmap](roadmap.md)
 - [Release checklist](release-checklist.md)
 - [Product and technical brief](brief.md)
+- [Project status](status.md)

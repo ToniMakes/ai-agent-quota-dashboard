@@ -94,6 +94,7 @@ In the desktop app, check:
 
 - Dashboard shows Codex and/or Claude Code quota rows.
 - Mini panel shows the most constrained remaining quota and reported reset.
+- Mini panel and always-on-top widget can switch between Chinese and English with the shared language preference.
 - Doctor first-run checklist shows quota sources ready or gives a specific next action.
 - Refresh History has a recent run with snapshot and check counts.
 

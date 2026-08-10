@@ -1,7 +1,30 @@
 # AI Agent Quota Dashboard 产品与技术 Brief
 
-更新时间：2026-08-09  
-当前讨论目标：构思一个小而美的本地优先应用，监控用户在多个外部 AI coding agents 中的 token/usage/quota 剩余额度，并在一个页面里清楚展示。
+更新时间：2026-08-11
+当前阶段：v0.1 developer preview / 真实数据 dogfooding。核心 MVP 已经从构思进入可运行实现：本地 Web Dashboard、Doctor、Settings、Codex/Claude Code 真实额度来源、桌面托盘小面板、桌面置顶小组件、严格 readiness 检查和中英双语 UI 都已落地。下一步重点是发布前体验打磨，而不是扩展大量 provider。
+
+当前状态总览见：[docs/status.md](status.md)。
+
+## 0. 当前实现快照
+
+已实现：
+
+- TypeScript/Node 本地服务，默认绑定 `127.0.0.1`
+- SQLite 存储 quota snapshots、reset events、refresh runs
+- Codex：优先自动读取本地 CLI `rate_limits` 结构化事件；没有可靠自动来源时，保留显式手动兜底
+- Claude Code：通过官方 statusline `rate_limits` 写入本地 sanitized snapshot
+- Dashboard / Doctor / Settings / Refresh History / Export
+- 桌面托盘 mini panel 和 always-on-top widget
+- 主 dashboard 与 mini surfaces 的中英双语切换
+- `trial:preflight` / `trial:ready` 严格真实数据检查
+- Windows + Ubuntu GitHub Actions CI
+
+仍需在公开宣传前完成：
+
+- 新手初次配置文案继续压缩和跨系统适配
+- 完整 fresh-machine 真实数据试跑
+- 截图/GIF 和 README 发布说明
+- 桌面打包或明确 source-only developer preview 分发方式
 
 ## 1. 一句话定位
 
@@ -98,15 +121,17 @@ v0.5: 浏览器插件读取网页可见 quota，但只做 opt-in
 - 跨平台比原生菜单栏快
 - UI 可以做得精致
 - 本地优先，信任感强
-- 后续可以把同一套 local API 接到 macOS menu bar、Windows tray、VS Code sidebar
+- 已经可以把同一套 local API 接到 Electron tray mini panel 和桌面置顶 widget
+- 后续再补打包、签名、自动启动和原生平台 polish
 
-后续形态：
+当前/后续形态：
 
-- macOS menu bar
-- Windows system tray
-- VS Code sidebar
-- CLI command
-- local JSON/CSV export
+- localhost Web Dashboard：已实现
+- Electron tray mini panel / always-on-top widget：已实现开发壳
+- CLI command / Doctor / export：已实现
+- local JSON/CSV export：已实现
+- macOS menu bar 原生 polish：后续
+- VS Code sidebar：后续
 
 ## 5. 第一屏 UI 原则
 
@@ -721,37 +746,41 @@ GitHub: https://github.com/ofershap/cursor-usage-tracker
 
 ## 13. MVP 功能清单
 
-P0:
+当前已完成：
 
-- 检测 Claude Code 数据路径
-- 检测 Codex 数据路径
-- 解析 Claude Code 本地 usage logs
-- 解析 Codex session logs
+- Codex CLI `rate_limits` 自动检测和手动 visible-status 兜底
+- Claude Code official statusline `rate_limits` 接入
 - 读取/保存 quota snapshots
 - Dashboard 首页
-- Agent detail 页面
 - Doctor 页面
+- Settings 首次接入引导
 - SQLite 本地存储
 - 数据可信度标签
 - 手动刷新
 - stale 标记
 - reset countdown
 - low quota warning
+- Refresh History
+- JSON/CSV export
+- Desktop tray mini panel
+- Always-on-top widget
+- 中英双语 UI
 
-P1:
+发布前继续打磨：
 
-- setup wizard
-- statusline integration helper
+- 新手 onboarding 文案和跨系统终端指引
+- fresh-machine 真实数据试跑
+- 截图/GIF 和 README release 说明
+- 打包/分发方式
+- release checklist
+
+v0.2 再考虑：
+
 - system notification
-- CSV/JSON export
-- light/dark mode
-- cost estimate
+- 简单趋势/预测
+- Agent detail 页面
 - local API 文档
-
-P2:
-
-- macOS menu bar
-- Windows tray
+- macOS menu bar 原生 polish
 - VS Code sidebar
 - Gemini CLI
 - Cursor local/enterprise connector
@@ -921,27 +950,29 @@ Troubleshooting actions
 
 ## 17. 推荐下一步
 
-新窗口可以从以下任务开始：
+当前最值得做的不是继续加 provider，而是把已经能跑通的真实数据体验打磨到可以给早期用户试用：
 
-1. 新建项目目录和 README
-2. 选择技术栈：推荐 TypeScript + local Web dashboard + SQLite
-3. 设计数据模型：QuotaSnapshot、UsageEvent、AgentSource
-4. 写 Claude Code adapter 的路径发现和 fixture parser
-5. 写 Codex adapter 的路径发现和 fixture parser
-6. 做一个静态 dashboard mock
-7. 接 SQLite
-8. 做 doctor endpoint
-9. 做 source confidence labels
-10. 做低额度提醒逻辑
+1. 用一个全新目录从 `git clone` 开始跑完整 fresh-machine 试用
+2. 验证 `npm install`、`npm test`、`npm run desktop:local`、`npm run trial:ready`
+3. 记录新手在 Codex / Claude Code 初次接入时卡住的位置
+4. 压缩 Settings 里的引导文案，只突出“现在做什么、复制哪里、结果是什么”
+5. 为 Windows、macOS、Linux 分别确认终端命令和 Claude Code 打开方式
+6. 准备 README 截图/GIF：主 dashboard、小面板、桌面 widget、Settings 首次接入
+7. 决定第一版分发方式：source-only developer preview、zip artifact，或 Electron packaged build
+8. 更新 `CHANGELOG.md` release entry，按 `docs/release-checklist.md` 验证后打 tag
+9. 再考虑低额度系统通知和简单趋势/预测
+10. 只有当 Codex + Claude Code 体验足够可信后，再评估 Gemini CLI / Cursor
 
 ## 18. 给新窗口的启动 Prompt
 
 可以把下面这段直接发给新窗口：
 
 ```text
-我想继续做一个 AI Agent Quota Dashboard 项目。产品定位是 local-first、quota-first、小而美，用来显示用户本机 Codex、Claude Code 等 AI coding agents 的剩余额度、reset 时间、用量趋势和数据可信度。
+我想继续开发 AI Agent Quota Dashboard。项目已经不是从零 scaffold 阶段，而是 v0.1 developer preview / 真实数据 dogfooding 阶段。
 
-请先阅读当前目录里的 ai-agent-quota-dashboard-brief.md，然后帮我新建一个 MVP 项目。第一版只支持 Claude Code + Codex，不碰浏览器 cookie、不收集 prompt/response、不做多设备同步。技术栈优先 TypeScript + local Web dashboard + SQLite。请先给出项目结构，然后实现最小可运行版本：本地服务、SQLite schema、mock adapter、dashboard 首页、doctor 页面。
+请先阅读 docs/status.md、docs/roadmap.md、README.md、CHANGELOG.md 和 docs/brief.md。当前已经实现 TypeScript/Node 本地服务、SQLite、Codex CLI rate_limits 自动检测、Claude Code statusline rate_limits、Dashboard/Doctor/Settings、Electron tray mini panel、always-on-top widget、严格 trial readiness 和中英双语 UI。
+
+下一步请不要扩展新 provider，先围绕“早期用户能否顺利完成真实数据体验”继续打磨：检查文档是否最新，跑 npm test / desktop smoke / trial readiness，修复新手引导、跨系统命令、UI 文案、截图和 release checklist。隐私边界保持不变：不读 cookie、不模拟登录、不上传 prompt/response/source code、不调用隐藏接口。
 ```
 
 ## 19. 核心产品原则
@@ -954,4 +985,3 @@ Troubleshooting actions
 - 每个 provider 独立 adapter
 - 先做 Claude Code + Codex
 - 先验证真实痛点，再扩展 provider
-
