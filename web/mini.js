@@ -282,34 +282,16 @@ function footerState() {
     };
   }
 
-  if (hasClaudeWaitingState(state.agents)) {
-    if (latestRun && latestRun.snapshotsSaved > 0) {
-      return {
-        kind: "info",
-        text: `${snapshotCountText(latestRun.snapshotsSaved)} - Claude waiting`,
-        title: refreshRunTitle(latestRun)
-      };
-    }
-
-    return {
-      action: state.setupStatus?.statusLineManagedByApp ? undefined : "settings",
-      ariaLabel: "Open Settings for Claude Code setup",
-      kind: "info",
-      text: state.setupStatus?.statusLineManagedByApp
-        ? "Watching Claude Code for rate_limits"
-        : "Claude Code setup needed",
-      title: latestRun ? refreshRunTitle(latestRun) : undefined
-    };
-  }
-
   if (needsRealDataSetup(state.agents)) {
+    const setup = setupProgress(state.agents);
+
     if (latestRun && latestRun.snapshotsSaved > 0) {
       return {
         action: "settings",
         ariaLabel: "Open Settings to finish real data setup",
         kind: "info",
-        text: `${snapshotCountText(latestRun.snapshotsSaved)} - setup left`,
-        title: refreshRunTitle(latestRun)
+        text: `${setup.ready}/${setup.total} ready - finish ${setup.missingText}`,
+        title: [setup.title, refreshRunTitle(latestRun)].join("\n")
       };
     }
 
@@ -317,7 +299,19 @@ function footerState() {
       action: "settings",
       ariaLabel: "Open Settings to set up real data",
       kind: "info",
-      text: "Open Settings to set up real data",
+      text: `${setup.ready}/${setup.total} ready - finish ${setup.missingText}`,
+      title: latestRun ? [setup.title, refreshRunTitle(latestRun)].join("\n") : setup.title
+    };
+  }
+
+  if (hasClaudeWaitingState(state.agents)) {
+    return {
+      action: state.setupStatus?.statusLineManagedByApp ? undefined : "settings",
+      ariaLabel: "Open Settings for Claude Code setup",
+      kind: "info",
+      text: state.setupStatus?.statusLineManagedByApp
+        ? "Watching Claude Code for rate_limits"
+        : "Claude Code setup needed",
       title: latestRun ? refreshRunTitle(latestRun) : undefined
     };
   }
@@ -439,6 +433,40 @@ function needsRealDataSetup(agents) {
   return agents.some((agent) => !agent.primarySnapshot);
 }
 
+function setupProgress(agents) {
+  const setupAgents = sortAgents(agents).filter((agent) =>
+    ["codex", "claude-code"].includes(agent.agent)
+  );
+  const missing = setupAgents.filter((agent) => !agent.primarySnapshot);
+  const total = setupAgents.length || agents.length;
+  const ready = Math.max(total - missing.length, 0);
+  const missingNames = missing.map((agent) => setupAgentName(agent)).filter(Boolean);
+  const missingText = missingNames.length > 0 ? missingNames.join(", ") : "real data";
+
+  return {
+    missingText,
+    ready,
+    title: `${ready}/${total} quota sources ready. Missing: ${missingText}.`,
+    total
+  };
+}
+
+function setupAgentName(agent) {
+  if (agent.agent === "codex") {
+    return "Codex";
+  }
+
+  if (agent.agent === "claude-code") {
+    if (agent.emptyState?.reason === "waiting_for_statusline_data") {
+      return "Claude data";
+    }
+
+    return "Claude";
+  }
+
+  return agent.shortName ?? agent.displayName ?? agent.agent;
+}
+
 function emptyStateGuidance(agent) {
   if (agent.emptyState?.reason === "waiting_for_statusline_data") {
     return {
@@ -446,7 +474,7 @@ function emptyStateGuidance(agent) {
       actionLabel: "Settings",
       detail: "Open Claude Code once",
       label: "waiting",
-      title: "Waiting for Claude Code"
+      title: "Claude listening"
     };
   }
 
@@ -463,20 +491,20 @@ function emptyStateGuidance(agent) {
   if (agent.agent === "codex") {
     return {
       action: "settings",
-      actionLabel: "Settings",
-      detail: "Save Codex /status",
-      label: "setup needed",
-      title: "Codex needs setup"
+      actionLabel: "Save /status",
+      detail: "Paste visible quota + reset",
+      label: "setup 1",
+      title: "Codex /status needed"
     };
   }
 
   if (agent.agent === "claude-code") {
     return {
       action: "settings",
-      actionLabel: "Settings",
-      detail: "Set up statusline",
-      label: "setup needed",
-      title: "Claude needs setup"
+      actionLabel: "Install setup",
+      detail: "Add local statusline sink",
+      label: "setup 2",
+      title: "Claude statusline needed"
     };
   }
 

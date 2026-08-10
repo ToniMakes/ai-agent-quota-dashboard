@@ -21,6 +21,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Tray tooltip/menu quota summaries for the desktop shell
 - Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
 - Mini footer summary for the latest refresh result and warnings
+- Mini setup progress text for first-run Codex and Claude Code onboarding
 - Clickable mini footer actions for refresh warnings and setup guidance
 - Mini and tray first-run actions that open Settings or Doctor directly
 - Compact mini-surface quota rows with manual refresh and reset/observed summaries

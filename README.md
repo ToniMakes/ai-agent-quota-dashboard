@@ -32,6 +32,7 @@ This repository is at the v0.1 scaffold stage. The current app includes:
 - Electron desktop shell with a tray mini panel and optional always-on-top widget
 - Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
 - Mini footer summary for the latest refresh result and warnings
+- Mini setup progress text for first-run Codex and Claude Code onboarding
 - Clickable mini footer actions for refresh warnings and setup guidance
 - Mini and tray first-run actions that open Settings or Doctor directly
 - Dashboard guidance for missing quota data
