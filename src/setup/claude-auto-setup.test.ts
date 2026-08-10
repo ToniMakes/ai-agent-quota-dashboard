@@ -7,7 +7,51 @@ import {
 import type { ClaudeStatuslineSetupStatus } from "./claude-statusline-status.js";
 
 describe("runClaudeAutoSetup", () => {
-  it("installs Claude Code with WinGet and writes the AIQD statusline", async () => {
+  it("connects existing Claude Code by default without running an installer", async () => {
+    const commands: Array<{ command: string; args: string[] }> = [];
+    const setupArgv: string[][] = [];
+    const statuses = [
+      status({
+        claudeCliAvailable: false,
+        statusLineConfigured: false,
+        statusLineManagedByApp: false
+      }),
+      status({
+        claudeCliAvailable: false,
+        statusLineConfigured: false,
+        statusLineManagedByApp: false
+      }),
+      status({
+        claudeCliAvailable: false,
+        statusLineConfigured: true,
+        statusLineManagedByApp: true
+      })
+    ];
+    const result = await runClaudeAutoSetup({
+      entryPointUrl: "file:///app/dist/index.js",
+      platform: "win32",
+      runCommand: recordCommand(commands),
+      setupStatusline: async (argv) => {
+        setupArgv.push(argv);
+        return {
+          command: "powershell -File claude-statusline.ps1",
+          settingsPath: "C:\\Users\\hitomi\\.claude\\settings.json",
+          shimPath: "C:\\Users\\hitomi\\.aiqd\\claude-statusline.ps1"
+        };
+      },
+      statusLookup: async () => statuses.shift() ?? statuses.at(-1)!
+    });
+
+    assert.equal(commands.length, 0);
+    assert.deepEqual(setupArgv[0], ["--write"]);
+    assert.equal(result.result.ok, true);
+    assert.equal(result.result.needsUserAction, true);
+    assert.equal(result.result.steps[0]?.state, "warn");
+    assert.equal(result.result.steps[1]?.state, "pass");
+    assert.match(result.result.nextAction, /cannot see the claude command/);
+  });
+
+  it("installs Claude Code with WinGet only when explicitly requested", async () => {
     const commands: Array<{ command: string; args: string[] }> = [];
     const setupArgv: string[][] = [];
     const statuses = [
@@ -29,6 +73,7 @@ describe("runClaudeAutoSetup", () => {
     ];
     const result = await runClaudeAutoSetup({
       entryPointUrl: "file:///app/dist/index.js",
+      installIfMissing: true,
       platform: "win32",
       runCommand: recordCommand(commands),
       setupStatusline: async (argv) => {

@@ -244,7 +244,7 @@ function resolveReadiness(input: {
       nextAction:
         input.status.claudeCliAvailable
           ? "Open Claude Code from a terminal, let the statusline render once, then refresh this dashboard."
-          : "Install Claude Code CLI, then open a terminal in a project and run claude."
+          : "Open Claude Code from your usual terminal. If no terminal has the claude command, install Claude Code CLI first."
     };
   }
 
@@ -298,11 +298,12 @@ function buildClaudeCliCheck(
   }
 
   return {
-    action: status.claudeCliInstallCommand,
+    action:
+      "Open Claude Code from your usual terminal. If no terminal has the claude command, install Claude Code CLI first.",
     detail: status.claudeCliDocsUrl,
     id: "claude-cli",
     label: "Claude Code CLI",
-    message: "claude command not found on PATH",
+    message: "claude command not found on this PATH",
     status: "warn"
   };
 }

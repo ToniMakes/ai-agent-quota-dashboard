@@ -27,6 +27,7 @@ export type ClaudeAutoSetupResult = {
 
 export type ClaudeAutoSetupOptions = {
   entryPointUrl: string;
+  installIfMissing?: boolean;
   platform?: NodeJS.Platform;
   runCommand?: CommandRunner;
   setupStatusline?: (argv: string[]) => Promise<{
@@ -81,6 +82,7 @@ export async function runClaudeAutoSetup(
 
   let status = await statusLookup();
   const installStep = await maybeInstallClaudeCli({
+    installIfMissing: options.installIfMissing === true,
     platform,
     runCommand,
     status
@@ -104,6 +106,7 @@ export async function runClaudeAutoSetup(
 }
 
 async function maybeInstallClaudeCli(options: {
+  installIfMissing: boolean;
   platform: NodeJS.Platform;
   runCommand: CommandRunner;
   status: ClaudeStatuslineSetupStatus;
@@ -114,6 +117,18 @@ async function maybeInstallClaudeCli(options: {
       label: "Claude Code CLI",
       message: "claude command is already available.",
       state: "skip"
+    };
+  }
+
+  if (!options.installIfMissing) {
+    return {
+      detail:
+        "AIQD did not install anything. If Claude Code already works in your terminal, open it once from there or restart AIQD so PATH changes are visible.",
+      id: "claude-cli",
+      label: "Claude Code CLI",
+      message:
+        "claude command was not found on PATH; installation was not run.",
+      state: "warn"
     };
   }
 
@@ -266,6 +281,9 @@ function buildResult(
     needsUserAction: failed || warning || status.readiness !== "ready",
     nextAction: nextActionForStatus({
       failed,
+      cliMissingWarning: steps.some(
+        (step) => step.id === "claude-cli" && step.state === "warn"
+      ),
       status,
       warning
     }),
@@ -274,12 +292,17 @@ function buildResult(
 }
 
 function nextActionForStatus(input: {
+  cliMissingWarning: boolean;
   failed: boolean;
   status: ClaudeStatuslineSetupStatus;
   warning: boolean;
 }): string {
   if (input.failed) {
     return "Review the failed step, then try again.";
+  }
+
+  if (input.cliMissingWarning) {
+    return "AIQD finished the local statusline setup, but this running process cannot see the claude command yet. If Claude Code works in your terminal, open it there once and then restart AIQD if needed.";
   }
 
   if (input.warning) {
