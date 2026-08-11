@@ -42,6 +42,18 @@ Use this checklist before tagging a release.
 8. Confirm README and release notes describe the installer path first and source mode as a developer fallback.
 9. Update release notes from `CHANGELOG.md`, complete this checklist, verify CI on `main`, and tag the preview.
 
+## Maintainer Installed-App Trial
+
+- [x] Silent NSIS installer run exits `0`
+- [x] Desktop shortcut points to the installed packaged executable
+- [x] Start menu shortcut points to the installed packaged executable
+- [x] Desktop shortcut launches the installed packaged app, not source mode
+- [x] Installed backend serves on `127.0.0.1:4317`
+- [x] Installed `/api/trial-readiness` reports Codex and Claude Code ready from real local data
+- [x] Installed dashboard browser smoke shows Codex and Claude Code quota cards
+- [x] Installed mini panel browser smoke shows compact secondary-window rows
+- [ ] True clean Windows user or VM trial without pre-existing AIQD, Codex, or Claude Code state
+
 ## Installer Releases
 
 - [ ] Installer startup option is explicit and defaults to off for the first packaged release

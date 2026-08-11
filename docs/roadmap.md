@@ -33,7 +33,7 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 
 ### Remaining Before First Public Preview
 
-- Fresh-machine real-data trial from installer to Codex + Claude Code readiness
+- True clean Windows user or VM real-data trial from installer to Codex + Claude Code readiness
 - Signing decision for the Windows installer, or explicit unsigned-preview warning in release notes
 - Developer fallback trial from clone to Codex + Claude Code readiness
 - Beginner onboarding copy pass for Windows, macOS, and Linux
