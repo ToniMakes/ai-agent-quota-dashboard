@@ -2,9 +2,9 @@
 
 Last updated: 2026-08-11
 
-## Current Milestone: v0.1 Developer Preview
+## Current Milestone: v0.1 Desktop Preview
 
-The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and Claude Code quota experience trustworthy enough for early public testers, without expanding the provider surface.
+The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and Claude Code quota experience trustworthy enough for early public testers, with an installer-first path for normal users and source mode retained for developers.
 
 ### Done
 
@@ -22,30 +22,36 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 - Electron desktop shell with tray mini panel and always-on-top widget
 - Safe AIQD-only global shortcuts for mini panel, refresh, and widget
 - One-time first-run desktop guide with deep links to exact setup or Doctor sections
-- Chinese/English language switching in the main dashboard and mini surfaces
+- English-by-default Chinese/English language switching in the main dashboard and mini surfaces
+- Beginner Claude Code setup flow that separates `Install Claude Code CLI` from `Connect Claude data`
+- Technical Claude statusline commands hidden behind advanced details in the normal setup flow
 - CI on Windows and Ubuntu with Node 24
 
-### Remaining Before First Public Developer Preview
+### Remaining Before First Public Preview
 
-- Fresh-machine real-data trial from clone to Codex + Claude Code readiness
+- Packaged desktop installer or equivalent release artifact for Windows
+- Fresh-machine real-data trial from installer to Codex + Claude Code readiness
+- Developer fallback trial from clone to Codex + Claude Code readiness
 - Beginner onboarding copy pass for Windows, macOS, and Linux
 - Release screenshots or short GIFs for dashboard, mini panel, widget, and setup flow
-- Publish as a source-only developer preview; defer zip artifacts, packaged Electron builds, signed releases, and app-managed auto-start
+- Update release notes with the installer path, desktop shortcut behavior, and source-mode fallback
 - Update release notes and tag the first preview after the release checklist passes
 
 ### First Preview Work Plan
 
 1. Hardening: keep smoke checks deterministic, verify `npm test`, `desktop:smoke`, `desktop:first-run-smoke`, and `git diff --check` locally.
-2. Real-data trial: run a clean clone from install to Codex and Claude Code readiness, recording every point where setup copy is confusing.
-3. Onboarding pass: tighten Settings and README instructions around the next action, expected result, and recovery command for each platform.
-4. Release assets: capture dashboard, tray mini panel, widget, and setup-flow screenshots or short GIFs.
-5. Distribution decision: publish the first preview as source-only, and state clearly that zip artifacts, packaged Electron builds, signed releases, and app-managed auto-start are later work.
-6. Release finish: update `CHANGELOG.md`, complete `docs/release-checklist.md`, verify CI on `main`, and tag the first preview.
+2. Packaging: create a Windows installer or release artifact that installs the desktop app and creates a dashboard-opening app entry.
+3. Real-data trial: run a fresh install from installer to Codex and Claude Code readiness, recording every point where setup copy is confusing.
+4. Developer fallback: verify a clean clone still works for technical testers.
+5. Onboarding pass: tighten Settings and README instructions around the next action, expected result, and recovery path for each platform.
+6. Release assets: capture dashboard, tray mini panel, widget, and setup-flow screenshots or short GIFs.
+7. Release finish: update `CHANGELOG.md`, complete `docs/release-checklist.md`, verify CI on `main`, and tag the preview.
 
 ## v0.2
 
-- Packaged desktop build and installer story
-- Opt-in launch-at-login support: installer checkbox plus reversible Settings toggle, defaulting to off for the first packaged release
+- Installer polish: signing decision, update-channel decision, and any missing platform packaging gaps
+- Opt-in launch-at-login support: installer checkbox plus reversible Settings toggle, defaulting to off
+- Settings-controlled automatic refresh interval presets: manual, 15 seconds, 30 seconds, 1 minute, 5 minutes, and 15 minutes; label this as local refresh cadence because actual quota observation depends on Codex or Claude Code producing new data
 - System notification for low quota, stale data, and refresh warnings
 - Simple historical usage trend from stored snapshots and refresh runs
 - Reset rhythm statistics from observed reset events: recent reset times, intervals, average/median/min/max spacing, and replenishment deltas, always labeled as local observations rather than guaranteed provider schedules

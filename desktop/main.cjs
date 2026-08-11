@@ -35,6 +35,10 @@ const {
 } = require("./helpers.cjs");
 
 const projectRoot = path.resolve(__dirname, "..");
+const appIconPngPath = path.join(projectRoot, "assets", "icon.png");
+const appIconSvgPath = path.join(projectRoot, "assets", "icon.svg");
+const trayIconPngPath = path.join(projectRoot, "assets", "tray-icon.png");
+const trayIconSvgPath = path.join(projectRoot, "assets", "tray-icon.svg");
 const cliPath = path.join(projectRoot, "dist", "index.js");
 const preloadPath = path.join(__dirname, "preload.cjs");
 const panelSize = { width: 340, height: 236 };
@@ -63,6 +67,7 @@ let isQuitting = false;
 let isTrayRefreshing = false;
 let saveWidgetBoundsTimer;
 let showPanelWhenReady = false;
+let showDashboardWhenReady = false;
 
 app.setName("AI Agent Quota");
 app.setAppUserModelId("com.isToniLiu.ai-agent-quota-dashboard");
@@ -80,17 +85,27 @@ if (!hasSingleInstanceLock) {
   console.log("AIQD desktop is already running; focusing the existing instance.");
   app.quit();
 } else {
-  app.on("second-instance", () => {
+  app.on("second-instance", (_event, commandLine) => {
     if (smokeLikeMode) {
       return;
     }
 
+    const wantsDashboard = shouldOpenDashboard(commandLine);
+
     if (!baseUrl || !tray) {
-      showPanelWhenReady = true;
+      if (wantsDashboard) {
+        showDashboardWhenReady = true;
+      } else {
+        showPanelWhenReady = true;
+      }
       return;
     }
 
-    showPanelWindow();
+    if (wantsDashboard) {
+      openDashboardWindow();
+    } else {
+      showPanelWindow();
+    }
   });
 
   app.whenReady().then(startDesktopApp).catch(reportStartupFailure);
@@ -159,7 +174,10 @@ async function startDesktopApp() {
     void updateTrayStatus();
   }, trayStatusIntervalMs);
 
-  if (showPanelWhenReady) {
+  if (showDashboardWhenReady || shouldOpenDashboard(process.argv)) {
+    showDashboardWhenReady = false;
+    void openFirstRunGuide({ readyFallback: "dashboard" });
+  } else if (showPanelWhenReady) {
     showPanelWhenReady = false;
     showPanelWindow();
   } else {
@@ -481,6 +499,7 @@ function openDashboardWindow(view, target) {
     dashboardWindow = new BrowserWindow({
       width: 1180,
       height: 820,
+      icon: createAppIcon(64),
       minWidth: 900,
       minHeight: 620,
       title: "AI Agent Quota",
@@ -505,11 +524,14 @@ function dashboardUrl(view, target) {
   return `${baseUrl}${dashboardPath(view, target)}`;
 }
 
-async function openFirstRunGuide() {
+async function openFirstRunGuide(options = {}) {
   try {
     const result = await resolveFirstRunGuide();
 
     if (result.skipped) {
+      if (options.readyFallback === "dashboard") {
+        openDashboardWindow();
+      }
       return;
     }
 
@@ -518,10 +540,18 @@ async function openFirstRunGuide() {
       return;
     }
 
-    showPanelWindow();
+    if (options.readyFallback === "dashboard") {
+      openDashboardWindow();
+    } else {
+      showPanelWindow();
+    }
   } catch {
     // Keep startup quiet if the guide cannot be resolved.
   }
+}
+
+function shouldOpenDashboard(commandLine = []) {
+  return commandLine.includes("--open-dashboard");
 }
 
 async function runFirstRunGuideSmoke() {
@@ -588,18 +618,64 @@ function secureWebPreferences() {
 }
 
 function createTrayIcon() {
+  return createIconFromPaths(trayIconPngPath, trayIconSvgPath, 32);
+}
+
+function createAppIcon(size) {
+  return createIconFromPaths(appIconPngPath, appIconSvgPath, size);
+}
+
+function createIconFromPaths(pngPath, svgPath, size) {
+  try {
+    const image = nativeImage.createFromPath(pngPath);
+
+    if (!image.isEmpty()) {
+      return size
+        ? image.resize({ height: size, quality: "best", width: size })
+        : image;
+    }
+  } catch {
+    // Fall through to the inline fallback icon.
+  }
+
+  try {
+    const svg = readFileSync(svgPath, "utf8");
+    const image = nativeImage.createFromDataURL(
+      `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
+    );
+
+    if (!image.isEmpty()) {
+      return size
+        ? image.resize({ height: size, quality: "best", width: size })
+        : image;
+    }
+  } catch {
+    // Fall through to the inline fallback icon.
+  }
+
+  return createFallbackIcon(size);
+}
+
+function createFallbackIcon(size) {
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-      <rect width="32" height="32" rx="8" fill="#1f2520"/>
-      <circle cx="16" cy="16" r="9" fill="none" stroke="#6ec3a5" stroke-width="3"/>
-      <path d="M16 8a8 8 0 0 1 8 8h-4a4 4 0 0 0-4-4z" fill="#e3aa4a"/>
-      <circle cx="16" cy="16" r="3" fill="#f6f5f2"/>
+    <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+      <rect x="6" y="6" width="244" height="244" rx="56" fill="#151a17"/>
+      <circle cx="112" cy="112" r="73" fill="none" stroke="#56d6af" stroke-width="22" stroke-linecap="round"/>
+      <path d="M112 39a73 73 0 0 1 70 52" fill="none" stroke="#e7b35c" stroke-width="22" stroke-linecap="round"/>
+      <circle cx="112" cy="112" r="35" fill="#f6f5f2"/>
+      <circle cx="112" cy="112" r="18" fill="#151a17"/>
+      <path d="M157 158l50 50" fill="none" stroke="#f6f5f2" stroke-width="22" stroke-linecap="round"/>
+      <path d="M171 172l36 36" fill="none" stroke="#56d6af" stroke-width="10" stroke-linecap="round"/>
     </svg>
   `;
 
-  return nativeImage.createFromDataURL(
+  const image = nativeImage.createFromDataURL(
     `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
   );
+
+  return size
+    ? image.resize({ height: size, quality: "best", width: size })
+    : image;
 }
 
 function resolveWidgetBounds() {

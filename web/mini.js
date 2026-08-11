@@ -1,4 +1,5 @@
 const languageStorageKey = "aiqd.language";
+const defaultLanguage = "en";
 let currentLanguage = resolveInitialLanguage();
 
 const state = {
@@ -124,7 +125,7 @@ function resolveInitialLanguage() {
     return savedLanguage;
   }
 
-  return navigator.language?.toLowerCase().startsWith("zh") ? "zh" : "en";
+  return defaultLanguage;
 }
 
 function locale() {

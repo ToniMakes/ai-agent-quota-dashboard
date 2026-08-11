@@ -654,6 +654,13 @@ h2 {
   line-height: 1.45;
 }
 
+.setup-choice-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .setup-step-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -812,6 +819,21 @@ h2 {
   margin-top: 3px;
   color: var(--muted);
   font-size: 0.8rem;
+}
+
+.auto-setup-technical {
+  margin-top: 8px;
+}
+
+.auto-setup-technical summary {
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 760;
+}
+
+.auto-setup-technical .inline-command {
+  margin-top: 8px;
 }
 
 .auto-setup-step pre {
@@ -1231,6 +1253,14 @@ h2 {
   gap: 8px;
 }
 
+.connection-summary-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 8px;
+}
+
 .setup-watch-notice,
 .setup-next-actions {
   display: flex;
@@ -1543,6 +1573,10 @@ h2 {
   }
 
   .setup-overview-actions {
+    justify-content: start;
+  }
+
+  .connection-summary-actions {
     justify-content: start;
   }
 

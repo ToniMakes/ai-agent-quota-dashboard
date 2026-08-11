@@ -1,9 +1,11 @@
 const languageStorageKey = "aiqd.language";
+const defaultLanguage = "en";
 
 let currentLanguage = resolveInitialLanguage();
 
 const state = {
   agents: [],
+  claudeAutoSetupMode: undefined,
   claudeAutoSetupPending: false,
   claudeAutoSetupResult: undefined,
   claudeCheckFeedback: undefined,
@@ -123,7 +125,10 @@ document.addEventListener("click", async (event) => {
   const claudeAutoSetupButton = target.closest("[data-claude-auto-setup-action]");
 
   if (claudeAutoSetupButton instanceof HTMLButtonElement) {
-    await runClaudeAutoSetup();
+    await runClaudeAutoSetup({
+      installIfMissing:
+        claudeAutoSetupButton.dataset.claudeAutoSetupAction === "install"
+    });
     return;
   }
 
@@ -178,7 +183,7 @@ function resolveInitialLanguage() {
     return savedLanguage;
   }
 
-  return navigator.language?.toLowerCase().startsWith("zh") ? "zh" : "en";
+  return defaultLanguage;
 }
 
 function locale() {
@@ -431,26 +436,34 @@ async function runClaudeStatuslineCheck() {
   render();
 }
 
-async function runClaudeAutoSetup() {
+async function runClaudeAutoSetup(options = {}) {
   if (state.claudeAutoSetupPending) {
     return;
   }
 
+  const installIfMissing = options.installIfMissing === true;
+
+  state.claudeAutoSetupMode = installIfMissing ? "install" : "connect";
   state.claudeAutoSetupPending = true;
   state.claudeAutoSetupResult = undefined;
   state.claudeCheckFeedback = undefined;
   state.refreshStatus = {
     kind: "pending",
-    message: tx(
-      "Connecting Claude Code. Keep this page open; this can take a minute.",
-      "正在接入 Claude Code。请保持页面打开，这可能需要一分钟。"
-    )
+    message: installIfMissing
+      ? tx(
+          "Installing Claude Code CLI, then connecting local quota capture. Keep this page open.",
+          "正在安装 Claude Code CLI，并接入本地额度采集。请保持页面打开。"
+        )
+      : tx(
+          "Connecting Claude Code. Keep this page open; this can take a minute.",
+          "正在接入 Claude Code。请保持页面打开，这可能需要一分钟。"
+        )
   };
   render();
 
   try {
     const response = await fetch("/api/setup/claude-auto", {
-      body: JSON.stringify({ installIfMissing: false }),
+      body: JSON.stringify({ installIfMissing }),
       headers: { "Content-Type": "application/json" },
       method: "POST"
     });
@@ -467,7 +480,10 @@ async function runClaudeAutoSetup() {
     state.setupStatus = payload.status;
     state.refreshStatus = {
       detail: formatClaudeAutoSetupDetail(payload.result),
-      kind: payload.result?.ok ? "success" : "warning",
+      kind:
+        payload.result?.ok && !payload.result?.needsUserAction
+          ? "success"
+          : "warning",
       message:
         payload.result?.nextAction ??
         tx("Claude Code setup finished.", "Claude Code 设置已完成。")
@@ -503,6 +519,7 @@ async function runClaudeAutoSetup() {
       )
     };
   } finally {
+    state.claudeAutoSetupMode = undefined;
     state.claudeAutoSetupPending = false;
     render();
   }
@@ -1494,10 +1511,26 @@ function renderInitialSetupFlow(items, readiness) {
           )
         )}</p>
       </div>
+      ${renderSetupQuickChoices()}
       ${renderSetupCurrentAction(model)}
       <div class="guided-step-list">
         ${model.steps.map(renderGuidedStep).join("")}
       </div>
+    </div>
+  `;
+}
+
+function renderSetupQuickChoices() {
+  return `
+    <div class="setup-choice-row" aria-label="${escapeHtml(
+      tx("Choose a setup source", "选择要设置的数据来源")
+    )}">
+      <button class="copy-button" type="button" data-scroll-target="#codex-snapshot-content">
+        ${escapeHtml(tx("Set up Codex", "设置 Codex"))}
+      </button>
+      <button class="copy-button" type="button" data-scroll-target="#settings-content">
+        ${escapeHtml(tx("Set up Claude", "设置 Claude"))}
+      </button>
     </div>
   `;
 }
@@ -1512,6 +1545,8 @@ function buildInitialSetupModel(items, readiness) {
   const claudeCliAvailable = Boolean(state.setupStatus?.claudeCliAvailable);
   const claudeCliOnPath = state.setupStatus?.claudeCliOnPath !== false;
   const claudeAutoSetupPending = Boolean(state.claudeAutoSetupPending);
+  const claudeInstallPending =
+    claudeAutoSetupPending && state.claudeAutoSetupMode === "install";
   const claudeMissingRateLimits =
     state.setupStatus?.latestIssueCode === "missing_rate_limits";
   const claudeInputIssue =
@@ -1520,8 +1555,6 @@ function buildInitialSetupModel(items, readiness) {
   const claudeConnectedWithoutQuota =
     claudeMissingRateLimits || claudeInputIssue;
   const localTerminal = localTerminalName(state.setupStatus?.hostPlatform);
-  const canAutoSetupClaude =
-    !claudeComplete && (!claudeManaged || !claudeCliAvailable);
   const claudeCliOpenCommand =
     state.setupStatus?.claudeCliOpenCommand ??
     "Set-Location -LiteralPath 'C:\\path\\to\\your-project'\nclaude";
@@ -1531,6 +1564,19 @@ function buildInitialSetupModel(items, readiness) {
   const claudeCliInstallCommand =
     state.setupStatus?.claudeCliInstallCommand ??
     "winget install Anthropic.ClaudeCode";
+  const claudeCanUseWindowsInstaller = Boolean(
+    state.setupStatus?.hostPlatform === "win32" &&
+      claudeCliInstallCommand.includes("Anthropic.ClaudeCode")
+  );
+  const canInstallClaude =
+    !claudeComplete && !claudeCliAvailable && claudeCanUseWindowsInstaller;
+  const canConnectClaude = !claudeComplete && !claudeManaged;
+  const claudeSetupAction = canInstallClaude
+    ? "install"
+    : canConnectClaude
+      ? "connect"
+      : undefined;
+  const canAutoSetupClaude = Boolean(claudeSetupAction);
   const claudeCliHelper = claudeWaiting
     ? {
         autoSetupPending: claudeAutoSetupPending,
@@ -1573,14 +1619,24 @@ function buildInitialSetupModel(items, readiness) {
       ? {
           autoSetupPending: claudeAutoSetupPending,
           autoSetupResult: state.claudeAutoSetupResult,
-          detail: tx(
-            "Click the button. AIQD will write the local Claude Code data setting.",
-            "点击按钮。AIQD 会写入本地 Claude Code 数据设置。"
-          ),
-          title: tx(
-            "Connect Claude Code data",
-            "接入 Claude Code 数据"
-          )
+          detail: canInstallClaude
+            ? tx(
+                "AIQD will run the Windows installer for Claude Code CLI, then write the local quota capture setting.",
+                "AIQD 会运行 Windows 安装器安装 Claude Code CLI，然后写入本地额度采集设置。"
+              )
+            : tx(
+                "AIQD will write the local Claude Code data setting. It will not install anything in this step.",
+                "AIQD 会写入本地 Claude Code 数据设置。这一步不会安装任何东西。"
+              ),
+          title: canInstallClaude
+            ? tx(
+                "Install and connect Claude Code",
+                "安装并接入 Claude Code"
+              )
+            : tx(
+                "Connect Claude Code data",
+                "接入 Claude Code 数据"
+              )
         }
       : undefined;
   const claudeMissingRateLimitsHelper =
@@ -1705,11 +1761,18 @@ function buildInitialSetupModel(items, readiness) {
         ? tx("Review Claude", "查看 Claude")
         : canAutoSetupClaude
           ? claudeAutoSetupPending
-            ? tx("Setting up Claude", "正在设置 Claude")
-            : tx(
-                "Connect Claude data",
-                "接入 Claude 数据"
-              )
+            ? claudeInstallPending
+              ? tx("Installing Claude", "正在安装 Claude")
+              : tx("Connecting Claude", "正在接入 Claude")
+            : canInstallClaude
+              ? tx(
+                  "Install Claude Code CLI",
+                  "安装 Claude Code CLI"
+                )
+              : tx(
+                  "Connect Claude data",
+                  "接入 Claude 数据"
+                )
         : claudeManaged
           ? tx(
               "I ran it; check",
@@ -1717,10 +1780,15 @@ function buildInitialSetupModel(items, readiness) {
             )
           : tx("Open Claude setup", "打开 Claude 设置"),
       actionTitle: canAutoSetupClaude
-        ? tx(
-            "Connect Claude Code data",
-            "接入 Claude Code 数据"
-          )
+        ? canInstallClaude
+          ? tx(
+              "Install Claude Code CLI",
+              "安装 Claude Code CLI"
+            )
+          : tx(
+              "Connect Claude Code data",
+              "接入 Claude Code 数据"
+            )
         : claudeManaged
         ? tx(
             claudeConnectedWithoutQuota
@@ -1732,20 +1800,35 @@ function buildInitialSetupModel(items, readiness) {
           )
         : tx("Turn on Claude Code data capture", "启用 Claude Code 数据接入"),
       checklist: canAutoSetupClaude
-        ? [
-            tx(
-              "Click the connect button.",
-              "点击接入按钮。"
-            ),
-            tx(
-              "Wait for the button to finish.",
-              "等按钮处理完成。"
-            ),
-            tx(
-              "Then follow the command step.",
-              "然后按下一步运行命令。"
-            )
-          ]
+        ? canInstallClaude
+          ? [
+              tx(
+                "Click the install button.",
+                "点击安装按钮。"
+              ),
+              tx(
+                "Approve Windows installer prompts if they appear.",
+                "如果 Windows 弹出安装确认，请按提示确认。"
+              ),
+              tx(
+                "When it finishes, open Claude Code and send one short message.",
+                "完成后打开 Claude Code，并发送一条短消息。"
+              )
+            ]
+          : [
+              tx(
+                "Click the connect button.",
+                "点击接入按钮。"
+              ),
+              tx(
+                "Wait for the button to finish.",
+                "等按钮处理完成。"
+              ),
+              tx(
+                "Then open Claude Code and send one short message.",
+                "然后打开 Claude Code，并发送一条短消息。"
+              )
+            ]
         : claudeManaged
         ? claudeConnectedWithoutQuota
           ? [
@@ -1821,10 +1904,15 @@ function buildInitialSetupModel(items, readiness) {
           ],
       complete: claudeComplete,
       detail: canAutoSetupClaude
-        ? tx(
-            "This writes a local setting so Claude Code can send quota data to AIQD.",
-            "这会写入本地设置，让 Claude Code 能把额度数据发给 AIQD。"
-          )
+        ? canInstallClaude
+          ? tx(
+              "This installs Claude Code CLI with Windows package manager and writes the local setting AIQD needs for quota data.",
+              "这会通过 Windows 包管理器安装 Claude Code CLI，并写入 AIQD 读取额度数据需要的本地设置。"
+            )
+          : tx(
+              "This writes a local setting so Claude Code can send quota data to AIQD.",
+              "这会写入本地设置，让 Claude Code 能把额度数据发给 AIQD。"
+            )
         : claudeManaged
         ? tx(
             claudeConnectedWithoutQuota
@@ -1848,10 +1936,15 @@ function buildInitialSetupModel(items, readiness) {
       progressDetail: claudeComplete
         ? tx("Claude Code quota data received.", "已收到 Claude Code 额度数据。")
         : claudeAutoSetupPending
-          ? tx(
-              "AIQD is writing Claude Code settings.",
-              "AIQD 正在写入 Claude Code 设置。"
-            )
+          ? claudeInstallPending
+            ? tx(
+                "AIQD is installing Claude Code CLI.",
+                "AIQD 正在安装 Claude Code CLI。"
+              )
+            : tx(
+                "AIQD is writing Claude Code settings.",
+                "AIQD 正在写入 Claude Code 设置。"
+              )
         : claudeManaged
           ? tx(
               claudeConnectedWithoutQuota
@@ -1862,7 +1955,7 @@ function buildInitialSetupModel(items, readiness) {
                 : "等待 Claude 发送额度字段。"
             )
           : tx("Setup is not enabled yet.", "尚未启用设置。"),
-      claudeAutoSetupAction: canAutoSetupClaude,
+      claudeAutoSetupAction: claudeSetupAction,
       claudeCheckAction: claudeWaiting && !canAutoSetupClaude,
       disabled: claudeAutoSetupPending,
       notice: claudeWaitingNotice,
@@ -2068,16 +2161,25 @@ function renderStepHelper(helper) {
 
 function renderClaudeAutoSetupResult(result, pending) {
   if (pending) {
+    const installing = state.claudeAutoSetupMode === "install";
+
     return `
       <div class="auto-setup-result is-pending">
         <strong>${escapeHtml(
-          tx("AIQD is connecting Claude Code", "AIQD 正在接入 Claude Code")
+          installing
+            ? tx("AIQD is installing Claude Code", "AIQD 正在安装 Claude Code")
+            : tx("AIQD is connecting Claude Code", "AIQD 正在接入 Claude Code")
         )}</strong>
         <p>${escapeHtml(
-          tx(
-            "Keep this page open. Writing the local statusline setting can take a little while.",
-            "请保持页面打开。写入本地 statusline 设置可能需要一点时间。"
-          )
+          installing
+            ? tx(
+                "Keep this page open. Windows may show installer prompts before AIQD connects local quota capture.",
+                "请保持页面打开。Windows 可能会先显示安装提示，然后 AIQD 会接入本地额度采集。"
+              )
+            : tx(
+                "Keep this page open. Writing the local statusline setting can take a little while.",
+                "请保持页面打开。写入本地 statusline 设置可能需要一点时间。"
+              )
         )}</p>
       </div>
     `;
@@ -2087,18 +2189,25 @@ function renderClaudeAutoSetupResult(result, pending) {
     return "";
   }
 
+  const finishedWithoutAction = Boolean(result.ok && !result.needsUserAction);
+  const headerTitle = !result.ok
+    ? tx("Claude setup needs attention", "Claude 设置需要处理")
+    : result.needsUserAction
+      ? tx("Claude setup needs one more step", "Claude 设置还差一步")
+      : tx("Claude setup finished", "Claude 设置已完成");
+
   return `
-    <div class="auto-setup-result ${result.ok ? "is-ok" : "has-error"}">
+    <div class="auto-setup-result ${
+      finishedWithoutAction ? "is-ok" : "has-error"
+    }">
       <div class="auto-setup-result-header">
-        <strong>${escapeHtml(
-          result.ok
-            ? tx("Automatic setup finished", "自动设置已完成")
-            : tx("Automatic setup needs attention", "自动设置需要处理")
-        )}</strong>
-        <span class="badge ${result.ok ? "healthy" : "warning"}">${escapeHtml(
-          result.needsUserAction
-            ? tx("Action needed", "需要处理")
-            : tx("Done", "完成")
+        <strong>${escapeHtml(headerTitle)}</strong>
+        <span class="badge ${
+          finishedWithoutAction ? "healthy" : "warning"
+        }">${escapeHtml(
+          finishedWithoutAction
+            ? tx("Done", "完成")
+            : tx("Action needed", "需要处理")
         )}</span>
       </div>
       <div class="auto-setup-step-list">
@@ -2118,10 +2227,23 @@ function renderClaudeAutoSetupStep(step) {
       <div>
         <strong>${escapeHtml(claudeAutoStepTitle(step))}</strong>
         <p>${escapeHtml(claudeAutoStepMessage(step))}</p>
-        ${step.command ? renderInlineCommand(step.command) : ""}
-        ${step.detail ? `<pre>${escapeHtml(step.detail)}</pre>` : ""}
+        ${renderClaudeAutoSetupTechnicalDetails(step)}
       </div>
     </div>
+  `;
+}
+
+function renderClaudeAutoSetupTechnicalDetails(step) {
+  if (!step.command && !step.detail) {
+    return "";
+  }
+
+  return `
+    <details class="auto-setup-technical">
+      <summary>${escapeHtml(tx("Technical details", "技术详情"))}</summary>
+      ${step.command ? renderInlineCommand(step.command) : ""}
+      ${step.detail ? `<pre>${escapeHtml(step.detail)}</pre>` : ""}
+    </details>
   `;
 }
 
@@ -2181,6 +2303,10 @@ function localizedClaudeAutoNextAction(action) {
     return action;
   }
 
+  if (action.includes("Claude Code CLI is still missing")) {
+    return "AIQD 已接入本地额度采集，但还没有检测到 Claude Code CLI。请先安装 Claude Code CLI，然后打开一次 Claude Code。";
+  }
+
   if (action.includes("Open Claude Code from a terminal once")) {
     return "本地设置已完成。接下来只需要从终端打开一次 Claude Code，让它发送额度数据。";
   }
@@ -2213,8 +2339,7 @@ function formatClaudeAutoSetupDetail(result) {
     ...(result.steps ?? []).map((step) =>
       [
         `${step.label}: ${step.message}`,
-        step.command ? `Command: ${step.command}` : "",
-        step.detail ?? ""
+        step.exitCode !== undefined ? `Exit code: ${step.exitCode}` : ""
       ]
         .filter(Boolean)
         .join("\n")
@@ -2396,7 +2521,11 @@ function renderGuidedStepAction(step, allDone = false, className = "button") {
       class="${className}"
       type="button"
       ${step.disabled ? "disabled" : ""}
-      ${step.claudeAutoSetupAction ? "data-claude-auto-setup-action" : ""}
+      ${
+        step.claudeAutoSetupAction
+          ? `data-claude-auto-setup-action="${escapeHtml(step.claudeAutoSetupAction)}"`
+          : ""
+      }
       ${step.claudeCheckAction ? "data-claude-check-action" : ""}
       ${step.refreshAction ? "data-refresh-action" : ""}
       ${step.target ? `data-scroll-target="${escapeHtml(step.target)}"` : ""}
@@ -2613,23 +2742,23 @@ function buildClaudeOverviewItem() {
 
   return {
     actionLabel: tx("Claude details", "Claude 详情"),
-    command: ready || waiting ? undefined : status?.writeCommand,
+    command: undefined,
     countsTowardReady: true,
     detail:
       detailParts.length > 0
         ? detailParts.join(" / ")
         : localizedNextAction(status?.nextAction) ??
           tx(
-            "Install the statusline sink, then open Claude Code from a CLI/terminal session.",
-            "安装 statusline sink，然后从 CLI/终端会话打开 Claude Code。"
+            "Open Claude setup, then install or connect Claude Code from the guided button.",
+            "打开 Claude 设置，然后按引导按钮安装或接入 Claude Code。"
           ),
     id: "claude-code",
     label: "Claude Code",
     nextAction:
       localizedNextAction(status?.nextAction) ??
       tx(
-        "Install the statusline sink, then open Claude Code from a CLI/terminal session.",
-        "安装 statusline sink，然后从 CLI/终端会话打开 Claude Code。"
+        "Open Claude setup, then install or connect Claude Code from the guided button.",
+        "打开 Claude 设置，然后按引导按钮安装或接入 Claude Code。"
       ),
     state: ready ? "pass" : waiting ? "info" : "warn",
     status:
@@ -3319,9 +3448,12 @@ function renderClaudeConnectionSummary(status) {
         <strong>${escapeHtml(title)}</strong>
         <div class="settings-detail">${escapeHtml(detail)}</div>
       </div>
-      <span class="badge ${readinessBadgeClass(status.readiness)}">${escapeHtml(
-        statusLabel(status.readiness)
-      )}</span>
+      <div class="connection-summary-actions">
+        <span class="badge ${readinessBadgeClass(status.readiness)}">${escapeHtml(
+          statusLabel(status.readiness)
+        )}</span>
+        ${renderClaudeConnectionAction(status)}
+      </div>
     </div>
     <details class="optional-settings-details">
       <summary>
@@ -3338,6 +3470,61 @@ function renderClaudeConnectionSummary(status) {
       </div>
     </details>
   `;
+}
+
+function renderClaudeConnectionAction(status) {
+  if (status.readiness === "ready") {
+    return "";
+  }
+
+  const setupAction = claudeSetupActionForStatus(status);
+
+  if (setupAction) {
+    const label =
+      setupAction === "install"
+        ? tx("Install Claude Code CLI", "安装 Claude Code CLI")
+        : tx("Connect Claude data", "接入 Claude 数据");
+
+    return `
+      <button
+        class="copy-button"
+        type="button"
+        data-claude-auto-setup-action="${escapeHtml(setupAction)}"
+      >${escapeHtml(label)}</button>
+    `;
+  }
+
+  if (status.statusLineManagedByApp) {
+    return `
+      <button class="copy-button" type="button" data-claude-check-action="true">
+        ${escapeHtml(tx("Check Claude", "检查 Claude"))}
+      </button>
+    `;
+  }
+
+  return "";
+}
+
+function claudeSetupActionForStatus(status) {
+  if (!status || status.readiness === "ready") {
+    return undefined;
+  }
+
+  const canInstall = Boolean(
+    !status.claudeCliAvailable &&
+      status.hostPlatform === "win32" &&
+      status.claudeCliInstallCommand?.includes("Anthropic.ClaudeCode")
+  );
+
+  if (canInstall) {
+    return "install";
+  }
+
+  if (!status.statusLineManagedByApp) {
+    return "connect";
+  }
+
+  return undefined;
 }
 
 function renderClaudeStatuslineWaitingNotice(status) {

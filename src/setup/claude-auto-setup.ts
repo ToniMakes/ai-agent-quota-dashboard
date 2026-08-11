@@ -123,11 +123,11 @@ async function maybeInstallClaudeCli(options: {
   if (!options.installIfMissing) {
     return {
       detail:
-        "AIQD did not install anything. If Claude Code already works in your terminal, open it once from there or restart AIQD so PATH changes are visible.",
+        "AIQD did not install anything from this action. Use the Install Claude Code CLI button, or install Claude Code yourself and restart AIQD if needed.",
       id: "claude-cli",
       label: "Claude Code CLI",
       message:
-        "claude command was not found on PATH; installation was not run.",
+        "Claude Code CLI was not found; installation was not requested.",
       state: "warn"
     };
   }
@@ -302,7 +302,7 @@ function nextActionForStatus(input: {
   }
 
   if (input.cliMissingWarning) {
-    return "AIQD finished the local statusline setup, but this running process cannot see the claude command yet. If Claude Code works in your terminal, open it there once and then restart AIQD if needed.";
+    return "AIQD connected local quota capture, but Claude Code CLI is still missing. Install Claude Code CLI, then open Claude Code once.";
   }
 
   if (input.warning) {
@@ -317,7 +317,7 @@ function nextActionForStatus(input: {
     return "AIQD finished the local setup. Open Claude Code from a terminal once so it can send quota data.";
   }
 
-  return "AIQD finished the local setup, but this running process cannot see the claude command yet. Open a new terminal, check claude --version, then restart AIQD if needed.";
+  return "AIQD connected local quota capture, but Claude Code CLI is still missing. Install Claude Code CLI, then restart AIQD if needed.";
 }
 
 async function runExternalCommand(
