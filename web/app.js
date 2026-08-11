@@ -18,6 +18,7 @@ const state = {
   refreshRuns: [],
   refreshStatus: undefined,
   resetEvents: [],
+  setupDetailTarget: undefined,
   setupStatus: undefined,
   trialReadiness: undefined,
   generatedAt: undefined
@@ -139,6 +140,16 @@ document.addEventListener("click", async (event) => {
     return;
   }
 
+  const setupDetailToggle = target.closest("[data-setup-detail-toggle]");
+
+  if (setupDetailToggle instanceof HTMLButtonElement) {
+    const targetName = setupDetailToggle.dataset.setupDetailToggle;
+    state.setupDetailTarget =
+      state.setupDetailTarget === targetName ? undefined : targetName;
+    render();
+    return;
+  }
+
   const navigationButton = target.closest("[data-open-view], [data-scroll-target]");
 
   if (!(navigationButton instanceof HTMLButtonElement)) {
@@ -172,6 +183,7 @@ document.addEventListener("submit", async (event) => {
 });
 
 activateView(requestedViewName());
+state.setupDetailTarget = setupDetailTargetFromTargetId(requestedTargetId());
 
 await load();
 scrollToRequestedTarget();
@@ -276,6 +288,18 @@ function requestedTargetId() {
   const target = window.location.hash.replace("#", "");
 
   return target && !isKnownView(target) ? target : "";
+}
+
+function setupDetailTargetFromTargetId(targetId) {
+  if (targetId === "codex-snapshot-content") {
+    return "codex";
+  }
+
+  if (targetId === "settings-content") {
+    return "claude-code";
+  }
+
+  return undefined;
 }
 
 function scrollToRequestedTarget() {
@@ -1406,6 +1430,7 @@ function renderCodexAutoDetectionStatus(status) {
 function renderRealDataOverview() {
   const items = buildRealDataOverviewItems();
   const readiness = state.trialReadiness;
+  const showSetupDetails = Boolean(state.setupDetailTarget);
   const sourceItems = items.filter((item) => item.countsTowardReady);
   const readyCount = sourceItems.filter((item) => item.state === "pass").length;
   const totalCount = sourceItems.length;
@@ -1433,16 +1458,20 @@ function renderRealDataOverview() {
   elements.realDataContent.innerHTML = `
     ${renderInitialSetupFlow(items, readiness)}
 
-    ${renderAdvancedDetails(
-      tx("Advanced readiness details", "高级就绪详情"),
-      `
-        ${readiness ? renderTrialReadinessChecks(readiness) : ""}
-        <div class="setup-overview-list">
-          ${items.map(renderRealDataOverviewItem).join("")}
-        </div>
-        ${readiness ? renderInlineCommand("npm run trial:ready") : ""}
-      `
-    )}
+    ${
+      showSetupDetails
+        ? renderAdvancedDetails(
+            tx("Advanced readiness details", "高级就绪详情"),
+            `
+              ${readiness ? renderTrialReadinessChecks(readiness) : ""}
+              <div class="setup-overview-list">
+                ${items.map(renderRealDataOverviewItem).join("")}
+              </div>
+              ${readiness ? renderInlineCommand("npm run trial:ready") : ""}
+            `
+          )
+        : ""
+    }
   `;
 }
 
@@ -1495,6 +1524,7 @@ function readinessDisplayName(check) {
 
 function renderInitialSetupFlow(items, readiness) {
   const model = buildInitialSetupModel(items, readiness);
+  const detailTarget = state.setupDetailTarget;
 
   return `
     <div class="initial-setup-flow" aria-label="${escapeHtml(
@@ -1511,26 +1541,62 @@ function renderInitialSetupFlow(items, readiness) {
           )
         )}</p>
       </div>
-      ${renderSetupQuickChoices()}
-      ${renderSetupCurrentAction(model)}
-      <div class="guided-step-list">
-        ${model.steps.map(renderGuidedStep).join("")}
-      </div>
+      ${renderSetupQuickChoices(detailTarget)}
+      ${renderSelectedSetupDetails(model, detailTarget)}
     </div>
   `;
 }
 
-function renderSetupQuickChoices() {
+function renderSetupQuickChoices(activeTarget) {
   return `
     <div class="setup-choice-row" aria-label="${escapeHtml(
       tx("Choose a setup source", "选择要设置的数据来源")
     )}">
-      <button class="copy-button" type="button" data-scroll-target="#codex-snapshot-content">
-        ${escapeHtml(tx("Set up Codex", "设置 Codex"))}
+      <button
+        class="copy-button setup-choice-button ${activeTarget === "codex" ? "is-active" : ""}"
+        type="button"
+        data-setup-detail-toggle="codex"
+        aria-expanded="${activeTarget === "codex" ? "true" : "false"}"
+      >
+        ${escapeHtml(
+          activeTarget === "codex"
+            ? tx("Hide Codex", "收起 Codex")
+            : tx("Set up Codex", "设置 Codex")
+        )}
       </button>
-      <button class="copy-button" type="button" data-scroll-target="#settings-content">
-        ${escapeHtml(tx("Set up Claude", "设置 Claude"))}
+      <button
+        class="copy-button setup-choice-button ${activeTarget === "claude-code" ? "is-active" : ""}"
+        type="button"
+        data-setup-detail-toggle="claude-code"
+        aria-expanded="${activeTarget === "claude-code" ? "true" : "false"}"
+      >
+        ${escapeHtml(
+          activeTarget === "claude-code"
+            ? tx("Hide Claude", "收起 Claude")
+            : tx("Set up Claude", "设置 Claude")
+        )}
       </button>
+    </div>
+  `;
+}
+
+function renderSelectedSetupDetails(model, detailTarget) {
+  if (!detailTarget) {
+    return "";
+  }
+
+  const selectedStep = model.steps.find((step) => step.id === detailTarget);
+
+  if (!selectedStep) {
+    return "";
+  }
+
+  return `
+    <div class="setup-detail-panel">
+      ${renderSetupCurrentAction(model, selectedStep)}
+      <div class="guided-step-list is-selected">
+        ${renderGuidedStep(selectedStep)}
+      </div>
     </div>
   `;
 }
@@ -2072,21 +2138,25 @@ function localTerminalName(platform) {
   return tx("your system terminal", "你的系统终端");
 }
 
-function renderSetupCurrentAction(model) {
-  const step = model.currentStep;
-  const allDone = model.completedCount === model.totalCount;
+function renderSetupCurrentAction(model, selectedStep) {
+  const step = selectedStep ?? model.currentStep;
+  const showingSelectedStep = Boolean(selectedStep);
+  const allDone = model.completedCount === model.totalCount && !showingSelectedStep;
   const remainingLabel = allDone
     ? tx("All steps done", "全部完成")
     : tx("{count} step(s) left", "还剩 {count} 步", {
         count: model.remainingCount
       });
+  const stepComplete = Boolean(step.complete);
 
   return `
-    <section class="current-step-panel ${allDone ? "complete" : ""}">
+    <section class="current-step-panel ${allDone || stepComplete ? "complete" : ""}">
       <div class="current-step-copy">
         <span class="guide-kicker">${escapeHtml(
           allDone
             ? tx("Ready", "已就绪")
+            : showingSelectedStep
+              ? tx("Setup details", "设置详情")
             : tx("Current step {number}/{total}", "当前步骤 {number}/{total}", {
                 number: step.number,
                 total: model.totalCount
@@ -2105,16 +2175,22 @@ function renderSetupCurrentAction(model) {
                   "打开仪表盘，并在根据数字做判断前刷新一次。"
                 )
               )}</p>`
-            : renderActionChecklist(step.checklist)
+            : stepComplete
+              ? `<p>${escapeHtml(step.progressDetail ?? step.detail)}</p>`
+              : renderActionChecklist(step.checklist)
         }
-        ${allDone ? "" : renderStepHelper(step.helper)}
-        ${allDone ? "" : renderStepNotice(step.notice)}
+        ${allDone || stepComplete ? "" : renderStepHelper(step.helper)}
+        ${allDone || stepComplete ? "" : renderStepNotice(step.notice)}
         <p class="outcome-note">${escapeHtml(
           allDone
             ? tx(
                 "Result: you can now read real quota and reset dates.",
                 "结果：现在可以查看真实额度和 reset 日期。"
               )
+            : stepComplete
+              ? tx("Status: {status}", "状态：{status}", {
+                  status: step.status
+                })
             : tx("Result: {result}", "结果：{result}", {
                 result: step.outcome
               })

@@ -94,7 +94,7 @@ Manual Codex fallback snapshots expire at their reported reset time. If Codex la
 Normal-user path from the desktop app:
 
 1. Open Settings.
-2. In the first-run setup area, click `Set up Claude` if Codex is currently highlighted.
+2. In the first-run setup area, click `Set up Claude` to expand the Claude setup details. Click it again to collapse, or click `Set up Codex` to switch to the Codex details.
 3. If Claude Code CLI is missing, click `Install Claude Code CLI`.
 4. If AIQD still needs the local capture setting, click `Connect Claude data`.
 5. Open Claude Code in a project, finish Claude's own login/trust prompts, send one short message, and wait for the reply.
