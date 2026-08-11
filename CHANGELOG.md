@@ -8,8 +8,15 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ### Added
 
-- Source-only v0.1.0 developer-preview distribution decision and release notes draft
+- Installer-first v0.1.0 desktop-preview distribution target and release notes draft
+- Beginner Claude setup flow with separate `Install Claude Code CLI` and `Connect Claude data` actions
+- Claude setup result copy that distinguishes complete setup from action-needed states
+- Collapsed technical details for internal Claude statusline commands and paths during normal setup
+- Shared app icon assets for the desktop tray, main window, and Windows shortcut
+- Desktop-entry launch mode that opens the main dashboard window instead of only the tray mini panel
 - Distribution and startup plan documenting v0.2 opt-in launch-at-login behavior for installer and Settings
+- v0.2 roadmap note for Settings-controlled refresh interval presets, distinct from provider-produced observation timestamps
+- English default language for first-run dashboard and mini surfaces, while preserving saved user language choices
 - Demo release screenshots for the dashboard, Doctor, Settings setup flow, mini panel, and widget surfaces
 - Beginner onboarding copy for real-data trials now includes expected outcomes, PowerShell fallback commands, and Claude Code refresh troubleshooting
 - v0.2 roadmap note for Reset Rhythm statistics based on observed reset events

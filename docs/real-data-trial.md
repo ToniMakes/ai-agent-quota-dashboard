@@ -4,6 +4,15 @@ This guide is for a local desktop trial with real Codex and Claude Code quota si
 
 ## 1. Prepare
 
+Normal-user installer trial:
+
+1. Install AIQD from the release artifact.
+2. Open AIQD from the installed desktop or Start menu entry.
+3. Confirm the main dashboard window opens.
+4. Open Settings if the first-run guide does not take you there automatically.
+
+Developer source-mode trial:
+
 ```bash
 npm install
 npm test
@@ -82,6 +91,19 @@ Manual Codex fallback snapshots expire at their reported reset time. If Codex la
 
 ## 4. Connect Claude Code
 
+Normal-user path from the desktop app:
+
+1. Open Settings.
+2. In the first-run setup area, click `Set up Claude` if Codex is currently highlighted.
+3. If Claude Code CLI is missing, click `Install Claude Code CLI`.
+4. If AIQD still needs the local capture setting, click `Connect Claude data`.
+5. Open Claude Code in a project, finish Claude's own login/trust prompts, send one short message, and wait for the reply.
+6. Return to AIQD and click the check/refresh action.
+
+Expected: Claude Code is marked ready after AIQD receives supported `rate_limits` fields. If Claude opens but AIQD still says it is waiting, send one short message in Claude and wait for the response to finish.
+
+Developer source-mode fallback:
+
 Run the sink self-test first. It uses fake `rate_limits` data and temporary files.
 
 ```bash
@@ -109,7 +131,7 @@ Then open Claude Code once in any project so its statusline renders. AIQD will r
 
 Platform notes:
 
-- Windows: if Doctor says `claude.exe` is outside `PATH`, use the full-path command shown by Settings or Doctor, or add that directory to `PATH` and restart the terminal.
+- Windows: the Settings flow can install Claude Code CLI with the explicit install button when the supported Windows package is available. If Doctor says `claude.exe` is outside `PATH`, use the full-path command shown by Settings or Doctor, or restart AIQD after opening Claude Code from your normal terminal.
 - macOS/Linux: open a terminal in a project and run `claude`; if the command is not found, install or expose the Claude Code CLI first.
 
 If not ready: run `npm run trial:preflight`. A common next action is `Open Claude Code to refresh the statusline snapshot`, which means Claude is configured but has not sent a fresh supported `rate_limits` payload yet.

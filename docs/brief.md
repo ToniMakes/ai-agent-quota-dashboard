@@ -1,7 +1,7 @@
 # AI Agent Quota Dashboard 产品与技术 Brief
 
 更新时间：2026-08-11
-当前阶段：v0.1 developer preview / 真实数据 dogfooding。核心 MVP 已经从构思进入可运行实现：本地 Web Dashboard、Doctor、Settings、Codex/Claude Code 真实额度来源、桌面托盘小面板、桌面置顶小组件、严格 readiness 检查和中英双语 UI 都已落地。下一步重点是发布前体验打磨，而不是扩展大量 provider。
+当前阶段：v0.1 developer preview / 真实数据 dogfooding。核心 MVP 已经从构思进入可运行实现：本地 Web Dashboard、Doctor、Settings、Codex/Claude Code 真实额度来源、桌面托盘小面板、桌面置顶小组件、严格 readiness 检查和默认英文的中英双语 UI 都已落地。下一步重点是发布前体验打磨，而不是扩展大量 provider。
 
 当前状态总览见：[docs/status.md](status.md)。
 
@@ -15,7 +15,7 @@
 - Claude Code：通过官方 statusline `rate_limits` 写入本地 sanitized snapshot
 - Dashboard / Doctor / Settings / Refresh History / Export
 - 桌面托盘 mini panel 和 always-on-top widget
-- 主 dashboard 与 mini surfaces 的中英双语切换
+- 主 dashboard 与 mini surfaces 默认英文，并支持中英双语切换
 - `trial:preflight` / `trial:ready` 严格真实数据检查
 - Windows + Ubuntu GitHub Actions CI
 
@@ -24,7 +24,7 @@
 - 新手初次配置文案继续压缩和跨系统适配
 - 完整 fresh-machine 真实数据试跑
 - 截图/GIF 和 README 发布说明
-- 首版分发方式已明确：source-only developer preview；桌面打包、签名、安装包开机启动项后续再做
+- 首版分发方式已调整为 installer-first desktop preview；普通用户应通过安装包和桌面入口使用，源码运行只作为开发者兜底
 
 ## 1. 一句话定位
 
@@ -135,9 +135,9 @@ v0.5: 浏览器插件读取网页可见 quota，但只做 opt-in
 
 ### 4.1 打包与开机启动决策
 
-v0.1 不提供安装包，也不由 app 配置系统开机启动。当前 source-only preview 只支持用户从源码手动启动。
+v0.1 目标改为提供安装包或等价桌面发布 artifact。普通用户路径不应要求 `npm`、`node`、PowerShell 或源码 checkout；这些只保留在开发者文档里。
 
-v0.2 做 packaged desktop 时，把开机启动放在两个位置：
+packaged desktop 的开机启动应放在两个位置：
 
 - 安装包选项：`Start AIQD when I sign in`
 - App 设置页开关：`Launch at startup`
@@ -146,6 +146,7 @@ v0.2 做 packaged desktop 时，把开机启动放在两个位置：
 
 行为边界：
 
+- 用户双击桌面入口时，打开主 Dashboard 窗口；托盘 mini panel 是快捷入口，不是桌面入口的默认结果
 - 开机后只启动 tray shell 和本地 backend
 - 不自动打开主 dashboard，除非首次设置或启动失败需要用户处理
 - Settings 里的开关应该能读取当前系统启动项状态
@@ -405,6 +406,30 @@ v0.2 可以加入 **Reset Rhythm / 重置节奏** 统计。这个功能基于已
 - 明确文案：这些是本地观测，不是官方保证的未来重置计划
 
 预测逻辑 MVP 可以很简单：
+
+v0.2 也应该在 Settings 里提供 **自动刷新间隔** 预设，但不要叫“强制观测间隔”。AIQD 可以决定自己多久扫描本地来源，但 Claude Code statusline / Codex CLI 是否产生新的 quota 数据并不完全由 AIQD 控制。
+
+建议预设：
+
+- 手动刷新
+- 15 秒
+- 30 秒
+- 1 分钟
+- 5 分钟
+- 15 分钟
+
+默认建议：
+
+- tray / mini surfaces：30 秒
+- 主 Dashboard：1 分钟，或者只在窗口打开时自动刷新
+- 低额度或 stale 状态：允许临时更频繁，例如 15 秒
+- 后台/开机启动：不要过于频繁，避免无意义扫描
+
+文案建议：
+
+```text
+AIQD refreshes local sources on this cadence. The latest observed time can still depend on whether Codex or Claude Code has produced fresh quota data.
+```
 
 ```text
 burn_rate = recent_usage / recent_time
@@ -797,7 +822,7 @@ GitHub: https://github.com/ofershap/cursor-usage-tracker
 - JSON/CSV export
 - Desktop tray mini panel
 - Always-on-top widget
-- 中英双语 UI
+- 默认英文的中英双语 UI
 
 发布前继续打磨：
 
@@ -810,8 +835,9 @@ GitHub: https://github.com/ofershap/cursor-usage-tracker
 v0.2 再考虑：
 
 - system notification
-- packaged desktop / installer
+- installer polish / signing / update channel
 - opt-in launch at startup：安装包里默认关闭，Settings 中可随时开关
+- Settings 自动刷新间隔预设：手动、15 秒、30 秒、1 分钟、5 分钟、15 分钟；文案强调这是 AIQD 本地扫描频率，不保证 provider 一定产生新观测
 - 简单趋势/预测
 - Reset Rhythm：统计最近重置频率、间隔、恢复幅度，并把结果标为本地观测
 - Agent detail 页面
@@ -994,9 +1020,9 @@ Troubleshooting actions
 4. 压缩 Settings 里的引导文案，只突出“现在做什么、复制哪里、结果是什么”
 5. 为 Windows、macOS、Linux 分别确认终端命令和 Claude Code 打开方式
 6. 准备 README 截图/GIF：主 dashboard、小面板、桌面 widget、Settings 首次接入
-7. 第一版按 source-only developer preview 发布；zip artifact / Electron packaged build / 安装包开机启动后续再做
+7. 第一版按 installer-first desktop preview 发布；源码运行作为开发者 fallback
 8. 更新 `CHANGELOG.md` release entry，按 `docs/release-checklist.md` 验证后打 tag
-9. v0.2 再考虑安装包、Settings 开机启动开关、低额度系统通知、Reset Rhythm 和简单趋势/预测
+9. v0.2 再考虑签名/update channel、Settings 开机启动开关、Settings 自动刷新间隔预设、低额度系统通知、Reset Rhythm 和简单趋势/预测
 10. 只有当 Codex + Claude Code 体验足够可信后，再评估 Gemini CLI / Cursor
 
 ## 18. 给新窗口的启动 Prompt
@@ -1006,9 +1032,9 @@ Troubleshooting actions
 ```text
 我想继续开发 AI Agent Quota Dashboard。项目已经不是从零 scaffold 阶段，而是 v0.1 developer preview / 真实数据 dogfooding 阶段。
 
-请先阅读 docs/status.md、docs/roadmap.md、README.md、CHANGELOG.md 和 docs/brief.md。当前已经实现 TypeScript/Node 本地服务、SQLite、Codex CLI rate_limits 自动检测、Claude Code statusline rate_limits、Dashboard/Doctor/Settings、Electron tray mini panel、always-on-top widget、严格 trial readiness 和中英双语 UI。
+请先阅读 docs/status.md、docs/roadmap.md、README.md、CHANGELOG.md 和 docs/brief.md。当前已经实现 TypeScript/Node 本地服务、SQLite、Codex CLI rate_limits 自动检测、Claude Code statusline rate_limits、Dashboard/Doctor/Settings、Electron tray mini panel、always-on-top widget、严格 trial readiness 和默认英文的中英双语 UI。
 
-下一步请不要扩展新 provider，先围绕“早期用户能否顺利完成真实数据体验”和 v0.2 分发体验继续打磨：检查文档是否最新，跑 npm test / desktop smoke / trial readiness，修复新手引导、跨系统命令、UI 文案、截图、release checklist、安装包范围和开机启动开关方案。隐私边界保持不变：不读 cookie、不模拟登录、不上传 prompt/response/source code、不调用隐藏接口。
+下一步请不要扩展新 provider，先围绕“早期用户能否顺利完成真实数据体验”和 v0.2 分发体验继续打磨：检查文档是否最新，跑 npm test / desktop smoke / trial readiness，修复新手引导、跨系统命令、UI 文案、截图、release checklist、安装包范围、开机启动开关方案和 Settings 自动刷新间隔预设。隐私边界保持不变：不读 cookie、不模拟登录、不上传 prompt/response/source code、不调用隐藏接口。
 ```
 
 ## 19. 核心产品原则

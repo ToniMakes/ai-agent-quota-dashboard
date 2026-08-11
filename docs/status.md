@@ -2,7 +2,7 @@
 
 Last updated: 2026-08-11
 
-AI Agent Quota Dashboard is in a v0.1 developer-preview stage. The core MVP is no longer just a scaffold: the local dashboard, desktop tray shell, real-data setup flow, and strict trial readiness checks are implemented and passing CI.
+AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The core MVP is no longer just a scaffold: the local dashboard, desktop tray shell, real-data setup flow, and strict trial readiness checks are implemented and passing CI. The first public preview target is now installer-first for normal users, with source mode retained as a developer fallback.
 
 ## Current Capability
 
@@ -10,10 +10,12 @@ AI Agent Quota Dashboard is in a v0.1 developer-preview stage. The core MVP is n
 - SQLite persistence for normalized quota snapshots, reset events, and refresh runs
 - Codex quota detection from local CLI `rate_limits` events, with a manual visible-status fallback
 - Claude Code quota ingestion from official statusline `rate_limits`
+- Beginner Claude setup flow with explicit install and connect actions
 - Dashboard, Doctor, Settings, reset timeline, refresh history, and local export views
 - Strict real-data readiness checks shared by CLI, Settings, tray, and mini surfaces
 - Electron desktop shell with tray mini panel, always-on-top widget, safe AIQD-only shortcuts, and first-run deep links
-- Chinese/English UI support in the main dashboard and mini surfaces
+- Shared app icon assets for the tray, main window, and desktop shortcut
+- English-by-default UI with Chinese/English support in the main dashboard and mini surfaces
 - Source confidence, freshness, and reported-reset labels
 - JSON/CSV export with private identifiers and raw source references excluded
 - GitHub Actions CI on Windows and Ubuntu with Node 24
@@ -48,16 +50,16 @@ The beginner real-data trial docs now call out expected command results, Windows
 
 Demo release screenshots have been generated for the dashboard, Doctor, Settings setup flow, mini panel, and widget surfaces under `docs/assets/screenshots`.
 
-The first public preview distribution shape is source-only developer preview. `docs/release-notes-v0.1.0.md` is the draft GitHub Release text.
+The first public preview distribution shape is installer-first desktop preview. `docs/release-notes-v0.1.0.md` is the draft GitHub Release text and should not be used for tagging until a packaged desktop artifact exists.
 
 ## Current Product State
 
-The app is suitable for local real-data dogfooding by the maintainer and technically curious early testers. The first public preview is source-only: users clone the repo, install dependencies, and run the local dashboard or desktop shell from source. Packaged installers, zip artifacts, signed releases, and app-managed auto-start remain later-release work.
+The app is suitable for local real-data dogfooding by the maintainer and technically curious early testers. For the first public preview, normal users should install a packaged desktop build and finish setup from Settings. Source checkout remains the developer fallback path.
 
-The launch-at-login plan is documented in [docs/distribution.md](distribution.md): v0.2 should provide an explicit installer checkbox and a reversible Settings toggle, defaulting startup to off for the first packaged release.
+The launch-at-login plan is documented in [docs/distribution.md](distribution.md): startup must be explicit, reversible, and off by default. If v0.1 ships without that toggle, it should not create a startup entry.
 
 ## Next Focus
 
-1. Create the GitHub Release for `v0.1.0` from `docs/release-notes-v0.1.0.md`.
-2. Keep post-v0.1 changes focused on distribution polish, startup behavior, notifications, reset rhythm statistics, and simple trends.
-3. Start the v0.2 packaging plan with installer scope, signing decisions, and launch-at-login acceptance checks.
+1. Build and verify the packaged desktop artifact for `v0.1.0`.
+2. Run a fresh normal-user trial from installer through Codex and Claude Code readiness.
+3. Refresh release screenshots and finish `docs/release-checklist.md` before tagging.

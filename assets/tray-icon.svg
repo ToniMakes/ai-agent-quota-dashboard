@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="AIQD tray">
+  <circle cx="110" cy="110" r="77" fill="none" stroke="#56d6af" stroke-width="30" stroke-linecap="round"/>
+  <path d="M110 33a77 77 0 0 1 73 53" fill="none" stroke="#e7b35c" stroke-width="30" stroke-linecap="round"/>
+  <circle cx="110" cy="110" r="38" fill="#f6f5f2"/>
+  <circle cx="110" cy="110" r="20" fill="#151a17"/>
+  <path d="M158 158l56 56" fill="none" stroke="#151a17" stroke-width="36" stroke-linecap="round"/>
+  <path d="M158 158l56 56" fill="none" stroke="#f6f5f2" stroke-width="24" stroke-linecap="round"/>
+  <path d="M174 174l40 40" fill="none" stroke="#56d6af" stroke-width="11" stroke-linecap="round"/>
+</svg>

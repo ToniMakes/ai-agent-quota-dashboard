@@ -11,7 +11,7 @@ Unlike general token or cost trackers, this project is quota-first. It focuses o
 
 ## Status
 
-This repository is at the v0.1 developer-preview stage. The first public preview is a source-only developer preview for technically comfortable early testers. The core MVP is implemented enough for local real-data dogfooding, while packaged installers, signed releases, and app-managed auto-start are intentionally left for a later release.
+This repository is preparing the v0.1 desktop preview. The first public preview should be installer-first for normal users: install the app, open the desktop shortcut, then finish Codex and Claude Code setup from Settings. Source mode remains available as a developer fallback before and after the packaged release.
 
 See [docs/status.md](docs/status.md) for the current project snapshot. The current app includes:
 
@@ -24,6 +24,7 @@ See [docs/status.md](docs/status.md) for the current project snapshot. The curre
 - Manual Codex snapshot command and Settings form for visible `/status` or Usage values
 - Settings view status for Codex CLI quota detection with a manual fallback
 - Settings real-data overview for first-run Codex and Claude Code setup
+- Beginner Claude Code setup flow with separate install and connect actions
 - Real-data desktop trial guide for Codex and Claude Code setup
 - Doctor first-run checklist for real-data readiness
 - Setup refresh feedback for Codex saves, Claude Code waiting state, and manual refreshes
@@ -36,6 +37,7 @@ See [docs/status.md](docs/status.md) for the current project snapshot. The curre
 - Dashboard and Doctor views
 - Mini panel page for tray-sized quota checks
 - Electron desktop shell with a tray mini panel and optional always-on-top widget
+- Shared app icon assets for the tray, main window, and shortcut
 - One-time desktop first-run guide that uses strict trial readiness to open the exact setup or Doctor section
 - Desktop smoke coverage for the first-run guide deep-link and local state write
 - Desktop startup diagnostics with recovery guidance for backend failures
@@ -51,7 +53,7 @@ See [docs/status.md](docs/status.md) for the current project snapshot. The curre
 - Clickable mini footer actions for refresh warnings and setup guidance
 - Mini and tray first-run actions that open Settings or Doctor directly
 - Mini first-run actions deep-link to the exact Settings or Doctor section
-- Chinese/English language switching in the main dashboard and mini surfaces
+- English-by-default UI with Chinese/English language switching in the main dashboard and mini surfaces
 - Dashboard guidance for missing quota data
 - CLI `doctor` command for one-shot local diagnostics
 - CLI export command for normalized JSON/CSV output
@@ -99,7 +101,17 @@ This project does not:
 
 ## Quick Start
 
-The first preview is source-only. Clone the repository, install dependencies, and run the local dashboard or desktop shell from source.
+Normal-user release target:
+
+1. Download the installer from the GitHub Release assets.
+2. Run the installer.
+3. Open the AIQD desktop shortcut.
+4. In Settings, use `Install Claude Code CLI` if Claude Code is missing, then `Connect Claude data`.
+5. Open Claude Code once, send one short message, then return to AIQD and check the dashboard.
+
+Developer source mode:
+
+Clone the repository, install dependencies, and run the local dashboard or desktop shell from source.
 
 Demo mode:
 
@@ -144,10 +156,12 @@ npm run dev        # local server with demo quota snapshots
 npm run dev:local  # local server without demo quota snapshots
 npm run desktop    # desktop tray app without demo quota snapshots
 npm run desktop:local
+npm run desktop:open
 npm run desktop:demo
 npm run desktop:smoke
 npm run desktop:first-run-smoke
 npm run doctor
+npm run icons:generate
 npm run trial:preflight
 npm run trial:ready
 npm run claude:self-test
@@ -165,6 +179,7 @@ npm run desktop
 
 It starts the local backend, adds an AI Agent Quota tray icon, and provides:
 
+- a desktop-entry mode, `npm run desktop:open`, that opens the main dashboard window on launch
 - a tray mini panel that hides when it loses focus
 - an optional always-on-top desktop widget
 - a tray tooltip and menu summary for the current quota state
@@ -183,9 +198,9 @@ The mini surfaces reuse the same normalized `/api/agents`, `/api/trial-readiness
 
 Desktop shortcuts do not approve or automate other apps. Override or disable them with `AIQD_SHORTCUT_PANEL`, `AIQD_SHORTCUT_REFRESH`, and `AIQD_SHORTCUT_WIDGET`; set a value to `off` to disable that shortcut.
 
-This is currently a development shell, not an installer. Auto-start, packaging, zip artifacts, and signed releases are intentionally left for a later release.
+Source mode is a development shell. The v0.1 public preview should ship a packaged desktop installer so non-technical users do not need `npm`, `node`, or source checkout steps.
 
-The startup plan is documented in [docs/distribution.md](docs/distribution.md). The v0.2 packaging plan is to offer an explicit installer option, `Start AIQD when I sign in`, plus a reversible Settings toggle, `Launch at startup`; the first packaged release should default startup to off.
+The startup plan is documented in [docs/distribution.md](docs/distribution.md). The installed desktop shortcut should open the main dashboard. Launch-at-login should stay explicit, reversible, and off by default for the first packaged release.
 
 If the local backend cannot start, the desktop shell shows recovery guidance with the backend error tail and the same Doctor/smoke commands used in development.
 

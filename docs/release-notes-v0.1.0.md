@@ -1,10 +1,12 @@
-# v0.1.0 Developer Preview Release Notes
+# v0.1.0 Desktop Preview Release Notes
 
-AI Agent Quota Dashboard v0.1.0 is a source-only developer preview for technically comfortable early testers. It is meant for local real-data dogfooding of Codex and Claude Code quota signals before packaged installers and signed desktop releases exist.
+AI Agent Quota Dashboard v0.1.0 is the first desktop preview for local real-data dogfooding of Codex and Claude Code quota signals. The release target is installer-first for normal users, with source mode kept as a developer fallback.
 
 ## Distribution
 
-This preview is source-only:
+Normal users should download the packaged desktop installer from this GitHub Release, run it, and open AIQD from the installed desktop or Start menu entry. The installed entry opens the main dashboard window.
+
+Developer fallback from source:
 
 ```bash
 git clone https://github.com/isToniLiu/ai-agent-quota-dashboard.git
@@ -17,9 +19,9 @@ npm run desktop:local
 
 On Windows PowerShell, if `npm` is blocked by the local execution policy, use `npm.cmd` for the same commands.
 
-There is no installer, app-managed auto-start, signed binary, or packaged Electron build in this preview. Those are v0.2-or-later work items.
+Launch-at-login is not a hidden side effect. If startup support ships in this preview, it must be explicit and off by default. Otherwise, startup controls remain v0.2 work.
 
-The startup plan is explicit: v0.2 should offer `Start AIQD when I sign in` in the installer and `Launch at startup` in Settings, with startup off by default for the first packaged release.
+Code signing and update-channel decisions may remain later work if the release notes call that out clearly.
 
 ## Highlights
 
@@ -28,10 +30,14 @@ The startup plan is explicit: v0.2 should offer `Start AIQD when I sign in` in t
 - Codex quota detection from supported local CLI `rate_limits` events
 - Manual Codex visible-status fallback when automatic local data is unavailable
 - Claude Code official statusline `rate_limits` ingestion through an opt-in local sink
+- Beginner Claude Code setup with separate `Install Claude Code CLI` and `Connect Claude data` actions
+- Internal Claude statusline commands hidden behind technical details during normal setup
 - Dashboard, Doctor, Settings, reset timeline, refresh history, and JSON/CSV export
 - Electron desktop shell with tray mini panel, always-on-top widget, and AIQD-only shortcuts
+- Shared AIQD app icon assets for the desktop tray, main window, and shortcut
+- Desktop-entry launch mode that opens the main dashboard window
 - Strict real-data readiness shared by CLI, Settings, tray, and mini surfaces
-- Chinese/English language switching for the main dashboard and mini surfaces
+- English-by-default UI with Chinese/English language switching for the main dashboard and mini surfaces
 - Source confidence, freshness, and reported-reset labels
 - Privacy-safe public dashboard APIs and export output
 
@@ -52,16 +58,14 @@ Codex support is automatic when supported local `rate_limits` events are availab
 node dist/index.js codex snapshot --remaining-percent 72 --reset-at 2026-08-16T03:00:00Z
 ```
 
-Claude Code support requires installing the managed statusline sink:
+Claude Code support is configured from Settings:
 
-```bash
-npm run claude:self-test
-npm run build
-node dist/index.js setup claude-statusline
-node dist/index.js setup claude-statusline --write
-```
+1. If Claude Code CLI is missing, click `Install Claude Code CLI`.
+2. Click `Connect Claude data` if AIQD still needs to write the local capture setting.
+3. Open Claude Code once, finish Claude's own login/trust prompts, send one short message, and wait for the reply.
+4. Return to AIQD and check again.
 
-Then open Claude Code once so the statusline renders and sends supported `rate_limits` fields.
+The ordinary setup flow should not require users to copy `node dist...` or internal statusline commands. Those remain under advanced details for troubleshooting and source-mode development.
 
 ## Verification Before Tagging
 
@@ -80,11 +84,12 @@ CI runs tests on Windows and Ubuntu with Node 24.
 
 ## Known Limits
 
-- Source-only preview; no installer or signed desktop release yet
+- Installer preview may still be unsigned until the signing decision is made
 - No system notification support yet
-- No packaged build, app-managed launch-at-login setting, or update channel yet
+- No update channel yet
+- App-managed launch-at-login may be absent until v0.2; if present, it must be explicit and off by default
 - Claude Code may report setup warnings until it renders a fresh statusline payload
-- Historical trends and reset rhythm statistics are planned for v0.2
+- Historical trends, reset rhythm statistics, and Settings refresh interval presets are planned for v0.2
 - Additional providers are intentionally deferred until Codex and Claude Code are trustworthy
 
 ## Privacy Boundary

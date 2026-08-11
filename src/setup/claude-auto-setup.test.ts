@@ -48,7 +48,7 @@ describe("runClaudeAutoSetup", () => {
     assert.equal(result.result.needsUserAction, true);
     assert.equal(result.result.steps[0]?.state, "warn");
     assert.equal(result.result.steps[1]?.state, "pass");
-    assert.match(result.result.nextAction, /cannot see the claude command/);
+    assert.match(result.result.nextAction, /Claude Code CLI is still missing/);
   });
 
   it("installs Claude Code with WinGet only when explicitly requested", async () => {
