@@ -28,10 +28,10 @@ export function createClaudeCodeAdapter(
       provider: "anthropic",
       agent: "claude-code",
       displayName: "Claude Code",
-      shortName: "Claude",
+      shortName: "Claude Code",
       description: "Claude Code local usage files and statusline rate limits.",
       defaultDataPaths,
-      supportedWindows: ["daily", "weekly"]
+      supportedWindows: ["session_5h", "daily", "weekly"]
     },
     async scan(context: AdapterScanContext) {
       const checks: DoctorCheck[] = [];

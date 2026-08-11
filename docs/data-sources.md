@@ -24,6 +24,8 @@ Configured paths do not relax parser boundaries. Adapters still scan only narrow
 
 Claude Code statusline input is an official structured source. Anthropic documents a `rate_limits` object with `five_hour` and `seven_day` windows. Each window includes a used percentage and reset timestamp.
 
+The regular Claude desktop app's `Plan usage limits` screen is not a v0.1 data source. AIQD does not read or scrape the desktop app UI; Claude quota data comes from Claude Code statusline snapshots only.
+
 Source: https://docs.anthropic.com/en/docs/claude-code/statusline
 
 Parser:
@@ -45,6 +47,7 @@ Mapping:
 - `rate_limits.seven_day` -> `weekly`
 - `used_percentage` -> `usedPercent`
 - `resets_at` -> `resetAt`
+- `expiresAt` -> the earlier of `resets_at` and five hours after `observedAt`
 - source -> `official_statusline`
 - confidence -> `official`
 
