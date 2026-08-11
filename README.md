@@ -319,6 +319,8 @@ The Settings view shows the same config path, whether configured scan roots are 
 
 Claude Code can send official `rate_limits` data to a local statusline command. This project provides a sink that stores only sanitized rate limit fields.
 
+The regular Claude desktop app's `Plan usage limits` screen is not a v0.1 data source. If you only use the desktop app and never open Claude Code from a terminal/CLI session, AIQD cannot refresh Claude Code statusline quota data and may show the last statusline snapshot until it expires.
+
 Real-data setup from source:
 
 1. Build the local CLI:

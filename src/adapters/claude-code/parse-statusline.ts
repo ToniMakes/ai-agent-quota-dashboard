@@ -13,6 +13,8 @@ export type ParseClaudeCodeStatuslineOptions = {
   rawSourceRef?: string;
 };
 
+const statuslineSnapshotMaxAgeMs = 5 * 60 * 60 * 1000;
+
 const claudeRateLimitWindows: Array<{
   key: string;
   windowType: QuotaWindowType;
@@ -99,10 +101,42 @@ export function parseClaudeCodeStatuslinePayload(
       snapshot.resetAt = resetAt;
     }
 
+    const expiresAt = statuslineSnapshotExpiresAt(observedAt, resetAt);
+
+    if (expiresAt) {
+      snapshot.expiresAt = expiresAt;
+    }
+
     if (options.rawSourceRef) {
       snapshot.rawSourceRef = options.rawSourceRef;
     }
 
     return [snapshot];
   });
+}
+
+function statuslineSnapshotExpiresAt(
+  observedAt: string,
+  resetAt: string | undefined
+): string | undefined {
+  const candidates: number[] = [];
+  const observedAtMs = Date.parse(observedAt);
+
+  if (!Number.isNaN(observedAtMs)) {
+    candidates.push(observedAtMs + statuslineSnapshotMaxAgeMs);
+  }
+
+  if (resetAt) {
+    const resetAtMs = Date.parse(resetAt);
+
+    if (!Number.isNaN(resetAtMs)) {
+      candidates.push(resetAtMs);
+    }
+  }
+
+  if (candidates.length === 0) {
+    return undefined;
+  }
+
+  return new Date(Math.min(...candidates)).toISOString();
 }

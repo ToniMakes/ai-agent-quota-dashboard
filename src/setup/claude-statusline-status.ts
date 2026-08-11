@@ -11,7 +11,7 @@ import {
 import { isRecord } from "../adapters/parse-utils.js";
 import type { DoctorCheck, DoctorStatus, QuotaWindowType } from "../core/types.js";
 
-const freshStatuslineSnapshotSeconds = 6 * 60 * 60;
+const freshStatuslineSnapshotSeconds = 5 * 60 * 60;
 
 export type ClaudeStatuslineReadiness =
   | "ready"

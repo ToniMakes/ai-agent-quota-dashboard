@@ -34,6 +34,9 @@ describe("parseClaudeCodeStatusline", () => {
     assert.equal(snapshots[0]?.usedPercent, 37.4);
     assert.equal(snapshots[0]?.remainingPercent, 62.6);
     assert.equal(snapshots[0]?.resetAt, "2026-08-09T00:00:00.000Z");
+    assert.equal(snapshots[0]?.expiresAt, "2026-08-09T00:00:00.000Z");
+    assert.equal(snapshots[1]?.resetAt, "2026-08-13T00:00:00.000Z");
+    assert.equal(snapshots[1]?.expiresAt, "2026-08-09T05:00:00.000Z");
   });
 
   it("returns no quota snapshots when rate_limits is absent", async () => {
