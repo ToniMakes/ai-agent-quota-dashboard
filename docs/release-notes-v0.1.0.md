@@ -6,6 +6,12 @@ AI Agent Quota Dashboard v0.1.0 is the first desktop preview for local real-data
 
 Normal users should download the packaged desktop installer from this GitHub Release, run it, and open AIQD from the installed desktop or Start menu entry. The installed entry opens the main dashboard window.
 
+Windows x64 installer asset:
+
+```text
+AI Agent Quota Dashboard-0.1.0-win-x64.exe
+```
+
 Developer fallback from source:
 
 ```bash
@@ -34,6 +40,8 @@ Code signing and update-channel decisions may remain later work if the release n
 - Internal Claude statusline commands hidden behind technical details during normal setup
 - Dashboard, Doctor, Settings, reset timeline, refresh history, and JSON/CSV export
 - Electron desktop shell with tray mini panel, always-on-top widget, and AIQD-only shortcuts
+- Windows NSIS installer generated with `electron-builder`
+- Packaged app launches its local backend through Electron's bundled Node runtime, so users do not need Node.js or npm
 - Shared AIQD app icon assets for the desktop tray, main window, and shortcut
 - Desktop-entry launch mode that opens the main dashboard window
 - Strict real-data readiness shared by CLI, Settings, tray, and mini surfaces
@@ -75,6 +83,10 @@ The current release gate is:
 npm test
 npm run desktop:smoke
 npm run desktop:first-run-smoke
+npm run package:win:dir
+.\release\win-unpacked\AI Agent Quota Dashboard.exe --smoke
+.\release\win-unpacked\AI Agent Quota Dashboard.exe --smoke-first-run-guide
+npm run package:win
 npm run trial:preflight
 npm run trial:ready
 git diff --check
@@ -84,7 +96,7 @@ CI runs tests on Windows and Ubuntu with Node 24.
 
 ## Known Limits
 
-- Installer preview may still be unsigned until the signing decision is made
+- Windows installer is currently unsigned; Windows SmartScreen may warn until a signing certificate and reputation path are in place
 - No system notification support yet
 - No update channel yet
 - App-managed launch-at-login may be absent until v0.2; if present, it must be explicit and off by default

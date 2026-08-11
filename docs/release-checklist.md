@@ -7,6 +7,10 @@ Use this checklist before tagging a release.
 - [ ] `npm test` passes locally
 - [ ] `npm run desktop:smoke` passes locally
 - [ ] `npm run desktop:first-run-smoke` passes locally and uses isolated provider data paths
+- [ ] `npm run package:win:dir` passes locally
+- [ ] Packaged exe smoke passes: `.\release\win-unpacked\AI Agent Quota Dashboard.exe --smoke`
+- [ ] Packaged first-run smoke passes: `.\release\win-unpacked\AI Agent Quota Dashboard.exe --smoke-first-run-guide`
+- [ ] `npm run package:win` produces `release/AI Agent Quota Dashboard-0.1.0-win-x64.exe`
 - [ ] `npm run trial:preflight` gives source-specific next actions or reports ready
 - [ ] `npm run trial:ready` passes for a real-data dogfood build, or the release notes clearly say which source still needs setup
 - [ ] Packaged desktop installer or release artifact exists for the first public preview
@@ -17,6 +21,7 @@ Use this checklist before tagging a release.
 - [ ] `CHANGELOG.md` has a release entry
 - [ ] README describes current capabilities accurately
 - [ ] README explains the installer path for normal users and labels source mode as a developer fallback
+- [ ] Release notes say whether the Windows installer is unsigned
 - [ ] `docs/status.md` and `docs/roadmap.md` describe the current milestone accurately
 - [ ] Parser changes include sanitized fixtures
 - [ ] `docs/data-sources.md` documents source and confidence mapping
@@ -28,7 +33,7 @@ Use this checklist before tagging a release.
 ## First Preview Work Plan
 
 1. Verify deterministic validation: desktop smoke data paths are isolated and any first-run smoke assertion failure returns a non-zero process exit.
-2. Verify the local test gate: `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, and `git diff --check`.
+2. Verify the local test gate: `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, packaged smoke checks, and `git diff --check`.
 3. Build the packaged desktop artifact and verify the installed entry opens the main dashboard.
 4. Run a fresh-machine real-data trial from installer through Codex and Claude Code readiness.
 5. Run a clean-clone developer fallback trial.

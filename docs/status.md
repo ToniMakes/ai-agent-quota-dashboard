@@ -14,6 +14,8 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The core MVP is no 
 - Dashboard, Doctor, Settings, reset timeline, refresh history, and local export views
 - Strict real-data readiness checks shared by CLI, Settings, tray, and mini surfaces
 - Electron desktop shell with tray mini panel, always-on-top widget, safe AIQD-only shortcuts, and first-run deep links
+- Windows NSIS installer build via `electron-builder`
+- Packaged desktop runtime starts the local backend through Electron's bundled Node runtime
 - Shared app icon assets for the tray, main window, and desktop shortcut
 - English-by-default UI with Chinese/English support in the main dashboard and mini surfaces
 - Source confidence, freshness, and reported-reset labels
@@ -34,6 +36,10 @@ The current maintainer checkout has passed:
 - `git diff --check`
 - `npm run desktop:smoke`
 - `npm run desktop:first-run-smoke`
+- `npm run package:win:dir`
+- `.\release\win-unpacked\AI Agent Quota Dashboard.exe --smoke`
+- `.\release\win-unpacked\AI Agent Quota Dashboard.exe --smoke-first-run-guide`
+- `npm run package:win`
 - `npm run trial:preflight`
 - `npm run trial:ready`
 - Browser/API smoke against demo mode for `/`, `/mini.html`, `/api/health`, `/api/agents`, `/api/trial-readiness`, and `/api/export?format=json`
@@ -50,7 +56,7 @@ The beginner real-data trial docs now call out expected command results, Windows
 
 Demo release screenshots have been generated for the dashboard, Doctor, Settings setup flow, mini panel, and widget surfaces under `docs/assets/screenshots`.
 
-The first public preview distribution shape is installer-first desktop preview. `docs/release-notes-v0.1.0.md` is the draft GitHub Release text and should not be used for tagging until a packaged desktop artifact exists.
+The first public preview distribution shape is installer-first desktop preview. A local Windows x64 NSIS artifact has been generated at `release/AI Agent Quota Dashboard-0.1.0-win-x64.exe`; `release/` is ignored and the artifact should be uploaded to a GitHub Release rather than committed. `docs/release-notes-v0.1.0.md` is the draft GitHub Release text.
 
 ## Current Product State
 
@@ -60,6 +66,6 @@ The launch-at-login plan is documented in [docs/distribution.md](distribution.md
 
 ## Next Focus
 
-1. Build and verify the packaged desktop artifact for `v0.1.0`.
-2. Run a fresh normal-user trial from installer through Codex and Claude Code readiness.
+1. Run a fresh normal-user trial from the installer through Codex and Claude Code readiness.
+2. Decide whether to tag `v0.1.0` with the current unsigned installer or wait for signing.
 3. Refresh release screenshots and finish `docs/release-checklist.md` before tagging.

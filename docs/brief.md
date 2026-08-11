@@ -15,6 +15,7 @@
 - Claude Code：通过官方 statusline `rate_limits` 写入本地 sanitized snapshot
 - Dashboard / Doctor / Settings / Refresh History / Export
 - 桌面托盘 mini panel 和 always-on-top widget
+- Windows NSIS 安装包构建已接入 `electron-builder`，打包后通过 Electron bundled Node 启动本地 backend，普通用户不需要单独安装 Node.js
 - 主 dashboard 与 mini surfaces 默认英文，并支持中英双语切换
 - `trial:preflight` / `trial:ready` 严格真实数据检查
 - Windows + Ubuntu GitHub Actions CI
@@ -1032,7 +1033,7 @@ Troubleshooting actions
 ```text
 我想继续开发 AI Agent Quota Dashboard。项目已经不是从零 scaffold 阶段，而是 v0.1 developer preview / 真实数据 dogfooding 阶段。
 
-请先阅读 docs/status.md、docs/roadmap.md、README.md、CHANGELOG.md 和 docs/brief.md。当前已经实现 TypeScript/Node 本地服务、SQLite、Codex CLI rate_limits 自动检测、Claude Code statusline rate_limits、Dashboard/Doctor/Settings、Electron tray mini panel、always-on-top widget、严格 trial readiness 和默认英文的中英双语 UI。
+请先阅读 docs/status.md、docs/roadmap.md、README.md、CHANGELOG.md 和 docs/brief.md。当前已经实现 TypeScript/Node 本地服务、SQLite、Codex CLI rate_limits 自动检测、Claude Code statusline rate_limits、Dashboard/Doctor/Settings、Electron tray mini panel、always-on-top widget、Windows installer-first 打包配置、严格 trial readiness 和默认英文的中英双语 UI。
 
 下一步请不要扩展新 provider，先围绕“早期用户能否顺利完成真实数据体验”和 v0.2 分发体验继续打磨：检查文档是否最新，跑 npm test / desktop smoke / trial readiness，修复新手引导、跨系统命令、UI 文案、截图、release checklist、安装包范围、开机启动开关方案和 Settings 自动刷新间隔预设。隐私边界保持不变：不读 cookie、不模拟登录、不上传 prompt/response/source code、不调用隐藏接口。
 ```

@@ -43,6 +43,8 @@ See [docs/status.md](docs/status.md) for the current project snapshot. The curre
 - Desktop startup diagnostics with recovery guidance for backend failures
 - Desktop global shortcuts for AIQD mini panel, refresh, and widget actions
 - Local trial scripts for desktop launch, Doctor, and Claude statusline self-test
+- Windows NSIS installer build through `electron-builder`
+- Packaged desktop smoke checks that run without requiring a system Node.js install
 - Real-data trial preflight command with source-specific next actions
 - Strict real-data readiness check before desktop trials
 - Settings view status for desktop shortcut bindings and overrides
@@ -104,6 +106,7 @@ This project does not:
 Normal-user release target:
 
 1. Download the installer from the GitHub Release assets.
+   The Windows x64 artifact is named `AI Agent Quota Dashboard-0.1.0-win-x64.exe`.
 2. Run the installer.
 3. Open the AIQD desktop shortcut.
 4. In Settings, use `Install Claude Code CLI` if Claude Code is missing, then `Connect Claude data`.
@@ -162,6 +165,8 @@ npm run desktop:smoke
 npm run desktop:first-run-smoke
 npm run doctor
 npm run icons:generate
+npm run package:win:dir
+npm run package:win
 npm run trial:preflight
 npm run trial:ready
 npm run claude:self-test
@@ -205,6 +210,30 @@ The startup plan is documented in [docs/distribution.md](docs/distribution.md). 
 If the local backend cannot start, the desktop shell shows recovery guidance with the backend error tail and the same Doctor/smoke commands used in development.
 
 Use `npm run desktop:smoke` to verify that the desktop shell can start the local backend and exit cleanly. Use `npm run desktop:first-run-smoke` to verify the first-run guide deep-link and local state marker against isolated temporary data.
+
+## Windows Installer
+
+The Windows preview installer is built with `electron-builder` and the NSIS target:
+
+```bash
+npm run package:win
+```
+
+The generated installer is written to:
+
+```text
+release/AI Agent Quota Dashboard-0.1.0-win-x64.exe
+```
+
+For a faster packaged-app smoke test without running the installer:
+
+```bash
+npm run package:win:dir
+release\win-unpacked\AI Agent Quota Dashboard.exe --smoke
+release\win-unpacked\AI Agent Quota Dashboard.exe --smoke-first-run-guide
+```
+
+The packaged app starts its local backend through Electron's bundled Node runtime, so normal users do not need to install Node.js or npm.
 
 ## Doctor CLI
 

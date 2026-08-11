@@ -6,7 +6,7 @@ This guide is for a local desktop trial with real Codex and Claude Code quota si
 
 Normal-user installer trial:
 
-1. Install AIQD from the release artifact.
+1. Install AIQD from the release artifact: `AI Agent Quota Dashboard-0.1.0-win-x64.exe`.
 2. Open AIQD from the installed desktop or Start menu entry.
 3. Confirm the main dashboard window opens.
 4. Open Settings if the first-run guide does not take you there automatically.
