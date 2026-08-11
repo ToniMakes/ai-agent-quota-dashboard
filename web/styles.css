@@ -295,6 +295,10 @@ h2 {
   background: var(--warning);
 }
 
+.meter-fill.session {
+  background: var(--warning);
+}
+
 .meter-fill.critical {
   background: var(--critical);
 }
@@ -329,6 +333,27 @@ h2 {
   font-weight: 800;
   line-height: 1;
   text-transform: uppercase;
+}
+
+.primary-quota-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.35fr);
+  gap: 12px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.primary-quota-meta span,
+.primary-quota-meta time {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.primary-quota-meta time {
+  text-align: right;
 }
 
 .quota-lines,
@@ -384,6 +409,83 @@ h2 {
 .quota-line:first-child {
   border-top: 0;
   padding-top: 0;
+}
+
+.quota-window-row {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.quota-window-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.quota-window-heading,
+.quota-window-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.quota-window-name {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 780;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quota-window-remaining {
+  color: var(--text);
+  font-size: 0.95rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.quota-window-meter {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.quota-window-meter-fill {
+  width: var(--value);
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.quota-window-meter-fill.session {
+  background: var(--warning);
+}
+
+.quota-window-meter-fill.stale {
+  background: var(--stale);
+}
+
+.quota-window-meta {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.35fr);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.quota-window-meta span,
+.quota-window-meta time {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quota-window-meta time {
+  text-align: right;
 }
 
 .label {
@@ -1533,6 +1635,9 @@ h2 {
   }
 
   .quota-line,
+  .primary-quota-meta,
+  .quota-window-heading,
+  .quota-window-meta,
   .reset-row,
   .doctor-row,
   .event-row,
@@ -1555,6 +1660,12 @@ h2 {
   }
 
   .value {
+    text-align: left;
+  }
+
+  .quota-window-remaining,
+  .primary-quota-meta time,
+  .quota-window-meta time {
     text-align: left;
   }
 

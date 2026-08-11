@@ -26,6 +26,7 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 - One-time first-run desktop guide with deep links to exact setup or Doctor sections
 - English-by-default Chinese/English language switching in the main dashboard and mini surfaces
 - Collapsible first-run Settings details behind the Codex and Claude setup buttons
+- Dashboard and mini quota cards hide duplicate primary-window rows and use separate progress rows for extra windows such as Claude Code's 5-hour quota
 - Beginner Claude Code setup flow that separates `Install Claude Code CLI` from `Connect Claude data`
 - Technical Claude statusline commands hidden behind advanced details in the normal setup flow
 - CI on Windows and Ubuntu with Node 24

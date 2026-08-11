@@ -540,15 +540,17 @@ function renderWindowRows(agent) {
     `;
   }
 
-  const visibleSnapshots = snapshots.slice(0, 2);
-  const rows = visibleSnapshots
-    .map((snapshot) =>
-      renderWindowRow(snapshot, {
-        showMeter: !isSameSnapshot(snapshot, agent.primarySnapshot)
-      })
-    )
-    .join("");
-  const hiddenCount = snapshots.length - visibleSnapshots.length;
+  const secondarySnapshots = snapshots.filter(
+    (snapshot) => !isSameSnapshot(snapshot, agent.primarySnapshot)
+  );
+
+  if (secondarySnapshots.length === 0) {
+    return "";
+  }
+
+  const visibleSnapshots = secondarySnapshots.slice(0, 1);
+  const rows = visibleSnapshots.map(renderWindowRow).join("");
+  const hiddenCount = secondarySnapshots.length - visibleSnapshots.length;
   const more =
     hiddenCount > 0
       ? `<div class="mini-window-more">${escapeHtml(
@@ -562,21 +564,29 @@ function renderWindowRows(agent) {
   return rows + more;
 }
 
-function renderWindowRow(snapshot, options = {}) {
-  const reset = resetSummary(snapshot.resetAt);
+function renderWindowRow(snapshot) {
+  const reset = resetShortSummary(snapshot.resetAt);
   const resetTitle = snapshot.resetAt
     ? tx("Reported reset {time}", "报告 reset：{time}", {
         time: formatTimestamp(snapshot.resetAt, { long: true })
       })
     : tx("No reported reset", "没有报告 reset");
-  const meter = options.showMeter ? renderWindowMeter(snapshot) : "";
+  const used = formatUsedText(snapshot);
+  const detailParts = [
+    used ? tx("{amount} used", "已用 {amount}", { amount: used }) : "",
+    reset
+  ].filter(Boolean);
 
   return `
-    <div class="mini-window-row" title="${escapeHtml(resetTitle)}">
-      <span>${escapeHtml(windowLabel(snapshot.windowType))}</span>
-      <strong>${escapeHtml(formatRemainingText(snapshot))}</strong>
-      <time datetime="${escapeHtml(snapshot.resetAt ?? "")}">${escapeHtml(reset)}</time>
-      ${meter}
+    <div class="mini-window-row ${escapeHtml(windowMeterClass(snapshot))}" title="${escapeHtml(resetTitle)}">
+      <div class="mini-window-heading">
+        <span>${escapeHtml(windowLabel(snapshot.windowType))}</span>
+        <strong>${escapeHtml(formatRemainingText(snapshot))}</strong>
+      </div>
+      ${renderWindowMeter(snapshot)}
+      <div class="mini-window-meta">
+        <span>${escapeHtml(detailParts.join(" / "))}</span>
+      </div>
     </div>
   `;
 }
@@ -890,12 +900,14 @@ function meterValue(snapshot) {
   return 0;
 }
 
-function resetSummary(value) {
+function resetShortSummary(value) {
   if (!value) {
     return tx("reset --", "reset --");
   }
 
-  return `${formatResetDistance(value)} / ${formatTimestamp(value)}`;
+  return tx("reset {time}", "{time}重置", {
+    time: formatResetDistance(value)
+  });
 }
 
 function snapshotDetail(snapshot) {
@@ -927,6 +939,22 @@ function formatRemainingText(snapshot) {
   }
 
   return "--";
+}
+
+function formatUsedText(snapshot) {
+  if (!snapshot) {
+    return "";
+  }
+
+  if (typeof snapshot.usedPercent === "number") {
+    return `${Math.round(snapshot.usedPercent)}%`;
+  }
+
+  if (typeof snapshot.used === "number") {
+    return `${compactNumber(snapshot.used)} ${snapshot.unit ?? ""}`.trim();
+  }
+
+  return "";
 }
 
 function formatRelative(value) {

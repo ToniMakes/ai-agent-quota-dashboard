@@ -14,7 +14,7 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The core MVP is no 
 - Dashboard, Doctor, Settings, reset timeline, refresh history, and local export views
 - Strict real-data readiness checks shared by CLI, Settings, tray, and mini surfaces
 - Electron desktop shell with tray mini panel, always-on-top widget, safe AIQD-only shortcuts, and first-run deep links
-- Mini panel secondary quota progress bars, including a yellow Claude Code 5-hour bar
+- Dashboard and mini quota cards hide duplicate primary-window rows while keeping extra windows, such as Claude Code's 5-hour quota, visible as progress rows
 - Windows NSIS installer build via `electron-builder`
 - Packaged desktop runtime starts the local backend through Electron's bundled Node runtime
 - Shared app icon assets for the tray, main window, and desktop shortcut
@@ -45,7 +45,7 @@ The current maintainer checkout has passed:
 - `npm run trial:preflight`
 - `npm run trial:ready`
 - Browser interaction smoke for the collapsible first-run setup buttons
-- Browser interaction smoke for the mini panel Claude Code 5-hour progress bar
+- Browser interaction smoke for the decluttered dashboard and mini quota-window layouts
 - Browser/API smoke against demo mode for `/`, `/mini.html`, `/api/health`, `/api/agents`, `/api/trial-readiness`, and `/api/export?format=json`
 - Clean-copy trial from `.tmp/fresh-trial-current`: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, and `npm run trial:ready`
 - GitHub Actions CI on `main`

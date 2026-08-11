@@ -40,8 +40,9 @@ Code signing and update-channel decisions may remain later work if the release n
 - Beginner Claude Code setup with separate `Install Claude Code CLI` and `Connect Claude data` actions
 - Internal Claude statusline commands hidden behind technical details during normal setup
 - Dashboard, Doctor, Settings, reset timeline, refresh history, and JSON/CSV export
+- Dashboard quota cards keep the primary quota in the hero meter and show only extra windows as separate progress rows
 - Electron desktop shell with tray mini panel, always-on-top widget, and AIQD-only shortcuts
-- Mini panel secondary quota rows with compact progress bars, including a yellow Claude Code 5-hour bar
+- Mini panel hides duplicate primary quota rows and shows compact secondary-window bars, including a yellow Claude Code 5-hour bar
 - Windows NSIS installer generated with `electron-builder`
 - Packaged app launches its local backend through Electron's bundled Node runtime, so users do not need Node.js or npm
 - Shared AIQD app icon assets for the desktop tray, main window, and shortcut

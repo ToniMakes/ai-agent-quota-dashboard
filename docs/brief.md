@@ -848,7 +848,7 @@ GitHub: https://github.com/ofershap/cursor-usage-tracker
 - Refresh History
 - JSON/CSV export
 - Desktop tray mini panel
-- Mini panel secondary quota progress bars, including a yellow Claude Code 5h bar
+- Dashboard / mini quota cards：primary window 放在主数字和主进度条，secondary windows 作为补充进度条，例如 Claude Code 5h 黄条
 - Always-on-top widget
 - 默认英文的中英双语 UI
 
