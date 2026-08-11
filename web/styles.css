@@ -661,6 +661,17 @@ h2 {
   gap: 8px;
 }
 
+.setup-choice-button.is-active {
+  border-color: var(--accent);
+  background: var(--surface-muted);
+  color: var(--accent-strong);
+}
+
+.setup-detail-panel {
+  display: grid;
+  gap: 10px;
+}
+
 .setup-step-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -17,6 +17,7 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The core MVP is no 
 - Windows NSIS installer build via `electron-builder`
 - Packaged desktop runtime starts the local backend through Electron's bundled Node runtime
 - Shared app icon assets for the tray, main window, and desktop shortcut
+- Collapsible first-run Settings details controlled by the Codex and Claude setup buttons
 - English-by-default UI with Chinese/English support in the main dashboard and mini surfaces
 - Source confidence, freshness, and reported-reset labels
 - JSON/CSV export with private identifiers and raw source references excluded
@@ -42,6 +43,7 @@ The current maintainer checkout has passed:
 - `npm run package:win`
 - `npm run trial:preflight`
 - `npm run trial:ready`
+- Browser interaction smoke for the collapsible first-run setup buttons
 - Browser/API smoke against demo mode for `/`, `/mini.html`, `/api/health`, `/api/agents`, `/api/trial-readiness`, and `/api/export?format=json`
 - Clean-copy trial from `.tmp/fresh-trial-current`: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, and `npm run trial:ready`
 - GitHub Actions CI on `main`
@@ -67,5 +69,5 @@ The launch-at-login plan is documented in [docs/distribution.md](distribution.md
 ## Next Focus
 
 1. Run a fresh normal-user trial from the installer through Codex and Claude Code readiness.
-2. Decide whether to tag `v0.1.0` with the current unsigned installer or wait for signing.
-3. Refresh release screenshots and finish `docs/release-checklist.md` before tagging.
+2. Refresh release screenshots if the collapsible setup flow should be visible in release assets.
+3. Create the GitHub Release and upload the unsigned Windows installer artifact after final checklist review.

@@ -25,6 +25,7 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 - Safe AIQD-only global shortcuts for mini panel, refresh, and widget
 - One-time first-run desktop guide with deep links to exact setup or Doctor sections
 - English-by-default Chinese/English language switching in the main dashboard and mini surfaces
+- Collapsible first-run Settings details behind the Codex and Claude setup buttons
 - Beginner Claude Code setup flow that separates `Install Claude Code CLI` from `Connect Claude data`
 - Technical Claude statusline commands hidden behind advanced details in the normal setup flow
 - CI on Windows and Ubuntu with Node 24
@@ -35,9 +36,8 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 - Signing decision for the Windows installer, or explicit unsigned-preview warning in release notes
 - Developer fallback trial from clone to Codex + Claude Code readiness
 - Beginner onboarding copy pass for Windows, macOS, and Linux
-- Release screenshots or short GIFs for dashboard, mini panel, widget, and setup flow
-- Update release notes with the installer path, desktop shortcut behavior, and source-mode fallback
-- Update release notes and tag the first preview after the release checklist passes
+- Refresh release screenshots or short GIFs when the setup-flow UI changes materially
+- Create the GitHub Release and upload the installer artifact after final verification
 
 ### First Preview Work Plan
 
@@ -47,7 +47,7 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 4. Developer fallback: verify a clean clone still works for technical testers.
 5. Onboarding pass: tighten Settings and README instructions around the next action, expected result, and recovery path for each platform.
 6. Release assets: capture dashboard, tray mini panel, widget, and setup-flow screenshots or short GIFs.
-7. Release finish: update `CHANGELOG.md`, complete `docs/release-checklist.md`, verify CI on `main`, and tag the preview.
+7. Release finish: update `CHANGELOG.md`, complete `docs/release-checklist.md`, verify CI on `main`, tag the preview, and create the GitHub Release.
 
 ## v0.2
 

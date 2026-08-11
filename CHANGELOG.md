@@ -11,6 +11,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Installer-first v0.1.0 desktop-preview distribution target and release notes draft
 - Windows NSIS installer build through `electron-builder`
 - Packaged desktop runtime starts the local backend through Electron's bundled Node runtime, so users do not need Node.js
+- Collapsible first-run setup details controlled by the Codex and Claude setup buttons
 - Beginner Claude setup flow with separate `Install Claude Code CLI` and `Connect Claude data` actions
 - Claude setup result copy that distinguishes complete setup from action-needed states
 - Collapsed technical details for internal Claude statusline commands and paths during normal setup

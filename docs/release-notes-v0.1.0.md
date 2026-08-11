@@ -36,6 +36,7 @@ Code signing and update-channel decisions may remain later work if the release n
 - Codex quota detection from supported local CLI `rate_limits` events
 - Manual Codex visible-status fallback when automatic local data is unavailable
 - Claude Code official statusline `rate_limits` ingestion through an opt-in local sink
+- First-run Settings details stay collapsed until the user clicks `Set up Codex` or `Set up Claude`
 - Beginner Claude Code setup with separate `Install Claude Code CLI` and `Connect Claude data` actions
 - Internal Claude statusline commands hidden behind technical details during normal setup
 - Dashboard, Doctor, Settings, reset timeline, refresh history, and JSON/CSV export
@@ -68,10 +69,11 @@ node dist/index.js codex snapshot --remaining-percent 72 --reset-at 2026-08-16T0
 
 Claude Code support is configured from Settings:
 
-1. If Claude Code CLI is missing, click `Install Claude Code CLI`.
-2. Click `Connect Claude data` if AIQD still needs to write the local capture setting.
-3. Open Claude Code once, finish Claude's own login/trust prompts, send one short message, and wait for the reply.
-4. Return to AIQD and check again.
+1. Click `Set up Claude` to expand the Claude setup details.
+2. If Claude Code CLI is missing, click `Install Claude Code CLI`.
+3. Click `Connect Claude data` if AIQD still needs to write the local capture setting.
+4. Open Claude Code once, finish Claude's own login/trust prompts, send one short message, and wait for the reply.
+5. Return to AIQD and check again.
 
 The ordinary setup flow should not require users to copy `node dist...` or internal statusline commands. Those remain under advanced details for troubleshooting and source-mode development.
 

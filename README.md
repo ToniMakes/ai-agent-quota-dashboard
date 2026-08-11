@@ -24,6 +24,7 @@ See [docs/status.md](docs/status.md) for the current project snapshot. The curre
 - Manual Codex snapshot command and Settings form for visible `/status` or Usage values
 - Settings view status for Codex CLI quota detection with a manual fallback
 - Settings real-data overview for first-run Codex and Claude Code setup
+- Collapsible first-run setup details behind the `Set up Codex` and `Set up Claude` buttons
 - Beginner Claude Code setup flow with separate install and connect actions
 - Real-data desktop trial guide for Codex and Claude Code setup
 - Doctor first-run checklist for real-data readiness
@@ -109,8 +110,9 @@ Normal-user release target:
    The Windows x64 artifact is named `AI Agent Quota Dashboard-0.1.0-win-x64.exe`.
 2. Run the installer.
 3. Open the AIQD desktop shortcut.
-4. In Settings, use `Install Claude Code CLI` if Claude Code is missing, then `Connect Claude data`.
-5. Open Claude Code once, send one short message, then return to AIQD and check the dashboard.
+4. In Settings, click `Set up Codex` or `Set up Claude` to reveal only the setup details you need.
+5. For Claude Code, use `Install Claude Code CLI` if Claude Code is missing, then `Connect Claude data`.
+6. Open Claude Code once, send one short message, then return to AIQD and check the dashboard.
 
 Developer source mode:
 
