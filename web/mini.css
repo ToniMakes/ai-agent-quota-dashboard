@@ -311,44 +311,51 @@ button {
 
 .mini-window-list {
   display: grid;
-  gap: 5px;
+  gap: 4px;
 }
 
 .mini-window-row {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
-  align-items: baseline;
-  gap: 5px;
+  gap: 4px;
   color: var(--muted);
   font-size: 0.68rem;
   line-height: 1.2;
 }
 
-.mini-window-row span,
-.mini-window-row strong,
-.mini-window-row time,
+.mini-window-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.mini-window-heading span,
+.mini-window-heading strong,
+.mini-window-meta span,
 .mini-window-more {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.mini-window-row span {
+.mini-window-heading span {
   color: var(--text);
   font-weight: 720;
 }
 
-.mini-window-row strong {
+.mini-window-heading strong {
   color: var(--text);
   font-size: 0.72rem;
 }
 
-.mini-window-row time {
-  text-align: right;
+.mini-window-meta span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 650;
 }
 
 .mini-window-meter {
-  grid-column: 1 / -1;
   height: 3px;
   overflow: hidden;
   border-radius: 999px;

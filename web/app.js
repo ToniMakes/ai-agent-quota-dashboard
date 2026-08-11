@@ -692,7 +692,8 @@ function renderAgentCard(agent) {
     ? sourceLabel(primary.source)
     : tx("Unavailable", "不可用");
   const confidence = primary ? confidenceLabel(primary.confidence) : statusLabel("unknown");
-  const meterValue = clamp(primary?.remainingPercent ?? 0, 0, 100);
+  const meterValue = snapshotMeterValue(primary);
+  const remainingLabel = primaryRemainingLabel(primary);
 
   return `
     <article class="agent-card">
@@ -715,11 +716,15 @@ function renderAgentCard(agent) {
           )}"
         >
           <div class="remaining">${remaining}</div>
-          <div class="remaining-label">${escapeHtml(tx("remaining", "剩余"))}</div>
+          <div class="remaining-label">${escapeHtml(remainingLabel)}</div>
         </div>
         <div class="meter" aria-hidden="true">
-          <div class="meter-fill ${status}" style="--value: ${meterValue}%"></div>
+          <div
+            class="meter-fill ${escapeHtml(primaryMeterClass(primary, status))}"
+            style="--value: ${meterValue}%"
+          ></div>
         </div>
+        ${primary ? renderPrimaryQuotaMeta(primary) : ""}
       </div>
 
       <div class="quota-lines">
@@ -796,33 +801,197 @@ function renderSnapshotLines(agent) {
   }
 
   return snapshots
-    .map((snapshot) => {
-      return `
-        <div class="quota-line">
-          <span class="label">${escapeHtml(windowLabel(snapshot.windowType))}</span>
-          <span class="value quota-value">
-            <span class="quota-primary">${escapeHtml(
-              tx("Remaining", "剩余")
-            )} ${formatRemaining(snapshot)}</span>
-            ${renderUsedValue(snapshot)}
-            <span class="quota-reset">${escapeHtml(
-              tx("reported reset", "报告 reset")
-            )} ${renderResetValue(snapshot.resetAt)}</span>
-          </span>
-        </div>
-      `;
-    })
+    .filter((snapshot) => !isSameSnapshot(snapshot, agent.primarySnapshot))
+    .map((snapshot) =>
+      renderQuotaWindowRow(snapshot, {
+        showMeter: true
+      })
+    )
     .join("");
 }
 
-function renderUsedValue(snapshot) {
+function renderPrimaryQuotaMeta(snapshot) {
   const used = formatUsed(snapshot);
+  const reset = snapshot.resetAt
+    ? tx("Reset {time}", "{time}重置", {
+        time: formatRelative(snapshot.resetAt)
+      })
+    : tx("No reported reset", "没有报告 reset");
+  const resetAbsolute = snapshot.resetAt ? formatTimestamp(snapshot.resetAt) : "";
 
-  if (!used) {
+  return `
+    <div class="primary-quota-meta">
+      ${
+        used
+          ? `<span>${escapeHtml(
+              tx("{amount} used", "已用 {amount}", { amount: used })
+            )}</span>`
+          : "<span></span>"
+      }
+      <span>${escapeHtml(reset)}</span>
+      ${
+        resetAbsolute
+          ? `<time datetime="${escapeHtml(snapshot.resetAt)}">${escapeHtml(
+              resetAbsolute
+            )}</time>`
+          : "<span></span>"
+      }
+    </div>
+  `;
+}
+
+function renderQuotaWindowRow(snapshot, options = {}) {
+  const remaining = formatRemainingText(snapshot);
+  const used = formatUsed(snapshot);
+  const reset = snapshot.resetAt
+    ? tx("Reset {time}", "{time}重置", {
+        time: formatRelative(snapshot.resetAt)
+      })
+    : tx("No reported reset", "没有报告 reset");
+  const resetAbsolute = snapshot.resetAt ? formatTimestamp(snapshot.resetAt) : "";
+
+  return `
+    <div
+      class="quota-window-row ${escapeHtml(snapshotMeterClass(snapshot))}"
+      title="${escapeHtml(
+        tx("{window} quota window", "{window}额度窗口", {
+          window: windowLabel(snapshot.windowType)
+        })
+      )}"
+    >
+      <div class="quota-window-heading">
+        <span class="quota-window-name">${escapeHtml(windowLabel(snapshot.windowType))}</span>
+        <strong class="quota-window-remaining">${escapeHtml(
+          tx("{amount} remaining", "剩余 {amount}", {
+            amount: remaining
+          })
+        )}</strong>
+      </div>
+      ${options.showMeter ? renderSnapshotMeter(snapshot) : ""}
+      <div class="quota-window-meta">
+        ${
+          used
+            ? `<span>${escapeHtml(
+                tx("{amount} used", "已用 {amount}", { amount: used })
+              )}</span>`
+            : ""
+        }
+        <span>${escapeHtml(reset)}</span>
+        ${
+          resetAbsolute
+            ? `<time datetime="${escapeHtml(snapshot.resetAt)}">${escapeHtml(
+                resetAbsolute
+              )}</time>`
+            : ""
+        }
+      </div>
+    </div>
+  `;
+}
+
+function renderSnapshotMeter(snapshot) {
+  if (!hasSnapshotMeterValue(snapshot)) {
     return "";
   }
 
-  return `<span class="quota-used">${escapeHtml(tx("used", "已用"))} ${used}</span>`;
+  return `
+    <div
+      class="quota-window-meter"
+      title="${escapeHtml(
+        tx("{window} remaining quota", "{window}剩余额度", {
+          window: windowLabel(snapshot.windowType)
+        })
+      )}"
+      aria-hidden="true"
+    >
+      <div
+        class="quota-window-meter-fill ${escapeHtml(snapshotMeterClass(snapshot))}"
+        style="--value: ${snapshotMeterValue(snapshot)}%"
+      ></div>
+    </div>
+  `;
+}
+
+function hasSnapshotMeterValue(snapshot) {
+  return Boolean(
+    typeof snapshot?.remainingPercent === "number" ||
+      (typeof snapshot?.remaining === "number" &&
+        typeof snapshot?.total === "number" &&
+        snapshot.total > 0)
+  );
+}
+
+function snapshotMeterValue(snapshot) {
+  if (!snapshot) {
+    return 0;
+  }
+
+  if (typeof snapshot.remainingPercent === "number") {
+    return clamp(snapshot.remainingPercent, 0, 100);
+  }
+
+  if (
+    typeof snapshot.remaining === "number" &&
+    typeof snapshot.total === "number" &&
+    snapshot.total > 0
+  ) {
+    return clamp((snapshot.remaining / snapshot.total) * 100, 0, 100);
+  }
+
+  return 0;
+}
+
+function primaryMeterClass(snapshot, status) {
+  if (snapshot?.windowType === "session_5h" && status === "healthy") {
+    return "session";
+  }
+
+  return status;
+}
+
+function snapshotMeterClass(snapshot) {
+  if (snapshot.windowType === "session_5h") {
+    return "session";
+  }
+
+  return snapshot.stale ? "stale" : "standard";
+}
+
+function isSameSnapshot(left, right) {
+  return Boolean(
+    left &&
+      right &&
+      left.provider === right.provider &&
+      left.agent === right.agent &&
+      left.windowType === right.windowType &&
+      left.observedAt === right.observedAt
+  );
+}
+
+function primaryRemainingLabel(snapshot) {
+  if (!snapshot) {
+    return tx("remaining", "剩余");
+  }
+
+  return tx("{window} remaining", "{window}剩余", {
+    window: windowLabel(snapshot.windowType)
+  });
+}
+
+function formatRemainingText(snapshot) {
+  if (!snapshot) {
+    return "--";
+  }
+
+  if (typeof snapshot.remainingPercent === "number") {
+    return `${Math.round(snapshot.remainingPercent)}%`;
+  }
+
+  if (typeof snapshot.remaining === "number") {
+    return `${compactNumber(snapshot.remaining)} ${snapshot.unit ?? ""}`.trim();
+  }
+
+  return `-- ${snapshot.unit ?? ""}`.trim();
 }
 
 function renderResets() {
@@ -4218,7 +4387,7 @@ function formatUsed(snapshot) {
   }
 
   if (typeof snapshot.used === "number") {
-    return `${compactNumber(snapshot.used)} ${escapeHtml(snapshot.unit ?? "")}`.trim();
+    return `${compactNumber(snapshot.used)} ${snapshot.unit ?? ""}`.trim();
   }
 
   return "";

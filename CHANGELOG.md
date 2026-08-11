@@ -12,7 +12,8 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Windows NSIS installer build through `electron-builder`
 - Packaged desktop runtime starts the local backend through Electron's bundled Node runtime, so users do not need Node.js
 - Collapsible first-run setup details controlled by the Codex and Claude setup buttons
-- Mini panel secondary quota windows now show compact progress bars, with Claude Code's 5-hour quota highlighted in yellow
+- Mini panel now hides duplicate primary quota rows and uses compact secondary-window bars, with Claude Code's 5-hour quota highlighted in yellow
+- Main dashboard quota windows were decluttered by moving primary-window used/reset details below the main meter and keeping extra windows, such as Claude Code's 5-hour quota, as separate progress rows
 - Beginner Claude setup flow with separate `Install Claude Code CLI` and `Connect Claude data` actions
 - Claude setup result copy that distinguishes complete setup from action-needed states
 - Collapsed technical details for internal Claude statusline commands and paths during normal setup
