@@ -41,6 +41,7 @@ Code signing and update-channel decisions may remain later work if the release n
 - Internal Claude statusline commands hidden behind technical details during normal setup
 - Dashboard, Doctor, Settings, reset timeline, refresh history, and JSON/CSV export
 - Electron desktop shell with tray mini panel, always-on-top widget, and AIQD-only shortcuts
+- Mini panel secondary quota rows with compact progress bars, including a yellow Claude Code 5-hour bar
 - Windows NSIS installer generated with `electron-builder`
 - Packaged app launches its local backend through Electron's bundled Node runtime, so users do not need Node.js or npm
 - Shared AIQD app icon assets for the desktop tray, main window, and shortcut
@@ -103,7 +104,7 @@ CI runs tests on Windows and Ubuntu with Node 24.
 - No update channel yet
 - App-managed launch-at-login may be absent until v0.2; if present, it must be explicit and off by default
 - Claude Code may report setup warnings until it renders a fresh statusline payload
-- Historical trends, reset rhythm statistics, and Settings refresh interval presets are planned for v0.2
+- Restore default settings, historical trends, reset rhythm statistics, and Settings refresh interval presets are planned for v0.2
 - Additional providers are intentionally deferred until Codex and Claude Code are trustworthy
 
 ## Privacy Boundary
