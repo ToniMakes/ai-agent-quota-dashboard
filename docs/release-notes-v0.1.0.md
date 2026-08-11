@@ -17,7 +17,9 @@ npm run desktop:local
 
 On Windows PowerShell, if `npm` is blocked by the local execution policy, use `npm.cmd` for the same commands.
 
-There is no installer, auto-start, signed binary, or packaged Electron build in this preview. Those are v0.2-or-later work items.
+There is no installer, app-managed auto-start, signed binary, or packaged Electron build in this preview. Those are v0.2-or-later work items.
+
+The startup plan is explicit: v0.2 should offer `Start AIQD when I sign in` in the installer and `Launch at startup` in Settings, with startup off by default for the first packaged release.
 
 ## Highlights
 
@@ -80,7 +82,7 @@ CI runs tests on Windows and Ubuntu with Node 24.
 
 - Source-only preview; no installer or signed desktop release yet
 - No system notification support yet
-- No packaged build, auto-start, or update channel yet
+- No packaged build, app-managed launch-at-login setting, or update channel yet
 - Claude Code may report setup warnings until it renders a fresh statusline payload
 - Historical trends and reset rhythm statistics are planned for v0.2
 - Additional providers are intentionally deferred until Codex and Claude Code are trustworthy

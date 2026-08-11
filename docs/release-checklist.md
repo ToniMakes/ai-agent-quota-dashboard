@@ -12,7 +12,7 @@ Use this checklist before tagging a release.
 - [ ] CI is green on `main`
 - [ ] `CHANGELOG.md` has a release entry
 - [ ] README describes current capabilities accurately
-- [ ] README clearly says v0.1 is a source-only developer preview, not an installer or signed desktop release
+- [ ] README clearly says v0.1 is a source-only developer preview, not an installer, signed desktop release, or app-managed auto-start release
 - [ ] `docs/status.md` and `docs/roadmap.md` describe the current milestone accurately
 - [ ] Parser changes include sanitized fixtures
 - [ ] `docs/data-sources.md` documents source and confidence mapping
@@ -27,8 +27,17 @@ Use this checklist before tagging a release.
 3. Run a fresh-machine or clean-clone real-data trial from install through Codex and Claude Code readiness.
 4. Tighten beginner onboarding copy for Windows, macOS, and Linux, especially the exact command to run, expected result, and recovery path.
 5. Capture release screenshots or short GIFs for Dashboard, tray mini panel, widget, and setup flow.
-6. Confirm README and release notes say the first distribution shape is source-only developer preview; zip artifacts and packaged Electron builds are later work.
+6. Confirm README and release notes say the first distribution shape is source-only developer preview; zip artifacts, packaged Electron builds, signed releases, and app-managed auto-start are later work.
 7. Update release notes from `CHANGELOG.md`, complete this checklist, verify CI on `main`, and tag the preview.
+
+## Installer Releases
+
+- [ ] Installer startup option is explicit and defaults to off for the first packaged release
+- [ ] Settings includes a reversible `Launch at startup` toggle
+- [ ] Startup launches only the tray shell and local backend unless setup or recovery needs attention
+- [ ] Disabling startup removes AIQD's OS startup entry
+- [ ] Uninstall or app removal does not leave an orphaned startup entry
+- [ ] Startup behavior preserves the same local-first privacy boundary as manual launch
 
 ## Optional
 

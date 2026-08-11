@@ -9,6 +9,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 ### Added
 
 - Source-only v0.1.0 developer-preview distribution decision and release notes draft
+- Distribution and startup plan documenting v0.2 opt-in launch-at-login behavior for installer and Settings
 - Demo release screenshots for the dashboard, Doctor, Settings setup flow, mini panel, and widget surfaces
 - Beginner onboarding copy for real-data trials now includes expected outcomes, PowerShell fallback commands, and Claude Code refresh troubleshooting
 - v0.2 roadmap note for Reset Rhythm statistics based on observed reset events
