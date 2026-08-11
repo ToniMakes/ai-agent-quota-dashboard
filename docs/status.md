@@ -47,6 +47,7 @@ The current maintainer checkout has passed:
 - Browser interaction smoke for the collapsible first-run setup buttons
 - Browser interaction smoke for the decluttered dashboard and mini quota-window layouts
 - Browser/API smoke against demo mode for `/`, `/mini.html`, `/api/health`, `/api/agents`, `/api/trial-readiness`, and `/api/export?format=json`
+- Maintainer-profile installer trial: silent NSIS install exited `0`, desktop and Start menu shortcuts target the installed packaged executable, the desktop shortcut opens the installed app backend on `127.0.0.1:4317`, `/api/trial-readiness` reports `ok: true`, and browser smoke passes for the installed dashboard and mini panel
 - Clean-copy trial from `.tmp/fresh-trial-current`: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, and `npm run trial:ready`
 - GitHub Actions CI on `main`
 
@@ -62,6 +63,8 @@ Demo release screenshots have been generated for the dashboard, Doctor, Settings
 
 The first public preview distribution shape is installer-first desktop preview. A local Windows x64 NSIS artifact has been generated at `release/AI Agent Quota Dashboard-0.1.0-win-x64.exe`; `release/` is ignored and the artifact should be uploaded to a GitHub Release rather than committed. `docs/release-notes-v0.1.0.md` is the draft GitHub Release text.
 
+The latest installed-app trial used the maintainer's existing Windows profile and preserved existing AIQD, Codex, and Claude Code state. It validates the packaged installer and normal desktop entry path, but a true clean Windows user or VM first-run remains useful before broad distribution.
+
 ## Current Product State
 
 The app is suitable for local real-data dogfooding by the maintainer and technically curious early testers. For the first public preview, normal users should install a packaged desktop build and finish setup from Settings. Source checkout remains the developer fallback path.
@@ -70,6 +73,6 @@ The launch-at-login plan is documented in [docs/distribution.md](distribution.md
 
 ## Next Focus
 
-1. Run a fresh normal-user trial from the installer through Codex and Claude Code readiness.
+1. Run a true clean Windows user or VM trial from the installer through Codex and Claude Code readiness.
 2. Refresh release screenshots for the final quota-card layout, mini panel, widget, and setup flow.
 3. Create the GitHub Release and upload the unsigned Windows installer artifact after final checklist review.
