@@ -71,5 +71,5 @@ The launch-at-login plan is documented in [docs/distribution.md](distribution.md
 ## Next Focus
 
 1. Run a fresh normal-user trial from the installer through Codex and Claude Code readiness.
-2. Refresh release screenshots if the collapsible setup flow should be visible in release assets.
+2. Refresh release screenshots for the final quota-card layout, mini panel, widget, and setup flow.
 3. Create the GitHub Release and upload the unsigned Windows installer artifact after final checklist review.

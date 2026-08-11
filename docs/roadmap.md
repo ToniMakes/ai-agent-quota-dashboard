@@ -37,7 +37,7 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 - Signing decision for the Windows installer, or explicit unsigned-preview warning in release notes
 - Developer fallback trial from clone to Codex + Claude Code readiness
 - Beginner onboarding copy pass for Windows, macOS, and Linux
-- Refresh release screenshots or short GIFs when the setup-flow UI changes materially
+- Refresh release screenshots or short GIFs for the final quota-card layout, mini panel, widget, and setup flow
 - Create the GitHub Release and upload the installer artifact after final verification
 
 ### First Preview Work Plan
