@@ -24,7 +24,7 @@
 - 新手初次配置文案继续压缩和跨系统适配
 - 完整 fresh-machine 真实数据试跑
 - 截图/GIF 和 README 发布说明
-- 首版分发方式已明确：source-only developer preview；桌面打包后续再做
+- 首版分发方式已明确：source-only developer preview；桌面打包、签名、安装包开机启动项后续再做
 
 ## 1. 一句话定位
 
@@ -122,7 +122,7 @@ v0.5: 浏览器插件读取网页可见 quota，但只做 opt-in
 - UI 可以做得精致
 - 本地优先，信任感强
 - 已经可以把同一套 local API 接到 Electron tray mini panel 和桌面置顶 widget
-- 后续再补打包、签名、自动启动和原生平台 polish
+- 后续再补打包、签名、用户显式选择的自动启动和原生平台 polish
 
 当前/后续形态：
 
@@ -132,6 +132,28 @@ v0.5: 浏览器插件读取网页可见 quota，但只做 opt-in
 - local JSON/CSV export：已实现
 - macOS menu bar 原生 polish：后续
 - VS Code sidebar：后续
+
+### 4.1 打包与开机启动决策
+
+v0.1 不提供安装包，也不由 app 配置系统开机启动。当前 source-only preview 只支持用户从源码手动启动。
+
+v0.2 做 packaged desktop 时，把开机启动放在两个位置：
+
+- 安装包选项：`Start AIQD when I sign in`
+- App 设置页开关：`Launch at startup`
+
+第一版安装包建议默认不勾选开机启动。AIQD 会启动本地 backend 和托盘壳，所以这个行为必须显式、可逆、容易理解。
+
+行为边界：
+
+- 开机后只启动 tray shell 和本地 backend
+- 不自动打开主 dashboard，除非首次设置或启动失败需要用户处理
+- Settings 里的开关应该能读取当前系统启动项状态
+- 关闭开关后，移除 AIQD 自己创建的启动项
+- 不因为开机启动而自动批准快捷键、自动配置其他工具、读取额外来源或上传数据
+- Windows/macOS 优先使用 Electron packaged app 的 login item API；Linux 再评估 XDG autostart 或安装器集成
+
+不要把手动放进 Windows Startup folder 或 Task Scheduler 跑 `npm run desktop:local` 当成正式产品路径；那只适合开发者自己临时使用。
 
 ## 5. 第一屏 UI 原则
 
@@ -788,6 +810,8 @@ GitHub: https://github.com/ofershap/cursor-usage-tracker
 v0.2 再考虑：
 
 - system notification
+- packaged desktop / installer
+- opt-in launch at startup：安装包里默认关闭，Settings 中可随时开关
 - 简单趋势/预测
 - Reset Rhythm：统计最近重置频率、间隔、恢复幅度，并把结果标为本地观测
 - Agent detail 页面
@@ -970,9 +994,9 @@ Troubleshooting actions
 4. 压缩 Settings 里的引导文案，只突出“现在做什么、复制哪里、结果是什么”
 5. 为 Windows、macOS、Linux 分别确认终端命令和 Claude Code 打开方式
 6. 准备 README 截图/GIF：主 dashboard、小面板、桌面 widget、Settings 首次接入
-7. 第一版按 source-only developer preview 发布；zip artifact / Electron packaged build 后续再做
+7. 第一版按 source-only developer preview 发布；zip artifact / Electron packaged build / 安装包开机启动后续再做
 8. 更新 `CHANGELOG.md` release entry，按 `docs/release-checklist.md` 验证后打 tag
-9. v0.2 再考虑低额度系统通知、Reset Rhythm 和简单趋势/预测
+9. v0.2 再考虑安装包、Settings 开机启动开关、低额度系统通知、Reset Rhythm 和简单趋势/预测
 10. 只有当 Codex + Claude Code 体验足够可信后，再评估 Gemini CLI / Cursor
 
 ## 18. 给新窗口的启动 Prompt
@@ -984,7 +1008,7 @@ Troubleshooting actions
 
 请先阅读 docs/status.md、docs/roadmap.md、README.md、CHANGELOG.md 和 docs/brief.md。当前已经实现 TypeScript/Node 本地服务、SQLite、Codex CLI rate_limits 自动检测、Claude Code statusline rate_limits、Dashboard/Doctor/Settings、Electron tray mini panel、always-on-top widget、严格 trial readiness 和中英双语 UI。
 
-下一步请不要扩展新 provider，先围绕“早期用户能否顺利完成真实数据体验”继续打磨：检查文档是否最新，跑 npm test / desktop smoke / trial readiness，修复新手引导、跨系统命令、UI 文案、截图和 release checklist。隐私边界保持不变：不读 cookie、不模拟登录、不上传 prompt/response/source code、不调用隐藏接口。
+下一步请不要扩展新 provider，先围绕“早期用户能否顺利完成真实数据体验”和 v0.2 分发体验继续打磨：检查文档是否最新，跑 npm test / desktop smoke / trial readiness，修复新手引导、跨系统命令、UI 文案、截图、release checklist、安装包范围和开机启动开关方案。隐私边界保持不变：不读 cookie、不模拟登录、不上传 prompt/response/source code、不调用隐藏接口。
 ```
 
 ## 19. 核心产品原则

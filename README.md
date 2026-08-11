@@ -11,7 +11,7 @@ Unlike general token or cost trackers, this project is quota-first. It focuses o
 
 ## Status
 
-This repository is at the v0.1 developer-preview stage. The first public preview is a source-only developer preview for technically comfortable early testers. The core MVP is implemented enough for local real-data dogfooding, while packaged installers, signed releases, and auto-start are intentionally left for a later release.
+This repository is at the v0.1 developer-preview stage. The first public preview is a source-only developer preview for technically comfortable early testers. The core MVP is implemented enough for local real-data dogfooding, while packaged installers, signed releases, and app-managed auto-start are intentionally left for a later release.
 
 See [docs/status.md](docs/status.md) for the current project snapshot. The current app includes:
 
@@ -184,6 +184,8 @@ The mini surfaces reuse the same normalized `/api/agents`, `/api/trial-readiness
 Desktop shortcuts do not approve or automate other apps. Override or disable them with `AIQD_SHORTCUT_PANEL`, `AIQD_SHORTCUT_REFRESH`, and `AIQD_SHORTCUT_WIDGET`; set a value to `off` to disable that shortcut.
 
 This is currently a development shell, not an installer. Auto-start, packaging, zip artifacts, and signed releases are intentionally left for a later release.
+
+The startup plan is documented in [docs/distribution.md](docs/distribution.md). The v0.2 packaging plan is to offer an explicit installer option, `Start AIQD when I sign in`, plus a reversible Settings toggle, `Launch at startup`; the first packaged release should default startup to off.
 
 If the local backend cannot start, the desktop shell shows recovery guidance with the backend error tail and the same Doctor/smoke commands used in development.
 

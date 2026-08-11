@@ -42,21 +42,22 @@ The current maintainer checkout has passed:
 
 A clean source copy with the current worktree changes can install, build, test, launch desktop smoke checks, and pass real-data strict readiness against the maintainer machine's Codex and Claude Code setup.
 
-Observed follow-up: Claude Code statusline data was accepted for strict readiness, but setup status still warns when the latest rate-limit snapshot is old. Before screenshots or release notes, open Claude Code once to refresh the statusline snapshot and confirm the warning clears.
+Claude Code statusline data was refreshed during the release gate, and strict readiness accepted fresh `session_5h` and weekly windows from `official_statusline`.
 
 The beginner real-data trial docs now call out expected command results, Windows PowerShell `npm.cmd` fallbacks, Codex automatic-versus-manual detection, and Claude Code stale-snapshot recovery.
 
 Demo release screenshots have been generated for the dashboard, Doctor, Settings setup flow, mini panel, and widget surfaces under `docs/assets/screenshots`.
 
-The first public preview distribution shape is now source-only developer preview. `docs/release-notes-v0.1.0.md` is the draft GitHub Release text.
+The first public preview distribution shape is source-only developer preview. `docs/release-notes-v0.1.0.md` is the draft GitHub Release text.
 
 ## Current Product State
 
-The app is suitable for local real-data dogfooding by the maintainer and technically curious early testers. The first public preview will be source-only: users clone the repo, install dependencies, and run the local dashboard or desktop shell from source. Packaged installers, zip artifacts, signed releases, and auto-start remain later-release work.
+The app is suitable for local real-data dogfooding by the maintainer and technically curious early testers. The first public preview is source-only: users clone the repo, install dependencies, and run the local dashboard or desktop shell from source. Packaged installers, zip artifacts, signed releases, and app-managed auto-start remain later-release work.
+
+The launch-at-login plan is documented in [docs/distribution.md](distribution.md): v0.2 should provide an explicit installer checkbox and a reversible Settings toggle, defaulting startup to off for the first packaged release.
 
 ## Next Focus
 
-1. Refresh Claude Code once so the statusline snapshot is current before any ready-state screenshots.
-2. Capture any remaining native OS screenshots, especially the tray menu and actual floating widget.
-3. Review and finalize `docs/release-notes-v0.1.0.md`.
-4. Tag the first public source-only developer preview after the release checklist is complete.
+1. Create the GitHub Release for `v0.1.0` from `docs/release-notes-v0.1.0.md`.
+2. Keep post-v0.1 changes focused on distribution polish, startup behavior, notifications, reset rhythm statistics, and simple trends.
+3. Start the v0.2 packaging plan with installer scope, signing decisions, and launch-at-login acceptance checks.
