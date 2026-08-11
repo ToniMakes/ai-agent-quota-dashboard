@@ -1,3 +1,5 @@
+const path = require("node:path");
+
 function summarizeAgents(agents, options = {}) {
   if (!Array.isArray(agents) || agents.length === 0) {
     return "No agents configured";
@@ -384,7 +386,51 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function buildSmokeBackendEnv(baseEnv = {}, smokeUserDataDir) {
+  const smokeHomeDir = path.join(smokeUserDataDir, "home");
+  const aiqdAppDataDir = path.join(smokeUserDataDir, "aiqd-data");
+  const claudeConfigDir = path.join(smokeHomeDir, ".claude");
+
+  return {
+    ...baseEnv,
+    AIQD_APP_DATA_DIR: aiqdAppDataDir,
+    AIQD_CLAUDE_SETTINGS_PATH: path.join(claudeConfigDir, "settings.json"),
+    AIQD_CLAUDE_STATUSLINE_DIR: path.join(aiqdAppDataDir, "claude-code"),
+    AIQD_CLAUDE_STATUSLINE_HISTORY_PATH: path.join(
+      aiqdAppDataDir,
+      "claude-code",
+      "claude-code-statusline-history.jsonl"
+    ),
+    AIQD_CLAUDE_STATUSLINE_LATEST_PATH: path.join(
+      aiqdAppDataDir,
+      "claude-code",
+      "claude-code-statusline-latest.json"
+    ),
+    AIQD_CLAUDE_STATUSLINE_SHIM_PATH: path.join(
+      aiqdAppDataDir,
+      process.platform === "win32" ? "claude-statusline.ps1" : "claude-statusline.sh"
+    ),
+    AIQD_CODEX_MANUAL_SNAPSHOT_PATH: path.join(
+      aiqdAppDataDir,
+      "codex",
+      "codex-quota-snapshot.json"
+    ),
+    AIQD_CONFIG_PATH: path.join(aiqdAppDataDir, "config.json"),
+    AIQD_DB_PATH: path.join(aiqdAppDataDir, "quota.db"),
+    AIQD_DEMO_DATA: "0",
+    AIQD_HOST: "127.0.0.1",
+    APPDATA: path.join(smokeUserDataDir, "appdata"),
+    CLAUDE_CONFIG_DIR: claudeConfigDir,
+    CODEX_HOME: path.join(smokeHomeDir, ".codex"),
+    HOME: smokeHomeDir,
+    LOCALAPPDATA: path.join(smokeUserDataDir, "localappdata"),
+    USERPROFILE: smokeHomeDir,
+    XDG_CONFIG_HOME: path.join(smokeUserDataDir, "xdg-config")
+  };
+}
+
 module.exports = {
+  buildSmokeBackendEnv,
   buildTrayMenuTemplate,
   clampBoundsToWorkArea,
   dashboardPath,

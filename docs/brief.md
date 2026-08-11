@@ -24,7 +24,7 @@
 - 新手初次配置文案继续压缩和跨系统适配
 - 完整 fresh-machine 真实数据试跑
 - 截图/GIF 和 README 发布说明
-- 桌面打包或明确 source-only developer preview 分发方式
+- 首版分发方式已明确：source-only developer preview；桌面打包后续再做
 
 ## 1. 一句话定位
 
@@ -370,6 +370,17 @@ Doctor 应检查：
 - Dashboard 内醒目状态
 - 系统通知，后续再做
 - 邮件/Slack 暂时不做，企业版再加
+
+v0.2 可以加入 **Reset Rhythm / 重置节奏** 统计。这个功能基于已经保存的 reset events，回答用户常见的真实问题：为什么睡醒以后 Codex 又回到了 100%，最近到底多久恢复一次。
+
+建议展示：
+
+- 最近 N 次观测到的 reset / replenishment 时间
+- 相邻两次 reset 之间的间隔
+- 平均、中位数、最短、最长间隔
+- 每次恢复前后的 remaining 变化，例如 `18% -> 100%`
+- reset anchor changed 和 quota replenished 分开标记
+- 明确文案：这些是本地观测，不是官方保证的未来重置计划
 
 预测逻辑 MVP 可以很简单：
 
@@ -778,6 +789,7 @@ v0.2 再考虑：
 
 - system notification
 - 简单趋势/预测
+- Reset Rhythm：统计最近重置频率、间隔、恢复幅度，并把结果标为本地观测
 - Agent detail 页面
 - local API 文档
 - macOS menu bar 原生 polish
@@ -958,9 +970,9 @@ Troubleshooting actions
 4. 压缩 Settings 里的引导文案，只突出“现在做什么、复制哪里、结果是什么”
 5. 为 Windows、macOS、Linux 分别确认终端命令和 Claude Code 打开方式
 6. 准备 README 截图/GIF：主 dashboard、小面板、桌面 widget、Settings 首次接入
-7. 决定第一版分发方式：source-only developer preview、zip artifact，或 Electron packaged build
+7. 第一版按 source-only developer preview 发布；zip artifact / Electron packaged build 后续再做
 8. 更新 `CHANGELOG.md` release entry，按 `docs/release-checklist.md` 验证后打 tag
-9. 再考虑低额度系统通知和简单趋势/预测
+9. v0.2 再考虑低额度系统通知、Reset Rhythm 和简单趋势/预测
 10. 只有当 Codex + Claude Code 体验足够可信后，再评估 Gemini CLI / Cursor
 
 ## 18. 给新窗口的启动 Prompt

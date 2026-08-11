@@ -8,6 +8,11 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ### Added
 
+- Source-only v0.1.0 developer-preview distribution decision and release notes draft
+- Demo release screenshots for the dashboard, Doctor, Settings setup flow, mini panel, and widget surfaces
+- Beginner onboarding copy for real-data trials now includes expected outcomes, PowerShell fallback commands, and Claude Code refresh troubleshooting
+- v0.2 roadmap note for Reset Rhythm statistics based on observed reset events
+- First public developer-preview work plan in the release documentation
 - Project status document summarizing current v0.1 developer-preview progress and next release focus
 - Mini dashboard language toggle shared with the main dashboard language preference
 - Chinese/English language switching for tray mini panel and always-on-top widget surfaces
@@ -68,6 +73,8 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ### Fixed
 
+- SQLite refreshes now wait briefly for an existing writer instead of failing immediately on a short-lived database lock
+- Desktop first-run smoke now isolates provider data paths and exits non-zero when its deep-link assertion fails
 - Dashboard quota cards now clarify remaining quota versus official pages that display used quota
 - Codex manual snapshot files saved by the Settings form now refresh into the Dashboard
 - Claude Code setup status tolerates UTF-8 BOM in settings and latest snapshot JSON

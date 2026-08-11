@@ -11,7 +11,7 @@ Unlike general token or cost trackers, this project is quota-first. It focuses o
 
 ## Status
 
-This repository is at the v0.1 developer-preview stage. The core MVP is implemented enough for local real-data dogfooding, but packaging, release screenshots, and beginner-facing distribution docs are still in progress.
+This repository is at the v0.1 developer-preview stage. The first public preview is a source-only developer preview for technically comfortable early testers. The core MVP is implemented enough for local real-data dogfooding, while packaged installers, signed releases, and auto-start are intentionally left for a later release.
 
 See [docs/status.md](docs/status.md) for the current project snapshot. The current app includes:
 
@@ -69,6 +69,22 @@ See [docs/status.md](docs/status.md) for the current project snapshot. The curre
 
 If reliable quota data cannot be obtained from official or local user-visible sources, the app should show `unavailable`.
 
+## Screenshots
+
+Demo dashboard:
+
+![AI Agent Quota dashboard](docs/assets/screenshots/dashboard-demo.png)
+
+First-run setup flow:
+
+![AI Agent Quota setup flow](docs/assets/screenshots/settings-demo.png)
+
+Mini panel:
+
+![AI Agent Quota mini panel](docs/assets/screenshots/mini-panel-demo.png)
+
+More release screenshot notes are in [docs/assets/screenshots](docs/assets/screenshots).
+
 ## Non-goals
 
 This project does not:
@@ -82,6 +98,8 @@ This project does not:
 - Upload prompts, responses, source code, or chat content
 
 ## Quick Start
+
+The first preview is source-only. Clone the repository, install dependencies, and run the local dashboard or desktop shell from source.
 
 Demo mode:
 
@@ -104,14 +122,20 @@ npm run dev:local
 
 If demo snapshots were previously written to the local SQLite database, `npm run dev:local`, `doctor`, and `export` hide them unless demo mode is explicitly enabled.
 
-Real local desktop trial:
+Real local desktop trial from source:
 
 ```bash
 npm install
+npm test
+npm run trial:preflight
 npm run desktop:local
 ```
 
-The desktop first-run guide opens the exact Settings or Doctor section needed for real data setup. See [docs/real-data-trial.md](docs/real-data-trial.md) for the full Codex and Claude Code checklist.
+Expected result: `trial:preflight` either reports ready or prints the next source-specific action. The desktop first-run guide then opens the exact Settings or Doctor section needed for real data setup.
+
+If Windows PowerShell blocks `npm` with `running scripts is disabled`, run the same commands with `npm.cmd`, for example `npm.cmd test` and `npm.cmd run desktop:local`.
+
+See [docs/real-data-trial.md](docs/real-data-trial.md) for the full Codex and Claude Code checklist.
 
 ## Scripts
 
@@ -159,7 +183,7 @@ The mini surfaces reuse the same normalized `/api/agents`, `/api/trial-readiness
 
 Desktop shortcuts do not approve or automate other apps. Override or disable them with `AIQD_SHORTCUT_PANEL`, `AIQD_SHORTCUT_REFRESH`, and `AIQD_SHORTCUT_WIDGET`; set a value to `off` to disable that shortcut.
 
-This is currently a development shell, not an installer. Auto-start, packaging, and signed releases are intentionally left for a later release.
+This is currently a development shell, not an installer. Auto-start, packaging, zip artifacts, and signed releases are intentionally left for a later release.
 
 If the local backend cannot start, the desktop shell shows recovery guidance with the backend error tail and the same Doctor/smoke commands used in development.
 
@@ -202,6 +226,8 @@ The export command refreshes local sources by default. Use `--no-refresh` to exp
 
 AIQD first scans local Codex CLI session logs for supported `rate_limits` events. When those events are present, Codex quota is labeled `official_cli` and no manual copying is needed.
 
+First action: use Codex once, then refresh AIQD or run `npm run trial:preflight`. If Codex CLI wrote supported local `rate_limits` data, no manual setup is needed.
+
 The manual fallback command remains only for machines or Codex versions that do not expose usable local rate-limit events. To record a value you can visibly confirm:
 
 ```bash
@@ -243,7 +269,7 @@ The Settings view shows the same config path, whether configured scan roots are 
 
 Claude Code can send official `rate_limits` data to a local statusline command. This project provides a sink that stores only sanitized rate limit fields.
 
-Real-data setup:
+Real-data setup from source:
 
 1. Build the local CLI:
 
@@ -269,7 +295,11 @@ node dist/index.js setup claude-statusline --write
 node dist/index.js doctor
 ```
 
-After installation, Doctor may show `Waiting for Claude Code data` until Claude Code renders the statusline once and sends the first supported `rate_limits` payload.
+Expected result: after Claude Code renders its statusline once, Doctor shows supported `rate_limits` windows. Until then it may show `Waiting for Claude Code data`.
+
+If Doctor says the snapshot is old, open Claude Code once more so the statusline sends a fresh payload, then run `node dist/index.js doctor` again.
+
+If Doctor says Claude Code CLI is installed outside `PATH`, use the full-path command shown by Settings or Doctor, or add that install directory to `PATH` and restart the terminal.
 
 Preview without changing Claude settings: `node dist/index.js setup claude-statusline`.
 
