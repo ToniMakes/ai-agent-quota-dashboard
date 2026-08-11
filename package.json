@@ -3,8 +3,10 @@
   "version": "0.1.0",
   "description": "Local-first quota dashboard for AI coding agents.",
   "type": "module",
+  "main": "desktop/main.cjs",
   "private": true,
   "homepage": "https://github.com/isToniLiu/ai-agent-quota-dashboard#readme",
+  "author": "Toni Liu",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/isToniLiu/ai-agent-quota-dashboard.git"
@@ -27,6 +29,8 @@
     "desktop:smoke": "npm run build && electron --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process desktop/main.cjs --smoke",
     "doctor": "npm run build && node dist/index.js doctor",
     "icons:generate": "electron scripts/generate-icons.cjs",
+    "package:win": "npm run build && electron-builder --win --x64",
+    "package:win:dir": "npm run build && electron-builder --win --x64 --dir",
     "trial:preflight": "npm run build && node dist/index.js trial preflight",
     "trial:ready": "npm run build && node dist/index.js doctor --strict",
     "claude:self-test": "npm run build && node dist/index.js claude-statusline-sink --self-test",
@@ -47,9 +51,49 @@
     "local-first"
   ],
   "license": "MIT",
+  "build": {
+    "appId": "com.istoniliu.ai-agent-quota-dashboard",
+    "productName": "AI Agent Quota Dashboard",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "asar": false,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "assets/**/*",
+      "desktop/**/*",
+      "dist/**/*",
+      "web/**/*",
+      "LICENSE",
+      "README.md",
+      "package.json"
+    ],
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AI Agent Quota Dashboard",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
+    }
+  },
   "devDependencies": {
     "@types/node": "^24.0.0",
     "electron": "^43.3.0",
+    "electron-builder": "^26.15.3",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0"
   }

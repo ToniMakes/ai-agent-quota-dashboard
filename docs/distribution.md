@@ -6,7 +6,31 @@ Last updated: 2026-08-11
 
 The v0.1.0 preview target is installer-first. Normal users should download a packaged desktop installer, run it, and open AIQD from the desktop or Start menu entry. Source mode remains a developer fallback, not the primary public path.
 
-Do not tag the first public preview until a packaged desktop artifact exists and the release notes explain the normal-user install path. Code signing, update channels, and app-managed launch-at-login can still be later work if they are called out clearly.
+The Windows x64 installer artifact is:
+
+```text
+release/AI Agent Quota Dashboard-0.1.0-win-x64.exe
+```
+
+The current local artifact is unsigned. Release notes must mention that Windows SmartScreen may warn until a signing certificate and reputation path are in place.
+
+Do not tag the first public preview until this artifact exists, the packaged smoke checks pass, and the release notes explain the normal-user install path. Code signing, update channels, and app-managed launch-at-login can still be later work if they are called out clearly.
+
+Build commands:
+
+```bash
+npm run package:win:dir
+npm run package:win
+```
+
+Packaged smoke commands:
+
+```powershell
+.\release\win-unpacked\AI Agent Quota Dashboard.exe --smoke
+.\release\win-unpacked\AI Agent Quota Dashboard.exe --smoke-first-run-guide
+```
+
+The packaged app uses Electron's bundled Node runtime for the local backend. Normal users should not need a separate Node.js or npm install.
 
 ## Startup Decision
 

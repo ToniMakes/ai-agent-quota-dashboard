@@ -20,6 +20,8 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 - JSON and CSV export with private identifiers and raw source references excluded
 - Strict real-data readiness shared by CLI, Settings, tray, and mini surfaces
 - Electron desktop shell with tray mini panel and always-on-top widget
+- Windows installer build through `electron-builder` / NSIS
+- Packaged desktop smoke checks that run without requiring system Node.js
 - Safe AIQD-only global shortcuts for mini panel, refresh, and widget
 - One-time first-run desktop guide with deep links to exact setup or Doctor sections
 - English-by-default Chinese/English language switching in the main dashboard and mini surfaces
@@ -29,8 +31,8 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 
 ### Remaining Before First Public Preview
 
-- Packaged desktop installer or equivalent release artifact for Windows
 - Fresh-machine real-data trial from installer to Codex + Claude Code readiness
+- Signing decision for the Windows installer, or explicit unsigned-preview warning in release notes
 - Developer fallback trial from clone to Codex + Claude Code readiness
 - Beginner onboarding copy pass for Windows, macOS, and Linux
 - Release screenshots or short GIFs for dashboard, mini panel, widget, and setup flow
@@ -40,7 +42,7 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 ### First Preview Work Plan
 
 1. Hardening: keep smoke checks deterministic, verify `npm test`, `desktop:smoke`, `desktop:first-run-smoke`, and `git diff --check` locally.
-2. Packaging: create a Windows installer or release artifact that installs the desktop app and creates a dashboard-opening app entry.
+2. Packaging: keep the Windows installer artifact reproducible and verify packaged smoke checks before each tag.
 3. Real-data trial: run a fresh install from installer to Codex and Claude Code readiness, recording every point where setup copy is confusing.
 4. Developer fallback: verify a clean clone still works for technical testers.
 5. Onboarding pass: tighten Settings and README instructions around the next action, expected result, and recovery path for each platform.

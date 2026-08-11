@@ -123,7 +123,7 @@ async function startDesktopApp() {
   desktopStatePath = path.join(app.getPath("userData"), "desktop-state.json");
   const port = await findFreePort(4317, 4399);
   baseUrl = `http://127.0.0.1:${port}`;
-  backend = spawn(process.env.AIQD_NODE_PATH ?? "node", backendArgs(port), {
+  backend = spawn(backendCommand(), backendArgs(port), {
     cwd: projectRoot,
     env: backendEnv(),
     stdio: ["ignore", "pipe", "pipe"],
@@ -271,12 +271,24 @@ function backendArgs(port) {
   return args;
 }
 
-function backendEnv() {
-  if (!smokeUserDataDir) {
-    return process.env;
+function backendCommand() {
+  if (process.env.AIQD_NODE_PATH) {
+    return process.env.AIQD_NODE_PATH;
   }
 
-  return buildSmokeBackendEnv(process.env, smokeUserDataDir);
+  return app.isPackaged ? process.execPath : "node";
+}
+
+function backendEnv() {
+  const env = smokeUserDataDir
+    ? buildSmokeBackendEnv(process.env, smokeUserDataDir)
+    : { ...process.env };
+
+  if (app.isPackaged && !process.env.AIQD_NODE_PATH) {
+    env.ELECTRON_RUN_AS_NODE = "1";
+  }
+
+  return env;
 }
 
 function registerIpc() {
