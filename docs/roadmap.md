@@ -54,6 +54,8 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 - Installer polish: signing decision, update-channel decision, and any missing platform packaging gaps
 - Opt-in launch-at-login support: installer checkbox plus reversible Settings toggle, defaulting to off
 - Settings-controlled automatic refresh interval presets: manual, 15 seconds, 30 seconds, 1 minute, 5 minutes, and 15 minutes; label this as local refresh cadence because actual quota observation depends on Codex or Claude Code producing new data
+- Settings safety reset: a `Restore default settings` action for AIQD-owned preferences only, such as language, refresh cadence, shortcut overrides, launch-at-login preference, and remembered window/widget positions
+- Separate advanced actions for destructive or external changes, such as clearing local quota history or disconnecting Claude Code data capture; these must require explicit confirmation and must not be bundled into the normal defaults reset
 - System notification for low quota, stale data, and refresh warnings
 - Simple historical usage trend from stored snapshots and refresh runs
 - Reset rhythm statistics from observed reset events: recent reset times, intervals, average/median/min/max spacing, and replenishment deltas, always labeled as local observations rather than guaranteed provider schedules

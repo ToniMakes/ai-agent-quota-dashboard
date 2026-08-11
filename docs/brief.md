@@ -432,6 +432,32 @@ v0.2 也应该在 Settings 里提供 **自动刷新间隔** 预设，但不要�
 AIQD refreshes local sources on this cadence. The latest observed time can still depend on whether Codex or Claude Code has produced fresh quota data.
 ```
 
+v0.2 也应该加入 **Restore default settings / 恢复默认设置**，作为普通用户改乱配置后的安全出口。这个功能不需要等到 v2.0，但不要塞进 v0.1 首版发布前。
+
+默认按钮只恢复 AIQD 自己拥有的偏好：
+
+- 语言选择
+- 自动刷新间隔
+- 快捷键覆盖
+- launch-at-login / 开机启动偏好
+- 记住的窗口、小组件位置
+- 其他纯 UI / 本应用配置
+
+默认按钮不应该：
+
+- 删除 quota snapshots
+- 删除 reset events
+- 删除 refresh history
+- 修改 Claude Code statusline 设置
+- 修改 Codex 或其他外部 agent 配置
+
+危险操作要拆开放在高级区，例如：
+
+- Clear local quota history / 清除本地额度历史
+- Disconnect Claude Code data capture / 断开 Claude Code 数据接入
+
+这些操作需要二次确认，文案要明确说明会删除 AIQD 本地数据或改动外部工具配置。
+
 ```text
 burn_rate = recent_usage / recent_time
 time_to_empty = remaining / burn_rate
@@ -822,6 +848,7 @@ GitHub: https://github.com/ofershap/cursor-usage-tracker
 - Refresh History
 - JSON/CSV export
 - Desktop tray mini panel
+- Mini panel secondary quota progress bars, including a yellow Claude Code 5h bar
 - Always-on-top widget
 - 默认英文的中英双语 UI
 
@@ -839,6 +866,7 @@ v0.2 再考虑：
 - installer polish / signing / update channel
 - opt-in launch at startup：安装包里默认关闭，Settings 中可随时开关
 - Settings 自动刷新间隔预设：手动、15 秒、30 秒、1 分钟、5 分钟、15 分钟；文案强调这是 AIQD 本地扫描频率，不保证 provider 一定产生新观测
+- Restore default settings：只重置 AIQD 自己的偏好；清除本地历史和断开 Claude/Codex 外部接入必须拆成高级危险操作
 - 简单趋势/预测
 - Reset Rhythm：统计最近重置频率、间隔、恢复幅度，并把结果标为本地观测
 - Agent detail 页面
@@ -1023,7 +1051,7 @@ Troubleshooting actions
 6. 准备 README 截图/GIF：主 dashboard、小面板、桌面 widget、Settings 首次接入
 7. 第一版按 installer-first desktop preview 发布；源码运行作为开发者 fallback
 8. 更新 `CHANGELOG.md` release entry，按 `docs/release-checklist.md` 验证后打 tag
-9. v0.2 再考虑签名/update channel、Settings 开机启动开关、Settings 自动刷新间隔预设、低额度系统通知、Reset Rhythm 和简单趋势/预测
+9. v0.2 再考虑签名/update channel、Settings 开机启动开关、Settings 自动刷新间隔预设、恢复默认设置、低额度系统通知、Reset Rhythm 和简单趋势/预测
 10. 只有当 Codex + Claude Code 体验足够可信后，再评估 Gemini CLI / Cursor
 
 ## 18. 给新窗口的启动 Prompt
@@ -1035,7 +1063,7 @@ Troubleshooting actions
 
 请先阅读 docs/status.md、docs/roadmap.md、README.md、CHANGELOG.md 和 docs/brief.md。当前已经实现 TypeScript/Node 本地服务、SQLite、Codex CLI rate_limits 自动检测、Claude Code statusline rate_limits、Dashboard/Doctor/Settings、Electron tray mini panel、always-on-top widget、Windows installer-first 打包配置、严格 trial readiness 和默认英文的中英双语 UI。
 
-下一步请不要扩展新 provider，先围绕“早期用户能否顺利完成真实数据体验”和 v0.2 分发体验继续打磨：检查文档是否最新，跑 npm test / desktop smoke / trial readiness，修复新手引导、跨系统命令、UI 文案、截图、release checklist、安装包范围、开机启动开关方案和 Settings 自动刷新间隔预设。隐私边界保持不变：不读 cookie、不模拟登录、不上传 prompt/response/source code、不调用隐藏接口。
+下一步请不要扩展新 provider，先围绕“早期用户能否顺利完成真实数据体验”和 v0.2 分发体验继续打磨：检查文档是否最新，跑 npm test / desktop smoke / trial readiness，修复新手引导、跨系统命令、UI 文案、截图、release checklist、安装包范围、开机启动开关方案、Settings 自动刷新间隔预设和恢复默认设置。隐私边界保持不变：不读 cookie、不模拟登录、不上传 prompt/response/source code、不调用隐藏接口。
 ```
 
 ## 19. 核心产品原则

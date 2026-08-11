@@ -53,6 +53,7 @@ See [docs/status.md](docs/status.md) for the current project snapshot. The curre
 - Tray tooltip/menu status uses strict readiness before showing daily quota summaries
 - Mini footer summary for the latest refresh result and warnings
 - Mini strict readiness progress text for first-run Codex and Claude Code onboarding
+- Mini secondary quota rows with compact progress bars, including a yellow Claude Code 5-hour bar
 - Clickable mini footer actions for refresh warnings and setup guidance
 - Mini and tray first-run actions that open Settings or Doctor directly
 - Mini first-run actions deep-link to the exact Settings or Doctor section
@@ -194,7 +195,7 @@ It starts the local backend, adds an AI Agent Quota tray icon, and provides:
 - tray menu shortcuts for Refresh, Doctor, Settings, and Dashboard
 - a one-time first-run guide that uses strict trial readiness to open the exact Settings or Doctor section when real data is not ready, or shows the mini panel when it is ready
 - safe global shortcuts for AIQD itself: `Ctrl+Alt+Q` toggles the mini panel, `Ctrl+Alt+R` refreshes quota data, and `Ctrl+Alt+W` toggles the desktop widget
-- compact per-window quota rows and manual refresh in mini surfaces
+- compact per-window quota rows, secondary progress bars, and manual refresh in mini surfaces
 - single-instance behavior: launching the desktop app again focuses the existing mini panel
 - automatic tray refresh when Claude Code sends the first statusline snapshot
 - remembered desktop widget position

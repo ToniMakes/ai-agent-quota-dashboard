@@ -261,9 +261,10 @@ function renderAgent(agent) {
       </div>
       <div class="mini-primary-label">${escapeHtml(label)}</div>
       <div class="mini-meter" aria-hidden="true">
-        <div class="mini-meter-fill ${escapeHtml(status)}" style="--value: ${meterValue(
-          primary
-        )}%"></div>
+        <div
+          class="mini-meter-fill ${escapeHtml(primaryMeterClass(primary, status))}"
+          style="--value: ${meterValue(primary)}%"
+        ></div>
       </div>
       <div class="mini-window-list">${renderWindowRows(agent)}</div>
       <div class="mini-detail">${escapeHtml(detail)}</div>
@@ -540,9 +541,15 @@ function renderWindowRows(agent) {
   }
 
   const visibleSnapshots = snapshots.slice(0, 2);
-  const rows = visibleSnapshots.map(renderWindowRow).join("");
+  const rows = visibleSnapshots
+    .map((snapshot) =>
+      renderWindowRow(snapshot, {
+        showMeter: !isSameSnapshot(snapshot, agent.primarySnapshot)
+      })
+    )
+    .join("");
   const hiddenCount = snapshots.length - visibleSnapshots.length;
-      const more =
+  const more =
     hiddenCount > 0
       ? `<div class="mini-window-more">${escapeHtml(
           tx("+{count} more {unit}", "另有 {count} 个{unit}", {
@@ -555,21 +562,63 @@ function renderWindowRows(agent) {
   return rows + more;
 }
 
-function renderWindowRow(snapshot) {
+function renderWindowRow(snapshot, options = {}) {
   const reset = resetSummary(snapshot.resetAt);
   const resetTitle = snapshot.resetAt
     ? tx("Reported reset {time}", "报告 reset：{time}", {
         time: formatTimestamp(snapshot.resetAt, { long: true })
       })
     : tx("No reported reset", "没有报告 reset");
+  const meter = options.showMeter ? renderWindowMeter(snapshot) : "";
 
   return `
     <div class="mini-window-row" title="${escapeHtml(resetTitle)}">
       <span>${escapeHtml(windowLabel(snapshot.windowType))}</span>
       <strong>${escapeHtml(formatRemainingText(snapshot))}</strong>
       <time datetime="${escapeHtml(snapshot.resetAt ?? "")}">${escapeHtml(reset)}</time>
+      ${meter}
     </div>
   `;
+}
+
+function renderWindowMeter(snapshot) {
+  if (!hasMeterValue(snapshot)) {
+    return "";
+  }
+
+  return `
+    <div class="mini-window-meter" aria-hidden="true">
+      <div
+        class="mini-window-meter-fill ${escapeHtml(windowMeterClass(snapshot))}"
+        style="--value: ${meterValue(snapshot)}%"
+      ></div>
+    </div>
+  `;
+}
+
+function hasMeterValue(snapshot) {
+  return Boolean(
+    typeof snapshot?.remainingPercent === "number" ||
+      (typeof snapshot?.remaining === "number" &&
+        typeof snapshot?.total === "number" &&
+        snapshot.total > 0)
+  );
+}
+
+function windowMeterClass(snapshot) {
+  if (snapshot.windowType === "session_5h") {
+    return "session";
+  }
+
+  return snapshot.stale ? "stale" : "standard";
+}
+
+function primaryMeterClass(snapshot, status) {
+  if (snapshot?.windowType === "session_5h" && status === "healthy") {
+    return "session";
+  }
+
+  return status;
 }
 
 function prioritizeSnapshots(snapshots, primary) {
@@ -580,15 +629,20 @@ function prioritizeSnapshots(snapshots, primary) {
   return [
     primary,
     ...snapshots.filter(
-      (snapshot) =>
-        !(
-          snapshot.provider === primary.provider &&
-          snapshot.agent === primary.agent &&
-          snapshot.windowType === primary.windowType &&
-          snapshot.observedAt === primary.observedAt
-        )
+      (snapshot) => !isSameSnapshot(snapshot, primary)
     )
   ];
+}
+
+function isSameSnapshot(left, right) {
+  return Boolean(
+    left &&
+      right &&
+      left.provider === right.provider &&
+      left.agent === right.agent &&
+      left.windowType === right.windowType &&
+      left.observedAt === right.observedAt
+  );
 }
 
 function hasClaudeWaitingState(agents) {

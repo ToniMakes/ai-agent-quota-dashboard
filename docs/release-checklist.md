@@ -47,6 +47,8 @@ Use this checklist before tagging a release.
 - [ ] Installer startup option is explicit and defaults to off for the first packaged release
 - [ ] Settings includes a reversible `Launch at startup` toggle
 - [ ] Settings includes automatic refresh interval presets and explains that actual observed times depend on provider data updates
+- [ ] Settings includes a safe `Restore default settings` action for AIQD-owned preferences only
+- [ ] Any destructive reset, local history deletion, or external Claude/Codex disconnect action is separate from restore defaults and requires explicit confirmation
 - [ ] Startup launches only the tray shell and local backend unless setup or recovery needs attention
 - [ ] Disabling startup removes AIQD's OS startup entry
 - [ ] Uninstall or app removal does not leave an orphaned startup entry
