@@ -11,6 +11,21 @@ npm run trial:preflight
 npm run desktop:first-run-smoke
 ```
 
+Expected:
+
+- `npm test` passes.
+- `trial:preflight` either reports `Overall: ready` or prints the next action for Codex, Claude Code, or Doctor.
+- `desktop:first-run-smoke` reports the expected Settings deep link using isolated temporary provider paths.
+
+If Windows PowerShell blocks `npm` with `running scripts is disabled`, use `npm.cmd` for the same commands:
+
+```powershell
+npm.cmd install
+npm.cmd test
+npm.cmd run trial:preflight
+npm.cmd run desktop:first-run-smoke
+```
+
 The first-run smoke uses temporary paths. It does not read your real Codex or Claude Code data.
 
 ## 2. Launch The Desktop App
@@ -40,9 +55,15 @@ Startup failures should show recovery guidance with the backend error tail. The 
 
 ## 3. Detect Codex
 
-Use Codex once, then click `Refresh` in AIQD. The app scans local Codex CLI session logs for supported `rate_limits` events.
+First action: use Codex once, then click `Refresh` in AIQD or run:
 
-If automatic detection is unavailable on this machine or Codex version, use the manual fallback in AIQD Settings and fill:
+```bash
+npm run trial:preflight
+```
+
+Expected: Codex is marked ready from `official_cli` when AIQD finds supported local `rate_limits` events.
+
+If not ready: automatic detection may be unavailable on this machine or Codex version. Use the manual fallback in AIQD Settings and fill:
 
 - `Remaining %`
 - `Reported reset`
@@ -67,6 +88,8 @@ Run the sink self-test first. It uses fake `rate_limits` data and temporary file
 npm run claude:self-test
 ```
 
+Expected: the self-test reports parsed rate-limit windows and does not write to the normal Claude statusline snapshot path.
+
 Preview the managed statusline command:
 
 ```bash
@@ -74,13 +97,22 @@ npm run build
 node dist/index.js setup claude-statusline
 ```
 
+Expected: the preview shows the command AIQD would install, without changing Claude settings.
+
 Install only after reviewing the preview:
 
 ```bash
 node dist/index.js setup claude-statusline --write
 ```
 
-Then open Claude Code once so its statusline renders. AIQD will refresh when supported `rate_limits` fields arrive.
+Then open Claude Code once in any project so its statusline renders. AIQD will refresh when supported `rate_limits` fields arrive.
+
+Platform notes:
+
+- Windows: if Doctor says `claude.exe` is outside `PATH`, use the full-path command shown by Settings or Doctor, or add that directory to `PATH` and restart the terminal.
+- macOS/Linux: open a terminal in a project and run `claude`; if the command is not found, install or expose the Claude Code CLI first.
+
+If not ready: run `npm run trial:preflight`. A common next action is `Open Claude Code to refresh the statusline snapshot`, which means Claude is configured but has not sent a fresh supported `rate_limits` payload yet.
 
 ## 5. Verify
 
@@ -89,6 +121,12 @@ npm run trial:preflight
 npm run doctor
 npm run trial:ready
 ```
+
+Expected:
+
+- `trial:preflight` gives the shortest next action or says `Overall: ready`.
+- `doctor` shows source checks and any non-blocking warnings.
+- `trial:ready` passes only when every configured agent has fresh non-demo quota data.
 
 In the desktop app, check:
 

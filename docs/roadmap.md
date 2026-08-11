@@ -30,14 +30,24 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 - Fresh-machine real-data trial from clone to Codex + Claude Code readiness
 - Beginner onboarding copy pass for Windows, macOS, and Linux
 - Release screenshots or short GIFs for dashboard, mini panel, widget, and setup flow
-- Decide distribution shape: source-only preview, zip artifact, or packaged Electron build
+- Publish as a source-only developer preview; defer zip artifacts and packaged Electron builds
 - Update release notes and tag the first preview after the release checklist passes
+
+### First Preview Work Plan
+
+1. Hardening: keep smoke checks deterministic, verify `npm test`, `desktop:smoke`, `desktop:first-run-smoke`, and `git diff --check` locally.
+2. Real-data trial: run a clean clone from install to Codex and Claude Code readiness, recording every point where setup copy is confusing.
+3. Onboarding pass: tighten Settings and README instructions around the next action, expected result, and recovery command for each platform.
+4. Release assets: capture dashboard, tray mini panel, widget, and setup-flow screenshots or short GIFs.
+5. Distribution decision: publish the first preview as source-only, and state clearly that zip artifacts, packaged Electron builds, signed releases, and auto-start are later work.
+6. Release finish: update `CHANGELOG.md`, complete `docs/release-checklist.md`, verify CI on `main`, and tag the first preview.
 
 ## v0.2
 
 - Packaged desktop build and installer story
 - System notification for low quota, stale data, and refresh warnings
 - Simple historical usage trend from stored snapshots and refresh runs
+- Reset rhythm statistics from observed reset events: recent reset times, intervals, average/median/min/max spacing, and replenishment deltas, always labeled as local observations rather than guaranteed provider schedules
 - Optional forecast based on observed usage habits
 - More polished setup wizard and troubleshooting copy
 - Local API documentation for dashboard/CLI integration

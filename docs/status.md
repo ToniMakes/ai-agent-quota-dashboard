@@ -31,16 +31,32 @@ The current maintainer checkout has passed:
 - `node --check web/mini.js`
 - `git diff --check`
 - `npm run desktop:smoke`
+- `npm run desktop:first-run-smoke`
+- `npm run trial:preflight`
+- `npm run trial:ready`
+- Browser/API smoke against demo mode for `/`, `/mini.html`, `/api/health`, `/api/agents`, `/api/trial-readiness`, and `/api/export?format=json`
+- Clean-copy trial from `.tmp/fresh-trial-current`: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, and `npm run trial:ready`
 - GitHub Actions CI on `main`
+
+## Latest Clean Trial Notes
+
+A clean source copy with the current worktree changes can install, build, test, launch desktop smoke checks, and pass real-data strict readiness against the maintainer machine's Codex and Claude Code setup.
+
+Observed follow-up: Claude Code statusline data was accepted for strict readiness, but setup status still warns when the latest rate-limit snapshot is old. Before screenshots or release notes, open Claude Code once to refresh the statusline snapshot and confirm the warning clears.
+
+The beginner real-data trial docs now call out expected command results, Windows PowerShell `npm.cmd` fallbacks, Codex automatic-versus-manual detection, and Claude Code stale-snapshot recovery.
+
+Demo release screenshots have been generated for the dashboard, Doctor, Settings setup flow, mini panel, and widget surfaces under `docs/assets/screenshots`.
+
+The first public preview distribution shape is now source-only developer preview. `docs/release-notes-v0.1.0.md` is the draft GitHub Release text.
 
 ## Current Product State
 
-The app is suitable for local real-data dogfooding by the maintainer and technically curious early testers. It is not yet ready for broad public promotion because packaging, installer flow, screenshots, and beginner-facing release docs still need polish.
+The app is suitable for local real-data dogfooding by the maintainer and technically curious early testers. The first public preview will be source-only: users clone the repo, install dependencies, and run the local dashboard or desktop shell from source. Packaged installers, zip artifacts, signed releases, and auto-start remain later-release work.
 
 ## Next Focus
 
-1. Finish beginner onboarding copy for real-data setup across Windows, macOS, and Linux.
-2. Add release-quality screenshots or short GIFs for dashboard, tray panel, widget, and setup flow.
-3. Decide the first distributable shape: source-only developer preview, zip artifact, or packaged Electron build.
-4. Run one clean fresh-machine trial from clone to real Codex/Claude data.
-5. Tag the first public developer-preview release after the release checklist is complete.
+1. Refresh Claude Code once so the statusline snapshot is current before any ready-state screenshots.
+2. Capture any remaining native OS screenshots, especially the tray menu and actual floating widget.
+3. Review and finalize `docs/release-notes-v0.1.0.md`.
+4. Tag the first public source-only developer preview after the release checklist is complete.

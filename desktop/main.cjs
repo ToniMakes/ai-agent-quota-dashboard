@@ -23,6 +23,7 @@ const net = require("node:net");
 const { tmpdir } = require("node:os");
 const path = require("node:path");
 const {
+  buildSmokeBackendEnv,
   buildTrayMenuTemplate,
   dashboardPath,
   firstRunGuideTarget,
@@ -138,13 +139,13 @@ async function startDesktopApp() {
 
   if (smokeMode) {
     console.log(`AIQD desktop smoke ready at ${baseUrl}`);
-    app.quit();
+    exitDesktopProcess(0);
     return;
   }
 
   if (firstRunGuideSmokeMode) {
-    await runFirstRunGuideSmoke();
-    app.quit();
+    const ok = await runFirstRunGuideSmoke();
+    exitDesktopProcess(ok ? 0 : 1);
     return;
   }
 
@@ -203,6 +204,13 @@ function shutdownDesktopRuntime() {
   globalShortcut.unregisterAll();
 }
 
+function exitDesktopProcess(exitCode) {
+  process.exitCode = exitCode;
+  shutdownDesktopRuntime();
+  cleanupSmokeUserDataDir();
+  app.exit(exitCode);
+}
+
 function cleanupSmokeUserDataDir() {
   if (!smokeUserDataDir) {
     return;
@@ -250,27 +258,7 @@ function backendEnv() {
     return process.env;
   }
 
-  return {
-    ...process.env,
-    AIQD_CLAUDE_SETTINGS_PATH: path.join(
-      smokeUserDataDir,
-      ".claude",
-      "settings.json"
-    ),
-    AIQD_CLAUDE_STATUSLINE_DIR: path.join(smokeUserDataDir, "claude-code"),
-    AIQD_CLAUDE_STATUSLINE_SHIM_PATH: path.join(
-      smokeUserDataDir,
-      "claude-statusline.ps1"
-    ),
-    AIQD_CODEX_MANUAL_SNAPSHOT_PATH: path.join(
-      smokeUserDataDir,
-      "codex",
-      "codex-quota-snapshot.json"
-    ),
-    AIQD_CONFIG_PATH: path.join(smokeUserDataDir, "config.json"),
-    AIQD_DB_PATH: path.join(smokeUserDataDir, "quota.db"),
-    CLAUDE_CONFIG_DIR: path.join(smokeUserDataDir, ".claude")
-  };
+  return buildSmokeBackendEnv(process.env, smokeUserDataDir);
 }
 
 function registerIpc() {
@@ -557,9 +545,7 @@ async function runFirstRunGuideSmoke() {
   console.log(`AIQD desktop first-run guide smoke ${ok ? "passed" : "failed"}`);
   console.log(JSON.stringify(output, null, 2));
 
-  if (!ok) {
-    process.exitCode = 1;
-  }
+  return ok;
 }
 
 async function resolveFirstRunGuide() {

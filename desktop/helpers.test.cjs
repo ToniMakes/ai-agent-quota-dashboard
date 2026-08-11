@@ -1,6 +1,8 @@
 const assert = require("node:assert/strict");
+const path = require("node:path");
 const { describe, it } = require("node:test");
 const {
+  buildSmokeBackendEnv,
   buildTrayMenuTemplate,
   clampBoundsToWorkArea,
   dashboardPath,
@@ -413,5 +415,32 @@ describe("desktop helpers", () => {
       }),
       { ...widgetSize, x: 720, y: 500 }
     );
+  });
+
+  it("isolates smoke backend provider paths", () => {
+    const smokeRoot = path.join("tmp", "aiqd-smoke");
+    const env = buildSmokeBackendEnv(
+      {
+        AIQD_CONFIG_PATH: "real-config.json",
+        AIQD_DEMO_DATA: "1",
+        APPDATA: "real-appdata",
+        CODEX_HOME: "real-codex",
+        HOME: "real-home",
+        LOCALAPPDATA: "real-localappdata",
+        USERPROFILE: "real-profile"
+      },
+      smokeRoot
+    );
+    const smokeHome = path.join(smokeRoot, "home");
+    const smokeAppData = path.join(smokeRoot, "aiqd-data");
+
+    assert.equal(env.HOME, smokeHome);
+    assert.equal(env.USERPROFILE, smokeHome);
+    assert.equal(env.CODEX_HOME, path.join(smokeHome, ".codex"));
+    assert.equal(env.APPDATA, path.join(smokeRoot, "appdata"));
+    assert.equal(env.LOCALAPPDATA, path.join(smokeRoot, "localappdata"));
+    assert.equal(env.CLAUDE_CONFIG_DIR, path.join(smokeHome, ".claude"));
+    assert.equal(env.AIQD_CONFIG_PATH, path.join(smokeAppData, "config.json"));
+    assert.equal(env.AIQD_DEMO_DATA, "0");
   });
 });
