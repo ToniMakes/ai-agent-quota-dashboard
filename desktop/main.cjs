@@ -31,6 +31,7 @@ const {
   resolveDesktopShortcuts,
   resolveWidgetBounds: resolveSavedWidgetBounds,
   shouldRefreshForClaudeStatusline,
+  shouldOpenDashboardFromLaunch,
   summarizeDesktopStatus
 } = require("./helpers.cjs");
 
@@ -90,7 +91,7 @@ if (!hasSingleInstanceLock) {
       return;
     }
 
-    const wantsDashboard = shouldOpenDashboard(commandLine);
+    const wantsDashboard = shouldOpenDashboardFromLaunch(commandLine);
 
     if (!baseUrl || !tray) {
       if (wantsDashboard) {
@@ -174,7 +175,7 @@ async function startDesktopApp() {
     void updateTrayStatus();
   }, trayStatusIntervalMs);
 
-  if (showDashboardWhenReady || shouldOpenDashboard(process.argv)) {
+  if (showDashboardWhenReady || shouldOpenDashboardFromLaunch(process.argv)) {
     showDashboardWhenReady = false;
     void openFirstRunGuide({ readyFallback: "dashboard" });
   } else if (showPanelWhenReady) {
@@ -560,10 +561,6 @@ async function openFirstRunGuide(options = {}) {
   } catch {
     // Keep startup quiet if the guide cannot be resolved.
   }
-}
-
-function shouldOpenDashboard(commandLine = []) {
-  return commandLine.includes("--open-dashboard");
 }
 
 async function runFirstRunGuideSmoke() {

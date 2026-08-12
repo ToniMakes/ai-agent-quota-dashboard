@@ -90,6 +90,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Claude Code statusline reset times now also expire quota snapshots, so old 5-hour windows stop looking fresh after their reported reset
 - Claude Code statusline labels are clearer in dashboard and mini surfaces to avoid implying Claude desktop app usage-limit support
 - Dashboard and mini surfaces no longer show stale primary quota percentages as current remaining quota
+- Desktop shortcut launches now open the main dashboard even when AIQD is already running in the tray
 - SQLite refreshes now wait briefly for an existing writer instead of failing immediately on a short-lived database lock
 - Desktop first-run smoke now isolates provider data paths and exits non-zero when its deep-link assertion fails
 - Dashboard quota cards now clarify remaining quota versus official pages that display used quota

@@ -12,6 +12,7 @@ const {
   isSavedWidgetBounds,
   resolveDesktopShortcuts,
   resolveWidgetBounds,
+  shouldOpenDashboardFromLaunch,
   shouldRefreshForClaudeStatusline,
   summarizeDesktopStatus,
   summarizeAgents
@@ -89,6 +90,37 @@ describe("desktop helpers", () => {
     );
     assert.equal(dashboardPath("unknown", "codex-snapshot-content"), "/");
     assert.equal(dashboardPath("settings", "../bad"), "/?view=settings");
+  });
+
+  it("opens the dashboard for normal desktop launches", () => {
+    assert.equal(shouldOpenDashboardFromLaunch([]), true);
+    assert.equal(
+      shouldOpenDashboardFromLaunch([
+        "AI Agent Quota Dashboard.exe"
+      ]),
+      true
+    );
+    assert.equal(
+      shouldOpenDashboardFromLaunch([
+        "AI Agent Quota Dashboard.exe",
+        "--open-dashboard"
+      ]),
+      true
+    );
+    assert.equal(
+      shouldOpenDashboardFromLaunch([
+        "AI Agent Quota Dashboard.exe",
+        "--background"
+      ]),
+      false
+    );
+    assert.equal(
+      shouldOpenDashboardFromLaunch([
+        "AI Agent Quota Dashboard.exe",
+        "--open-mini"
+      ]),
+      false
+    );
   });
 
   it("chooses a first-run guide target for missing real-data setup", () => {
