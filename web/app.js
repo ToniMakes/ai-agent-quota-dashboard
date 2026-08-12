@@ -686,14 +686,14 @@ function renderAgents() {
 
 function renderAgentCard(agent) {
   const primary = agent.primarySnapshot;
-  const remaining = formatRemaining(primary);
   const status = agent.status ?? "unknown";
   const source = primary
     ? sourceLabel(primary.source)
     : tx("Unavailable", "不可用");
   const confidence = primary ? confidenceLabel(primary.confidence) : statusLabel("unknown");
-  const meterValue = snapshotMeterValue(primary);
-  const remainingLabel = primaryRemainingLabel(primary);
+  const quotaSummary = isStaleSnapshot(primary)
+    ? renderStaleQuotaSummary(agent, primary)
+    : renderPrimaryQuotaSummary(primary, status);
 
   return `
     <article class="agent-card">
@@ -705,27 +705,7 @@ function renderAgentCard(agent) {
         <span class="badge ${status}">${escapeHtml(statusLabel(status))}</span>
       </div>
 
-      <div>
-        <div
-          class="remaining-wrap"
-          title="${escapeHtml(
-            tx(
-              "AIQD shows remaining quota. Some official pages show used quota.",
-              "AIQD 显示剩余额度；有些官方页面显示已用额度。"
-            )
-          )}"
-        >
-          <div class="remaining">${remaining}</div>
-          <div class="remaining-label">${escapeHtml(remainingLabel)}</div>
-        </div>
-        <div class="meter" aria-hidden="true">
-          <div
-            class="meter-fill ${escapeHtml(primaryMeterClass(primary, status))}"
-            style="--value: ${meterValue}%"
-          ></div>
-        </div>
-        ${primary ? renderPrimaryQuotaMeta(primary) : ""}
-      </div>
+      ${quotaSummary}
 
       <div class="quota-lines">
         ${renderSnapshotLines(agent)}
@@ -736,6 +716,82 @@ function renderAgentCard(agent) {
         ${primary ? renderObservedLine(primary) : ""}
       </div>
     </article>
+  `;
+}
+
+function renderPrimaryQuotaSummary(primary, status) {
+  const remaining = formatRemaining(primary);
+  const meterValue = snapshotMeterValue(primary);
+  const remainingLabel = primaryRemainingLabel(primary);
+
+  return `
+    <div>
+      <div
+        class="remaining-wrap"
+        title="${escapeHtml(
+          tx(
+            "AIQD shows remaining quota. Some official pages show used quota.",
+            "AIQD 显示剩余额度；有些官方页面显示已用额度。"
+          )
+        )}"
+      >
+        <div class="remaining">${remaining}</div>
+        <div class="remaining-label">${escapeHtml(remainingLabel)}</div>
+      </div>
+      <div class="meter" aria-hidden="true">
+        <div
+          class="meter-fill ${escapeHtml(primaryMeterClass(primary, status))}"
+          style="--value: ${meterValue}%"
+        ></div>
+      </div>
+      ${primary ? renderPrimaryQuotaMeta(primary) : ""}
+    </div>
+  `;
+}
+
+function renderStaleQuotaSummary(agent, snapshot) {
+  const reset = snapshot.resetAt
+    ? tx("It reported a reset {time}.", "它报告的重置时间是 {time}。", {
+        time: formatRelative(snapshot.resetAt)
+      })
+    : tx("It did not report a reset time.", "它没有报告重置时间。");
+  const source = sourceLabel(snapshot.source);
+  const isClaude = agent.agent === "claude-code";
+  const detail = isClaude
+    ? tx(
+        "This is not zero quota. AIQD only has an old Claude Code statusline snapshot; Claude desktop usage is not an automatic data source yet.",
+        "这不是额度用完。AIQD 只剩一条旧的 Claude Code 状态栏快照；Claude 桌面版用量目前还不是自动数据源。"
+      )
+    : tx(
+        "This is not zero quota. The last local quota snapshot is past its reported reset time.",
+        "这不是额度用完。上一条本地额度快照已经超过它报告的重置时间。"
+      );
+  const action = isClaude
+    ? tx(
+        "Open Claude Code CLI once so its statusline can send a fresh snapshot, then refresh AIQD.",
+        "打开一次 Claude Code CLI，让状态栏发送新的快照，然后刷新 AIQD。"
+      )
+    : tx(
+        "Refresh the source or record a new visible quota value.",
+        "刷新数据源，或重新记录一次可见额度。"
+      );
+
+  return `
+    <div class="stale-quota-state">
+      <div class="stale-quota-copy">
+        <strong>${escapeHtml(tx("Needs fresh data", "需要新数据"))}</strong>
+        <p>${escapeHtml(detail)}</p>
+      </div>
+      <div class="stale-quota-facts" aria-label="${escapeHtml(
+        tx("Expired observation details", "过期观测详情")
+      )}">
+        <span>${escapeHtml(tx("Last source", "上次来源"))}</span>
+        <strong>${escapeHtml(source)}</strong>
+        <span>${escapeHtml(tx("Why hidden", "为什么隐藏额度"))}</span>
+        <strong>${escapeHtml(reset)}</strong>
+      </div>
+      <p class="stale-quota-action">${escapeHtml(action)}</p>
+    </div>
   `;
 }
 
@@ -759,7 +815,7 @@ function renderObservedLine(snapshot) {
 function renderStaleNote(snapshot) {
   if (snapshot.freshness?.status === "stale") {
     return `<span class="freshness-note">${escapeHtml(
-      snapshot.freshness.label
+      staleReasonLabel(snapshot)
     )}</span>`;
   }
 
@@ -776,6 +832,21 @@ function renderStaleNote(snapshot) {
   }
 
   return "";
+}
+
+function staleReasonLabel(snapshot) {
+  if (snapshot?.freshness?.reason === "expired") {
+    return tx(
+      "past the reported reset time",
+      "已超过报告的重置时间"
+    );
+  }
+
+  if (snapshot?.freshness?.reason === "source_marked_stale" || snapshot?.stale) {
+    return tx("marked stale by source", "数据源标记为过期");
+  }
+
+  return tx("needs fresh data", "需要新数据");
 }
 
 function renderSnapshotLines(agent) {
@@ -804,7 +875,7 @@ function renderSnapshotLines(agent) {
     .filter((snapshot) => !isSameSnapshot(snapshot, agent.primarySnapshot))
     .map((snapshot) =>
       renderQuotaWindowRow(snapshot, {
-        showMeter: true
+        showMeter: !isStaleSnapshot(snapshot)
       })
     )
     .join("");
@@ -842,6 +913,7 @@ function renderPrimaryQuotaMeta(snapshot) {
 
 function renderQuotaWindowRow(snapshot, options = {}) {
   const remaining = formatRemainingText(snapshot);
+  const isStale = isStaleSnapshot(snapshot);
   const used = formatUsed(snapshot);
   const reset = snapshot.resetAt
     ? tx("Reset {time}", "{time}重置", {
@@ -862,9 +934,11 @@ function renderQuotaWindowRow(snapshot, options = {}) {
       <div class="quota-window-heading">
         <span class="quota-window-name">${escapeHtml(windowLabel(snapshot.windowType))}</span>
         <strong class="quota-window-remaining">${escapeHtml(
-          tx("{amount} remaining", "剩余 {amount}", {
-            amount: remaining
-          })
+          isStale
+            ? tx("needs refresh", "需要刷新")
+            : tx("{amount} remaining", "剩余 {amount}", {
+                amount: remaining
+              })
         )}</strong>
       </div>
       ${options.showMeter ? renderSnapshotMeter(snapshot) : ""}
@@ -4369,7 +4443,7 @@ function formatRemaining(snapshot) {
   }
 
   if (isStaleSnapshot(snapshot)) {
-    return escapeHtml(tx("Stale", "已过期"));
+    return escapeHtml(tx("Needs refresh", "需要刷新"));
   }
 
   if (typeof snapshot.remainingPercent === "number") {
@@ -4539,7 +4613,7 @@ function statusLabel(status) {
     needs_attention: tx("needs attention", "需要处理"),
     pass: tx("pass", "通过"),
     ready: tx("ready", "就绪"),
-    stale: tx("stale", "过期"),
+    stale: tx("needs refresh", "需刷新"),
     unknown: tx("unknown", "未知"),
     waiting_for_data: tx("waiting", "等待中"),
     warn: tx("warn", "警告"),
@@ -4562,7 +4636,7 @@ function localizedReadinessLabel(label) {
     ["Ready", "就绪"],
     ["Waiting for data", "等待数据"],
     ["Needs attention", "需要处理"],
-    ["Expired", "已过期"],
+    ["Expired", "需要刷新"],
     ["Unknown", "未知"],
     ["Setup status unavailable", "设置状态不可用"],
     ["Waiting for visible quota", "等待可见额度"],

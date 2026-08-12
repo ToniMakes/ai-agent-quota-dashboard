@@ -46,5 +46,6 @@ An adapter may return no snapshots. That is a valid result when reliable quota d
 
 - Codex: weekly quota first
 - Claude Code: 5-hour and weekly statusline quota first
+- Claude Desktop: P0 planned local plan usage history adapter before broad public release
 
 Additional agents should be added only when their data can be obtained legally, reliably, and transparently.

@@ -275,6 +275,10 @@ button {
   background: #bda5e7;
 }
 
+.mini-meter-fill.stale {
+  min-width: 0;
+}
+
 .mini-remaining {
   font-size: 1rem;
   font-weight: 760;
@@ -376,6 +380,7 @@ button {
 
 .mini-window-meter-fill.stale {
   background: #bda5e7;
+  min-width: 0;
 }
 
 .mini-window-more {

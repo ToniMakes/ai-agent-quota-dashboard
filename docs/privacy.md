@@ -27,6 +27,7 @@ The app may store:
 - Codex CLI `rate_limits` fields extracted from local structured session events, when available
 - Manual Codex fallback snapshots the user explicitly records from a visible status or Usage surface
 - Sanitized Claude Code statusline `rate_limits` snapshots, when explicitly enabled
+- Planned Claude Desktop plan usage samples, limited to usage percentages and observation timestamps from the local plan usage history file
 
 The app should not store:
 
@@ -38,6 +39,7 @@ The app should not store:
 - Private hidden API responses
 - Claude Code transcript paths
 - Claude Code workspace paths
+- Claude Desktop chat content, prompts, responses, attachments, cookies, or session tokens
 
 ## Data Reliability
 

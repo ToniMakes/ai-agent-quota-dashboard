@@ -89,7 +89,19 @@ node dist/index.js codex snapshot --remaining-percent 72 --reset-at 2026-08-16T0
 
 Manual Codex fallback snapshots expire at their reported reset time. If Codex later changes the reset anchor, refresh first; if no CLI data appears, record a new visible fallback value.
 
-## 4. Connect Claude Code
+## 4. Verify Claude Desktop Coverage
+
+Claude Desktop-only coverage is a P0 release gate before broad public release. Normal Claude users should not need to open Claude Code CLI only to make AIQD useful.
+
+Before release, verify the installed app can read the local Claude Desktop plan usage history source:
+
+```text
+%APPDATA%\Claude\plan-usage-history.json
+```
+
+Expected: AIQD shows Claude Desktop five-hour and weekly usage from local plan usage samples, labels the source clearly, and does not read chat content, cookies, hidden API responses, prompts, responses, or attachments. If the adapter is not implemented yet, the release should remain blocked for ordinary Claude Desktop-only users.
+
+## 5. Connect Claude Code
 
 Normal-user path from the desktop app:
 
@@ -136,7 +148,7 @@ Platform notes:
 
 If not ready: run `npm run trial:preflight`. A common next action is `Open Claude Code to refresh the statusline snapshot`, which means Claude is configured but has not sent a fresh supported `rate_limits` payload yet.
 
-## 5. Verify
+## 6. Verify
 
 ```bash
 npm run trial:preflight

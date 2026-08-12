@@ -680,6 +680,62 @@ h2 {
   color: var(--stale);
 }
 
+.stale-quota-state {
+  display: grid;
+  gap: 12px;
+  margin-top: 4px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--stale), var(--border) 55%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--stale), var(--surface) 93%);
+}
+
+.stale-quota-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.stale-quota-copy strong {
+  color: var(--text);
+  font-size: 1.08rem;
+  line-height: 1.2;
+}
+
+.stale-quota-copy p,
+.stale-quota-action {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.stale-quota-facts {
+  display: grid;
+  grid-template-columns: minmax(96px, 0.7fr) minmax(0, 1.3fr);
+  gap: 7px 12px;
+  padding-top: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--stale), transparent 72%);
+  font-size: 0.8rem;
+}
+
+.stale-quota-facts span {
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.stale-quota-facts strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-weight: 760;
+  text-overflow: ellipsis;
+}
+
+.stale-quota-action {
+  color: var(--stale);
+  font-weight: 720;
+}
+
 .settings-detail {
   white-space: pre-line;
 }
@@ -1638,6 +1694,7 @@ h2 {
   .primary-quota-meta,
   .quota-window-heading,
   .quota-window-meta,
+  .stale-quota-facts,
   .reset-row,
   .doctor-row,
   .event-row,

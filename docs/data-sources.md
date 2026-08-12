@@ -20,11 +20,36 @@ These paths are stored in:
 
 Configured paths do not relax parser boundaries. Adapters still scan only narrow candidate filenames and parse only supported structured quota/statusline records.
 
+## Claude Desktop Plan Usage History
+
+Status: P0 planned source before broad public release.
+
+Claude Desktop users should not have to open Claude Code CLI just to make AIQD useful. On Windows, Claude Desktop has been observed to maintain:
+
+```text
+%APPDATA%\Claude\plan-usage-history.json
+```
+
+The observed file shape is a versioned document with `samples`. Each sample includes a timestamp and compact usage fields, such as `u.fh` and `u.sd`, which appear to correspond to five-hour and seven-day used percentages shown in Claude's Usage settings.
+
+Implementation boundary:
+
+- Parse only usage percentages and observation timestamps.
+- Convert used percentages into remaining percentages for AIQD cards.
+- Label the source as local Claude Desktop plan usage history, not as an official API.
+- Treat reset timing as unknown unless it can be conservatively inferred from local reset observations.
+- Do not scrape the desktop UI.
+- Do not import cookies, session tokens, or browser storage.
+- Do not call hidden Claude endpoints.
+- Do not read prompts, responses, attachments, transcript paths, or source code.
+
+This source should sit ahead of manual or estimated fallbacks because it directly supports normal Claude Desktop users, but it should remain clearly distinct from official Claude Code statusline data.
+
 ## Claude Code
 
 Claude Code statusline input is an official structured source. Anthropic documents a `rate_limits` object with `five_hour` and `seven_day` windows. Each window includes a used percentage and reset timestamp.
 
-The regular Claude desktop app's `Plan usage limits` screen is not a v0.1 data source. AIQD does not read or scrape the desktop app UI; Claude quota data comes from Claude Code statusline snapshots only.
+Claude Code statusline is the currently implemented Claude source. Claude Desktop local plan usage history is the P0 planned source above, and should be implemented without scraping the desktop app UI.
 
 Source: https://docs.anthropic.com/en/docs/claude-code/statusline
 
