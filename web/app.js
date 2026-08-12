@@ -926,6 +926,10 @@ function snapshotMeterValue(snapshot) {
     return 0;
   }
 
+  if (isStaleSnapshot(snapshot)) {
+    return 0;
+  }
+
   if (typeof snapshot.remainingPercent === "number") {
     return clamp(snapshot.remainingPercent, 0, 100);
   }
@@ -4364,6 +4368,10 @@ function formatRemaining(snapshot) {
     return `--<span>%</span>`;
   }
 
+  if (isStaleSnapshot(snapshot)) {
+    return escapeHtml(tx("Stale", "已过期"));
+  }
+
   if (typeof snapshot.remainingPercent === "number") {
     return `${Math.round(snapshot.remainingPercent)}<span>%</span>`;
   }
@@ -4375,6 +4383,14 @@ function formatRemaining(snapshot) {
   }
 
   return `--<span>${escapeHtml(snapshot.unit)}</span>`;
+}
+
+function isStaleSnapshot(snapshot) {
+  return Boolean(
+    snapshot?.freshness?.status === "stale" ||
+      snapshot?.stale ||
+      (snapshot?.expiresAt && Date.parse(snapshot.expiresAt) <= Date.now())
+  );
 }
 
 function formatUsed(snapshot) {
