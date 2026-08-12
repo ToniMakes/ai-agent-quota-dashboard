@@ -82,6 +82,16 @@ function dashboardPath(view, target) {
   return `/?view=${encodeURIComponent(view)}${hash ? `#${hash}` : ""}`;
 }
 
+function shouldOpenDashboardFromLaunch(commandLine = []) {
+  if (commandLine.includes("--open-dashboard")) {
+    return true;
+  }
+
+  return !["--background", "--open-mini", "--tray"].some((flag) =>
+    commandLine.includes(flag)
+  );
+}
+
 function firstRunGuideTarget(agents, readiness) {
   const readinessTarget = firstRunGuideTargetFromReadiness(readiness);
 
@@ -442,6 +452,7 @@ module.exports = {
   resolveWidgetBounds,
   resolveDesktopShortcuts,
   shouldRefreshForClaudeStatusline,
+  shouldOpenDashboardFromLaunch,
   summarizeAgent,
   summarizeDesktopStatus,
   summarizeAgents
