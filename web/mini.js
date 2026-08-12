@@ -869,6 +869,10 @@ function formatRemaining(snapshot) {
     return "--%";
   }
 
+  if (isStaleSnapshot(snapshot)) {
+    return tx("Stale", "已过期");
+  }
+
   if (typeof snapshot.remainingPercent === "number") {
     return `${Math.round(snapshot.remainingPercent)}%`;
   }
@@ -885,6 +889,10 @@ function meterValue(snapshot) {
     return 0;
   }
 
+  if (isStaleSnapshot(snapshot)) {
+    return 0;
+  }
+
   if (typeof snapshot.remainingPercent === "number") {
     return clamp(snapshot.remainingPercent, 0, 100);
   }
@@ -898,6 +906,14 @@ function meterValue(snapshot) {
   }
 
   return 0;
+}
+
+function isStaleSnapshot(snapshot) {
+  return Boolean(
+    snapshot?.freshness?.status === "stale" ||
+      snapshot?.stale ||
+      (snapshot?.expiresAt && Date.parse(snapshot.expiresAt) <= Date.now())
+  );
 }
 
 function resetShortSummary(value) {
