@@ -244,12 +244,17 @@ function render() {
 function renderAgent(agent) {
   const primary = agent.primarySnapshot;
   const status = agent.status ?? "unknown";
+  const stalePrimary = isStaleSnapshot(primary);
   const guidance = primary ? undefined : emptyStateGuidance(agent);
   const detail = primary ? snapshotDetail(primary) : guidance.detail;
   const label = primary
-    ? tx("{window} left", "{window} 剩余", {
-        window: windowLabel(primary.windowType)
-      })
+    ? stalePrimary
+      ? tx("{window} needs refresh", "{window} 需刷新", {
+          window: windowLabel(primary.windowType)
+        })
+      : tx("{window} left", "{window} 剩余", {
+          window: windowLabel(primary.windowType)
+        })
     : guidance.label;
 
   return `
@@ -870,7 +875,7 @@ function formatRemaining(snapshot) {
   }
 
   if (isStaleSnapshot(snapshot)) {
-    return tx("Stale", "已过期");
+    return tx("Refresh", "刷新");
   }
 
   if (typeof snapshot.remainingPercent === "number") {
@@ -935,7 +940,7 @@ function snapshotDetail(snapshot) {
   ];
 
   if (snapshot.freshness?.status === "stale") {
-    parts.push(snapshot.freshness.label);
+    parts.push(staleReasonLabel(snapshot));
   }
 
   return parts.join(" / ");
@@ -944,6 +949,10 @@ function snapshotDetail(snapshot) {
 function formatRemainingText(snapshot) {
   if (!snapshot) {
     return "--";
+  }
+
+  if (isStaleSnapshot(snapshot)) {
+    return tx("needs refresh", "需要刷新");
   }
 
   if (typeof snapshot.remainingPercent === "number") {
@@ -955,6 +964,18 @@ function formatRemainingText(snapshot) {
   }
 
   return "--";
+}
+
+function staleReasonLabel(snapshot) {
+  if (snapshot?.freshness?.reason === "expired") {
+    return tx("past reported reset", "超过报告的重置时间");
+  }
+
+  if (snapshot?.freshness?.reason === "source_marked_stale" || snapshot?.stale) {
+    return tx("marked stale by source", "数据源标记过期");
+  }
+
+  return tx("needs fresh data", "需要新数据");
 }
 
 function formatUsedText(snapshot) {

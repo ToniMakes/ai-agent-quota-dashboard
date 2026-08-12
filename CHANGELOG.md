@@ -22,6 +22,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Distribution and startup plan documenting v0.2 opt-in launch-at-login behavior for installer and Settings
 - v0.2 roadmap note for Settings-controlled refresh interval presets, distinct from provider-produced observation timestamps
 - v0.2 roadmap note for safe Settings reset controls that restore AIQD-owned defaults without deleting quota history or changing external agent configuration
+- P0 release-gate documentation for a Claude Desktop local plan usage history adapter, so desktop-only Claude users are covered before broad public release
 - English default language for first-run dashboard and mini surfaces, while preserving saved user language choices
 - Demo release screenshots for the dashboard, Doctor, Settings setup flow, mini panel, and widget surfaces
 - Beginner onboarding copy for real-data trials now includes expected outcomes, PowerShell fallback commands, and Claude Code refresh troubleshooting
@@ -90,6 +91,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Claude Code statusline reset times now also expire quota snapshots, so old 5-hour windows stop looking fresh after their reported reset
 - Claude Code statusline labels are clearer in dashboard and mini surfaces to avoid implying Claude desktop app usage-limit support
 - Dashboard and mini surfaces no longer show stale primary quota percentages as current remaining quota
+- Expired quota cards now explain that AIQD needs a fresh local snapshot instead of implying the quota is used up
 - Desktop shortcut launches now open the main dashboard even when AIQD is already running in the tray
 - SQLite refreshes now wait briefly for an existing writer instead of failing immediately on a short-lived database lock
 - Desktop first-run smoke now isolates provider data paths and exits non-zero when its deep-link assertion fails

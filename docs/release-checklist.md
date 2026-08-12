@@ -16,6 +16,7 @@ Use this checklist before tagging a release.
 - [ ] Packaged desktop installer or release artifact exists for the first public preview
 - [ ] Installed app entry opens the main dashboard window
 - [ ] Normal-user first run can reach Settings without typing `npm`, `node`, or PowerShell commands
+- [ ] P0 Claude Desktop local plan usage adapter is implemented, tested, and clearly labeled for desktop-only users
 - [ ] Claude setup offers an explicit install action when Claude Code CLI is missing and a separate connect action for local quota capture
 - [ ] CI is green on `main`
 - [ ] `CHANGELOG.md` has a release entry
@@ -35,12 +36,13 @@ Use this checklist before tagging a release.
 1. Verify deterministic validation: desktop smoke data paths are isolated and any first-run smoke assertion failure returns a non-zero process exit.
 2. Verify the local test gate: `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, packaged smoke checks, and `git diff --check`.
 3. Build the packaged desktop artifact and verify the installed entry opens the main dashboard.
-4. Run a fresh-machine real-data trial from installer through Codex and Claude Code readiness.
-5. Run a clean-clone developer fallback trial.
-6. Tighten beginner onboarding copy for Windows, macOS, and Linux, especially the visible next action, expected result, and recovery path.
-7. Capture release screenshots or short GIFs for Dashboard, tray mini panel, widget, and setup flow.
-8. Confirm README and release notes describe the installer path first and source mode as a developer fallback.
-9. Update release notes from `CHANGELOG.md`, complete this checklist, verify CI on `main`, and tag the preview.
+4. Implement and verify Claude Desktop local plan usage history ingestion for desktop-only users.
+5. Run a fresh-machine real-data trial from installer through Codex, Claude Desktop, and Claude Code readiness.
+6. Run a clean-clone developer fallback trial.
+7. Tighten beginner onboarding copy for Windows, macOS, and Linux, especially the visible next action, expected result, and recovery path.
+8. Capture release screenshots or short GIFs for Dashboard, tray mini panel, widget, and setup flow.
+9. Confirm README and release notes describe the installer path first and source mode as a developer fallback.
+10. Update release notes from `CHANGELOG.md`, complete this checklist, verify CI on `main`, and tag the preview.
 
 ## Maintainer Installed-App Trial
 

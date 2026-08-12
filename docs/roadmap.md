@@ -1,10 +1,10 @@
 # Roadmap
 
-Last updated: 2026-08-11
+Last updated: 2026-08-13
 
 ## Current Milestone: v0.1 Desktop Preview
 
-The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and Claude Code quota experience trustworthy enough for early public testers, with an installer-first path for normal users and source mode retained for developers.
+The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and Claude quota experience trustworthy enough for early public testers, with an installer-first path for normal users and source mode retained for developers.
 
 ### Done
 
@@ -33,7 +33,8 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 
 ### Remaining Before First Public Preview
 
-- True clean Windows user or VM real-data trial from installer to Codex + Claude Code readiness
+- P0: add a Claude Desktop local `plan-usage-history.json` adapter so desktop-only Claude users can monitor usage without opening Claude Code CLI
+- True clean Windows user or VM real-data trial from installer to Codex, Claude Desktop, and Claude Code readiness
 - Signing decision for the Windows installer, or explicit unsigned-preview warning in release notes
 - Developer fallback trial from clone to Codex + Claude Code readiness
 - Beginner onboarding copy pass for Windows, macOS, and Linux
@@ -44,11 +45,12 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 
 1. Hardening: keep smoke checks deterministic, verify `npm test`, `desktop:smoke`, `desktop:first-run-smoke`, and `git diff --check` locally.
 2. Packaging: keep the Windows installer artifact reproducible and verify packaged smoke checks before each tag.
-3. Real-data trial: run a fresh install from installer to Codex and Claude Code readiness, recording every point where setup copy is confusing.
-4. Developer fallback: verify a clean clone still works for technical testers.
-5. Onboarding pass: tighten Settings and README instructions around the next action, expected result, and recovery path for each platform.
-6. Release assets: capture dashboard, tray mini panel, widget, and setup-flow screenshots or short GIFs.
-7. Release finish: update `CHANGELOG.md`, complete `docs/release-checklist.md`, verify CI on `main`, tag the preview, and create the GitHub Release.
+3. Claude Desktop coverage: parse only local plan usage samples from `%APPDATA%\Claude\plan-usage-history.json`, clearly label the source, and avoid UI scraping, cookies, hidden APIs, or chat content.
+4. Real-data trial: run a fresh install from installer to Codex, Claude Desktop, and Claude Code readiness, recording every point where setup copy is confusing.
+5. Developer fallback: verify a clean clone still works for technical testers.
+6. Onboarding pass: tighten Settings and README instructions around the next action, expected result, and recovery path for each platform.
+7. Release assets: capture dashboard, tray mini panel, widget, and setup-flow screenshots or short GIFs.
+8. Release finish: update `CHANGELOG.md`, complete `docs/release-checklist.md`, verify CI on `main`, tag the preview, and create the GitHub Release.
 
 ## v0.2
 

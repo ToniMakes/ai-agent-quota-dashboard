@@ -105,9 +105,9 @@ CI runs tests on Windows and Ubuntu with Node 24.
 - No update channel yet
 - App-managed launch-at-login may be absent until v0.2; if present, it must be explicit and off by default
 - Claude Code may report setup warnings until it renders a fresh statusline payload
-- Claude desktop app `Plan usage limits` is not read in v0.1; Claude data comes from Claude Code statusline snapshots
+- Claude Desktop-only coverage is a P0 release gate: the local `plan-usage-history.json` source has been identified, but the adapter must land before this preview is broadly useful for users who never open Claude Code CLI
 - Restore default settings, historical trends, reset rhythm statistics, and Settings refresh interval presets are planned for v0.2
-- Additional providers are intentionally deferred until Codex and Claude Code are trustworthy
+- Additional providers are intentionally deferred until Codex and Claude sources are trustworthy
 
 ## Privacy Boundary
 

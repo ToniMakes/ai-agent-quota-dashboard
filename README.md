@@ -11,7 +11,9 @@ Unlike general token or cost trackers, this project is quota-first. It focuses o
 
 ## Status
 
-This repository is preparing the v0.1 desktop preview. The first public preview should be installer-first for normal users: install the app, open the desktop shortcut, then finish Codex and Claude Code setup from Settings. Source mode remains available as a developer fallback before and after the packaged release.
+This repository is preparing the v0.1 desktop preview. The first public preview should be installer-first for normal users: install the app, open the desktop shortcut, then finish setup from Settings. Source mode remains available as a developer fallback before and after the packaged release.
+
+Current release gate: Claude Desktop-only users are now the highest priority. AIQD currently reads Claude Code statusline snapshots, and a local Claude Desktop `plan-usage-history.json` source has been identified for a P0 adapter before broad public release.
 
 See [docs/status.md](docs/status.md) for the current project snapshot. The current app includes:
 
@@ -197,7 +199,7 @@ It starts the local backend, adds an AI Agent Quota tray icon, and provides:
 - a one-time first-run guide that uses strict trial readiness to open the exact Settings or Doctor section when real data is not ready, or shows the mini panel when it is ready
 - safe global shortcuts for AIQD itself: `Ctrl+Alt+Q` toggles the mini panel, `Ctrl+Alt+R` refreshes quota data, and `Ctrl+Alt+W` toggles the desktop widget
 - compact secondary-window quota rows and manual refresh in mini surfaces
-- single-instance behavior: launching the desktop app again focuses the existing mini panel
+- single-instance behavior: launching the desktop app again opens the existing main dashboard window, while the tray remains available for the mini panel
 - automatic tray refresh when Claude Code sends the first statusline snapshot
 - remembered desktop widget position
 - `Esc` to hide the active mini surface
@@ -315,11 +317,17 @@ These commands write only the dashboard's own config file:
 
 The Settings view shows the same config path, whether configured scan roots are readable, and copy buttons for the related commands. If the browser blocks clipboard access, the command is selected so it can be copied manually.
 
+## Claude Desktop And Claude Code
+
+Claude Desktop coverage is now a P0 release gate. On Windows, Claude Desktop has been observed to maintain a local `%APPDATA%\Claude\plan-usage-history.json` file with plan usage samples. AIQD should add a conservative adapter for that file before broad public release so users who never open Claude Code CLI can still monitor Claude usage.
+
+The planned Claude Desktop adapter must parse only narrow usage fields, such as 5-hour and weekly used percentages plus observation timestamps. It must not scrape the app UI, import cookies, call hidden APIs, or read chat content.
+
 ## Claude Code Statusline
 
 Claude Code can send official `rate_limits` data to a local statusline command. This project provides a sink that stores only sanitized rate limit fields.
 
-The regular Claude desktop app's `Plan usage limits` screen is not a v0.1 data source. If you only use the desktop app and never open Claude Code from a terminal/CLI session, AIQD cannot refresh Claude Code statusline quota data and may show the last statusline snapshot until it expires.
+Until the Claude Desktop adapter lands, Claude Code statusline remains the implemented Claude source. If you only use the desktop app and never open Claude Code from a terminal/CLI session, AIQD cannot refresh Claude Code statusline quota data and may show the last statusline snapshot until it expires.
 
 Real-data setup from source:
 
@@ -385,6 +393,7 @@ Source priority:
 ```text
 official_api / official_cli
 > official_statusline
+> planned local_plan_usage_history
 > local_quota_snapshot
 > local_usage_log
 > estimated

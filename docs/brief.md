@@ -1,9 +1,11 @@
 # AI Agent Quota Dashboard 产品与技术 Brief
 
-更新时间：2026-08-11
-当前阶段：v0.1 developer preview / 真实数据 dogfooding。核心 MVP 已经从构思进入可运行实现：本地 Web Dashboard、Doctor、Settings、Codex/Claude Code 真实额度来源、桌面托盘小面板、桌面置顶小组件、严格 readiness 检查和默认英文的中英双语 UI 都已落地。下一步重点是发布前体验打磨，而不是扩展大量 provider。
+更新时间：2026-08-13
+当前阶段：v0.1 developer preview / 真实数据 dogfooding。核心 MVP 已经从构思进入可运行实现：本地 Web Dashboard、Doctor、Settings、Codex/Claude Code 真实额度来源、桌面托盘小面板、桌面置顶小组件、严格 readiness 检查和默认英文的中英双语 UI 都已落地。发布前最高优先级已经调整为接入 Claude Desktop 本地 `plan-usage-history.json` 用量来源，让只用 Claude 桌面版的普通用户也能被覆盖；其次才是 fresh-machine 试跑、截图和 GitHub Release。
 
 当前状态总览见：[docs/status.md](status.md)。
+
+P0 发布门槛：实现 Claude Desktop local plan usage adapter。该 adapter 只能读取本地 plan usage history 里的用量百分比和观测时间，不能读取聊天内容、cookies、隐藏 API 响应、prompts、responses、attachments 或源码。
 
 ## 0. 当前实现快照
 
