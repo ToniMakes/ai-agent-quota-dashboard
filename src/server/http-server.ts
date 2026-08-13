@@ -70,12 +70,36 @@ export function listen(server: ReturnType<typeof createHttpServer>, config: AppC
   });
 }
 
+const loopbackHostnames = new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
+
+export function isAllowedOrigin(origin: string | undefined, port: number): boolean {
+  if (!origin) {
+    return true;
+  }
+
+  try {
+    const originUrl = new URL(origin);
+    const originPort = Number(
+      originUrl.port || (originUrl.protocol === "https:" ? 443 : 80)
+    );
+
+    return loopbackHostnames.has(originUrl.hostname) && originPort === port;
+  } catch {
+    return false;
+  }
+}
+
 async function handleApiRequest(
   context: ServerContext,
   request: IncomingMessage,
   response: ServerResponse,
   url: URL
 ): Promise<void> {
+  if (!isAllowedOrigin(request.headers.origin, context.config.port)) {
+    sendJson(response, 403, { error: "Origin not allowed" });
+    return;
+  }
+
   if (request.method === "GET" && url.pathname === "/api/health") {
     sendJson(response, 200, {
       ok: true,
