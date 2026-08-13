@@ -9,6 +9,7 @@ Users can add explicit scan roots with:
 ```bash
 node dist/index.js config path add codex "C:\path\to\codex-data"
 node dist/index.js config path add claude-code "C:\path\to\claude-data"
+node dist/index.js config path add claude-desktop "C:\path\to\plan-usage-history.json"
 node dist/index.js config path remove codex "C:\path\to\codex-data"
 ```
 
@@ -22,34 +23,52 @@ Configured paths do not relax parser boundaries. Adapters still scan only narrow
 
 ## Claude Desktop Plan Usage History
 
-Status: P0 planned source before broad public release.
+Status: implemented. Claude Desktop users do not need to open Claude Code CLI to make AIQD useful; this source is an alternative to Claude Code statusline, not a fallback ranked below it.
 
-Claude Desktop users should not have to open Claude Code CLI just to make AIQD useful. On Windows, Claude Desktop has been observed to maintain:
+On Windows, Claude Desktop maintains:
 
 ```text
 %APPDATA%\Claude\plan-usage-history.json
 ```
 
-The observed file shape is a versioned document with `samples`. Each sample includes a timestamp and compact usage fields, such as `u.fh` and `u.sd`, which appear to correspond to five-hour and seven-day used percentages shown in Claude's Usage settings.
+The file shape is a versioned document with `samples`: `{ "version": 2, "samples": [{ "t": <epoch_ms>, "org": "<org-id>", "u": { "fh": <0-100>, "sd": <0-100> } }] }`. `u.fh` and `u.sd` correspond to five-hour and seven-day (weekly) used percentages shown in Claude's Usage settings. AIQD uses only the most recent sample.
+
+Parser:
+
+```text
+src/adapters/claude-desktop/parse-plan-usage-history.ts
+```
+
+Fixtures:
+
+```text
+src/adapters/claude-desktop/__fixtures__/plan-usage-history-sample.json
+src/adapters/claude-desktop/__fixtures__/plan-usage-history-empty.json
+```
+
+Mapping:
+
+- `u.fh` -> `session_5h`, `u.sd` -> `weekly`
+- `t` (epoch ms) -> `observedAt`
+- source -> `local_quota_snapshot`, confidence -> `high`
+- `expiresAt` -> `observedAt` plus a fixed max-age window (no reset time is available in the file, so snapshots go stale from age alone rather than a reported reset)
 
 Implementation boundary:
 
 - Parse only usage percentages and observation timestamps.
 - Convert used percentages into remaining percentages for AIQD cards.
 - Label the source as local Claude Desktop plan usage history, not as an official API.
-- Treat reset timing as unknown unless it can be conservatively inferred from local reset observations.
+- Treat reset timing as unknown; this source never reports a reset time.
 - Do not scrape the desktop UI.
 - Do not import cookies, session tokens, or browser storage.
 - Do not call hidden Claude endpoints.
 - Do not read prompts, responses, attachments, transcript paths, or source code.
 
-This source should sit ahead of manual or estimated fallbacks because it directly supports normal Claude Desktop users, but it should remain clearly distinct from official Claude Code statusline data.
-
 ## Claude Code
 
 Claude Code statusline input is an official structured source. Anthropic documents a `rate_limits` object with `five_hour` and `seven_day` windows. Each window includes a used percentage and reset timestamp.
 
-Claude Code statusline is the currently implemented Claude source. Claude Desktop local plan usage history is the P0 planned source above, and should be implemented without scraping the desktop app UI.
+Claude Code statusline and Claude Desktop plan usage history are both implemented and are treated as alternatives: AIQD's real-data readiness check for the `anthropic` provider passes when either source has a fresh, non-demo snapshot, so Claude Code CLI is not required if Claude Desktop is available.
 
 Source: https://docs.anthropic.com/en/docs/claude-code/statusline
 

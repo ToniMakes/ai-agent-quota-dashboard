@@ -16,7 +16,7 @@ Use this checklist before tagging a release.
 - [ ] Packaged desktop installer or release artifact exists for the first public preview
 - [ ] Installed app entry opens the main dashboard window
 - [ ] Normal-user first run can reach Settings without typing `npm`, `node`, or PowerShell commands
-- [ ] P0 Claude Desktop local plan usage adapter is implemented, tested, and clearly labeled for desktop-only users
+- [x] Claude Desktop local plan usage adapter is implemented, tested, and clearly labeled for desktop-only users, as an alternative to Claude Code CLI
 - [ ] Claude setup offers an explicit install action when Claude Code CLI is missing and a separate connect action for local quota capture
 - [ ] CI is green on `main`
 - [ ] `CHANGELOG.md` has a release entry
@@ -36,7 +36,7 @@ Use this checklist before tagging a release.
 1. Verify deterministic validation: desktop smoke data paths are isolated and any first-run smoke assertion failure returns a non-zero process exit.
 2. Verify the local test gate: `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, packaged smoke checks, and `git diff --check`.
 3. Build the packaged desktop artifact and verify the installed entry opens the main dashboard.
-4. Implement and verify Claude Desktop local plan usage history ingestion for desktop-only users.
+4. Claude Desktop local plan usage history ingestion is implemented; verify it end-to-end on the installed packaged app for desktop-only users.
 5. Run a fresh-machine real-data trial from installer through Codex, Claude Desktop, and Claude Code readiness.
 6. Run a clean-clone developer fallback trial.
 7. Tighten beginner onboarding copy for Windows, macOS, and Linux, especially the visible next action, expected result, and recovery path.

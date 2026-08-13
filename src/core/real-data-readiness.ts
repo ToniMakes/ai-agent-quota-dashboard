@@ -103,8 +103,38 @@ export function buildRealDataReadiness(
 
   return {
     checks,
-    ok: checks.every((check) => check.status === "pass")
+    ok: isReadinessOk(checks)
   };
+}
+
+function isReadinessOk(checks: RealDataReadinessCheck[]): boolean {
+  const blockingChecksOk = checks
+    .filter((check) => check.provider === "local")
+    .every((check) => check.status === "pass");
+
+  const providerGroups = groupChecksByProvider(
+    checks.filter((check) => check.provider !== "local")
+  );
+
+  const providersOk = [...providerGroups.values()].every((group) =>
+    group.some((check) => check.status === "pass")
+  );
+
+  return blockingChecksOk && providersOk;
+}
+
+function groupChecksByProvider(
+  checks: RealDataReadinessCheck[]
+): Map<string, RealDataReadinessCheck[]> {
+  const groups = new Map<string, RealDataReadinessCheck[]>();
+
+  for (const check of checks) {
+    const group = groups.get(check.provider) ?? [];
+    group.push(check);
+    groups.set(check.provider, group);
+  }
+
+  return groups;
 }
 
 export function hasBlockingDiagnosticFailures(

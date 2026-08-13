@@ -13,13 +13,14 @@ Unlike general token or cost trackers, this project is quota-first. It focuses o
 
 This repository is preparing the v0.1 desktop preview. The first public preview should be installer-first for normal users: install the app, open the desktop shortcut, then finish setup from Settings. Source mode remains available as a developer fallback before and after the packaged release.
 
-Current release gate: Claude Desktop-only users are now the highest priority. AIQD currently reads Claude Code statusline snapshots, and a local Claude Desktop `plan-usage-history.json` source has been identified for a P0 adapter before broad public release.
+Claude Code CLI is no longer required for Claude coverage: AIQD reads Claude quota from either the Claude Code statusline or Claude Desktop's local `plan-usage-history.json`, and treats them as alternatives, so desktop-only Claude users are already covered. Remaining release gate: a true clean Windows user/VM trial from the installer before broad public release.
 
 See [docs/status.md](docs/status.md) for the current project snapshot. The current app includes:
 
 - Local Node.js service bound to `127.0.0.1`
 - SQLite storage using Node's built-in `node:sqlite`
-- Codex and Claude Code adapter boundaries
+- Codex, Claude Code, and Claude Desktop adapter boundaries
+- Claude Desktop local `plan-usage-history.json` adapter, an alternative Claude source that needs no CLI install
 - Fixture-driven parsers for Claude Code statusline rate limits
 - A conservative Codex parser for explicit structured quota snapshots
 - Automatic Codex CLI `rate_limits` detection when supported structured local events are available
@@ -114,9 +115,9 @@ Normal-user release target:
    The Windows x64 artifact is named `AI Agent Quota Dashboard-0.1.0-win-x64.exe`.
 2. Run the installer.
 3. Open the AIQD desktop shortcut.
-4. In Settings, click `Set up Codex` or `Set up Claude` to reveal only the setup details you need.
-5. For Claude Code, use `Install Claude Code CLI` if Claude Code is missing, then `Connect Claude data`.
-6. Open Claude Code once, send one short message, then return to AIQD and check the dashboard.
+4. In Settings, click `Set up Codex`, `Set up Claude Code CLI`, or `Check Claude Desktop` to reveal only the setup details you need.
+5. For Claude, either source is enough: if you already use Claude Desktop, AIQD reads its local usage file automatically with nothing to install. If you prefer Claude Code CLI, use `Install Claude Code CLI` if it is missing, then `Connect Claude data`.
+6. Open Claude Code once, send one short message, then return to AIQD and check the dashboard. (Skip this if Claude Desktop already shows fresh data.)
 
 Developer source mode:
 
@@ -306,6 +307,7 @@ The app scans conservative default paths for supported agents. You can add expli
 node dist/index.js config path list
 node dist/index.js config path add codex "C:\path\to\codex-data"
 node dist/index.js config path add claude-code "C:\path\to\claude-data"
+node dist/index.js config path add claude-desktop "C:\path\to\plan-usage-history.json"
 node dist/index.js config path remove codex "C:\path\to\codex-data"
 ```
 
@@ -319,15 +321,15 @@ The Settings view shows the same config path, whether configured scan roots are 
 
 ## Claude Desktop And Claude Code
 
-Claude Desktop coverage is now a P0 release gate. On Windows, Claude Desktop has been observed to maintain a local `%APPDATA%\Claude\plan-usage-history.json` file with plan usage samples. AIQD should add a conservative adapter for that file before broad public release so users who never open Claude Code CLI can still monitor Claude usage.
+AIQD reads Claude quota from two independent local sources and treats them as alternatives, not a chain: Claude Code statusline and Claude Desktop's local `plan-usage-history.json`. Either one being fresh is enough for Claude to count as ready; the Claude Code CLI is not required.
 
-The planned Claude Desktop adapter must parse only narrow usage fields, such as 5-hour and weekly used percentages plus observation timestamps. It must not scrape the app UI, import cookies, call hidden APIs, or read chat content.
+On Windows, Claude Desktop maintains a local `%APPDATA%\Claude\plan-usage-history.json` file with plan usage samples. The adapter parses only narrow usage fields — 5-hour and weekly used percentages plus observation timestamps — and does not scrape the app UI, import cookies, call hidden APIs, or read chat content. Reset time is not reported by this file, so AIQD shows percentage and observed time only for this source.
 
 ## Claude Code Statusline
 
 Claude Code can send official `rate_limits` data to a local statusline command. This project provides a sink that stores only sanitized rate limit fields.
 
-Until the Claude Desktop adapter lands, Claude Code statusline remains the implemented Claude source. If you only use the desktop app and never open Claude Code from a terminal/CLI session, AIQD cannot refresh Claude Code statusline quota data and may show the last statusline snapshot until it expires.
+If you only use the desktop app and never open Claude Code from a terminal/CLI session, AIQD reads Claude Desktop's local usage history instead; you do not need to set up the statusline at all. If you do use Claude Code CLI, keep in mind that AIQD cannot refresh Claude Code statusline quota data until Claude Code renders its statusline again, so the last snapshot may show as stale until then.
 
 Real-data setup from source:
 
