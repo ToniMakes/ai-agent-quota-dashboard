@@ -170,7 +170,7 @@ export function describeEmptyQuotaState(
       reason: "no_readable_paths",
       title: "No readable data path",
       detail:
-        "The dashboard checked the default and configured scan roots, but none were readable.",
+        "The dashboard checked the default and configured scan roots, but none were readable. AIQD only reads local files written by the desktop app or CLI; a browser-only account (no desktop app or CLI installed) has no local file for it to read.",
       action:
         manifest.agent === "codex"
           ? supportedSourceAction(manifest.agent)

@@ -41,6 +41,8 @@
 
 > 一个本地优先的 AI Agent 额度看板，统一显示 Codex、Claude Code 等 coding agent 的剩余额度、重置时间和数据可信度。
 
+边界说明：AIQD 只能监测桌面版/CLI 留在本机的文件（Codex CLI、Claude Code CLI、Claude Desktop 桌面应用），纯网页版（浏览器里打开 claude.ai 或 chatgpt.com，没装任何桌面应用或 CLI）本机没有可读文件，AIQD 无法监测。
+
 ## 2. 核心结论
 
 这个产品技术上可以做，但要把边界切干净。
