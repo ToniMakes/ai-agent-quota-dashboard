@@ -75,8 +75,14 @@ type SaveQuotaSnapshotsResult = {
   snapshotsSaved: number;
 };
 
+type Migration = {
+  version: number;
+  run: () => void;
+};
+
 export class SqliteStore {
   private readonly database: DatabaseSync;
+  private readonly migrations: Migration[];
 
   constructor(private readonly dbPath: string) {
     mkdirSync(dirname(dbPath), { recursive: true });
@@ -84,6 +90,10 @@ export class SqliteStore {
     this.database.exec("PRAGMA journal_mode = WAL;");
     this.database.exec("PRAGMA foreign_keys = ON;");
     this.database.exec("PRAGMA busy_timeout = 5000;");
+    this.migrations = [
+      { version: 1, run: () => this.createBaseSchema() },
+      { version: 2, run: () => this.ensureRefreshRunsResetEventsColumn() }
+    ];
     this.migrate();
   }
 
@@ -92,6 +102,42 @@ export class SqliteStore {
   }
 
   migrate(): void {
+    this.database.exec(`
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        version INTEGER PRIMARY KEY,
+        applied_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+    `);
+
+    const appliedVersions = new Set(
+      (
+        this.database.prepare("SELECT version FROM schema_migrations;").all() as Array<{
+          version: number;
+        }>
+      ).map((row) => row.version)
+    );
+
+    for (const migration of this.migrations) {
+      if (appliedVersions.has(migration.version)) {
+        continue;
+      }
+
+      this.database.exec("BEGIN;");
+
+      try {
+        migration.run();
+        this.database
+          .prepare("INSERT INTO schema_migrations (version) VALUES (?);")
+          .run(migration.version);
+        this.database.exec("COMMIT;");
+      } catch (error) {
+        this.database.exec("ROLLBACK;");
+        throw error;
+      }
+    }
+  }
+
+  private createBaseSchema(): void {
     this.database.exec(`
       CREATE TABLE IF NOT EXISTS quota_snapshots (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -187,7 +233,6 @@ export class SqliteStore {
       CREATE INDEX IF NOT EXISTS reset_events_agent_time_idx
         ON reset_events(provider, agent, observed_at DESC);
     `);
-    this.ensureRefreshRunsResetEventsColumn();
   }
 
   saveQuotaSnapshots(snapshots: QuotaSnapshot[]): SaveQuotaSnapshotsResult {
