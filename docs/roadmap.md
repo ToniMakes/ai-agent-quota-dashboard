@@ -29,11 +29,12 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 - Dashboard and mini quota cards hide duplicate primary-window rows and use separate progress rows for extra windows such as Claude Code's 5-hour quota
 - Beginner Claude Code setup flow that separates `Install Claude Code CLI` from `Connect Claude data`
 - Technical Claude statusline commands hidden behind advanced details in the normal setup flow
+- Claude Desktop local `plan-usage-history.json` adapter, an alternative Claude source that needs no CLI install
+- Real-data readiness treats Claude Code and Claude Desktop as alternatives (any-of per provider) instead of both being mandatory
 - CI on Windows and Ubuntu with Node 24
 
 ### Remaining Before First Public Preview
 
-- P0: add a Claude Desktop local `plan-usage-history.json` adapter so desktop-only Claude users can monitor usage without opening Claude Code CLI
 - True clean Windows user or VM real-data trial from installer to Codex, Claude Desktop, and Claude Code readiness
 - Signing decision for the Windows installer, or explicit unsigned-preview warning in release notes
 - Developer fallback trial from clone to Codex + Claude Code readiness
@@ -45,7 +46,7 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 
 1. Hardening: keep smoke checks deterministic, verify `npm test`, `desktop:smoke`, `desktop:first-run-smoke`, and `git diff --check` locally.
 2. Packaging: keep the Windows installer artifact reproducible and verify packaged smoke checks before each tag.
-3. Claude Desktop coverage: parse only local plan usage samples from `%APPDATA%\Claude\plan-usage-history.json`, clearly label the source, and avoid UI scraping, cookies, hidden APIs, or chat content.
+3. Claude Desktop coverage: the adapter parsing local plan usage samples from `%APPDATA%\Claude\plan-usage-history.json` is implemented; verify it end-to-end on a clean machine alongside Codex and Claude Code.
 4. Real-data trial: run a fresh install from installer to Codex, Claude Desktop, and Claude Code readiness, recording every point where setup copy is confusing.
 5. Developer fallback: verify a clean clone still works for technical testers.
 6. Onboarding pass: tighten Settings and README instructions around the next action, expected result, and recovery path for each platform.

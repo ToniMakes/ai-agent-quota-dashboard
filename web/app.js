@@ -756,25 +756,36 @@ function renderStaleQuotaSummary(agent, snapshot) {
       })
     : tx("It did not report a reset time.", "它没有报告重置时间。");
   const source = sourceLabel(snapshot.source);
-  const isClaude = agent.agent === "claude-code";
-  const detail = isClaude
+  const isClaudeCode = agent.agent === "claude-code";
+  const isClaudeDesktop = agent.agent === "claude-desktop";
+  const detail = isClaudeCode
     ? tx(
-        "This is not zero quota. AIQD only has an old Claude Code statusline snapshot; Claude desktop usage is not an automatic data source yet.",
-        "这不是额度用完。AIQD 只剩一条旧的 Claude Code 状态栏快照；Claude 桌面版用量目前还不是自动数据源。"
+        "This is not zero quota. AIQD only has an old Claude Code statusline snapshot; try opening Claude Code again, or check the Claude Desktop card for a more current reading.",
+        "这不是额度用完。AIQD 只剩一条旧的 Claude Code 状态栏快照；可以再打开一次 Claude Code，或者看看 Claude Desktop 卡片是否有更新的数据。"
       )
-    : tx(
-        "This is not zero quota. The last local quota snapshot is past its reported reset time.",
-        "这不是额度用完。上一条本地额度快照已经超过它报告的重置时间。"
-      );
-  const action = isClaude
+    : isClaudeDesktop
+      ? tx(
+          "This is not zero quota. AIQD only has an old Claude Desktop usage sample.",
+          "这不是额度用完。AIQD 只剩一条旧的 Claude Desktop 用量样本。"
+        )
+      : tx(
+          "This is not zero quota. The last local quota snapshot is past its reported reset time.",
+          "这不是额度用完。上一条本地额度快照已经超过它报告的重置时间。"
+        );
+  const action = isClaudeCode
     ? tx(
         "Open Claude Code CLI once so its statusline can send a fresh snapshot, then refresh AIQD.",
         "打开一次 Claude Code CLI，让状态栏发送新的快照，然后刷新 AIQD。"
       )
-    : tx(
-        "Refresh the source or record a new visible quota value.",
-        "刷新数据源，或重新记录一次可见额度。"
-      );
+    : isClaudeDesktop
+      ? tx(
+          "Open Claude Desktop so it records a new usage sample, then refresh AIQD.",
+          "打开 Claude Desktop，让它记录一次新的用量样本，然后刷新 AIQD。"
+        )
+      : tx(
+          "Refresh the source or record a new visible quota value.",
+          "刷新数据源，或重新记录一次可见额度。"
+        );
 
   return `
     <div class="stale-quota-state">
@@ -1216,6 +1227,7 @@ function buildDoctorChecklistItems() {
   return [
     buildDoctorCodexChecklistItem(),
     buildDoctorClaudeChecklistItem(),
+    buildDoctorClaudeDesktopChecklistItem(),
     buildDoctorRefreshChecklistItem(),
     buildDoctorPathChecklistItem()
   ];
@@ -1240,7 +1252,19 @@ function buildDoctorClaudeChecklistItem() {
     ...item,
     actionLabel: item.state === "pass" ? tx("Review", "查看") : tx("Settings", "设置"),
     actionView: "settings",
-    label: tx("Claude Code statusline", "Claude Code 状态栏"),
+    label: tx("Claude quota (CLI or Desktop)", "Claude 额度（CLI 或 Desktop）"),
+    target: "#settings-content"
+  };
+}
+
+function buildDoctorClaudeDesktopChecklistItem() {
+  const item = buildClaudeDesktopOverviewItem();
+
+  return {
+    ...item,
+    actionLabel: item.state === "pass" ? tx("Review", "查看") : tx("Settings", "设置"),
+    actionView: "settings",
+    label: tx("Claude Desktop file", "Claude Desktop 文件"),
     target: "#settings-content"
   };
 }
@@ -1783,8 +1807,8 @@ function renderInitialSetupFlow(items, readiness) {
         )}</strong>
         <p>${escapeHtml(
           tx(
-            "Complete these steps once. The dashboard will show real Codex and Claude Code quota after the check passes.",
-            "按下面步骤做一次。检查通过后，仪表盘会显示真实的 Codex 和 Claude Code 额度。"
+            "Complete these steps once. For Claude, either the Claude Code CLI or Claude Desktop is enough — you do not need both.",
+            "按下面步骤做一次。对于 Claude，Claude Code CLI 或 Claude Desktop 任选其一即可，不需要都设置。"
           )
         )}</p>
       </div>
@@ -1819,8 +1843,20 @@ function renderSetupQuickChoices(activeTarget) {
       >
         ${escapeHtml(
           activeTarget === "claude-code"
-            ? tx("Hide Claude", "收起 Claude")
-            : tx("Set up Claude", "设置 Claude")
+            ? tx("Hide Claude Code CLI", "收起 Claude Code CLI")
+            : tx("Set up Claude Code CLI", "设置 Claude Code CLI")
+        )}
+      </button>
+      <button
+        class="copy-button setup-choice-button ${activeTarget === "claude-desktop" ? "is-active" : ""}"
+        type="button"
+        data-setup-detail-toggle="claude-desktop"
+        aria-expanded="${activeTarget === "claude-desktop" ? "true" : "false"}"
+      >
+        ${escapeHtml(
+          activeTarget === "claude-desktop"
+            ? tx("Hide Claude Desktop", "收起 Claude Desktop")
+            : tx("Check Claude Desktop", "检查 Claude Desktop")
         )}
       </button>
     </div>
@@ -1851,8 +1887,15 @@ function renderSelectedSetupDetails(model, detailTarget) {
 function buildInitialSetupModel(items, readiness) {
   const codex = items.find((item) => item.id === "codex");
   const claude = items.find((item) => item.id === "claude-code");
+  const claudeDesktop = items.find((item) => item.id === "claude-desktop");
   const codexComplete = codex?.state === "pass";
-  const claudeComplete = claude?.state === "pass";
+  // CLI-specific readiness (not the combined "either source" state from
+  // buildClaudeOverviewItem), so this step's own copy stays honest about
+  // whether the CLI itself is connected.
+  const claudeComplete = state.setupStatus?.readiness === "ready";
+  const claudeDesktopComplete = claudeDesktop?.state === "pass";
+  const claudeSatisfied = claudeComplete || claudeDesktopComplete;
+  const claudeDesktopIsRequiredSlot = claudeDesktopComplete && !claudeComplete;
   const claudeManaged = Boolean(state.setupStatus?.statusLineManagedByApp);
   const claudeWaiting = claudeManaged && !claudeComplete;
   const claudeCliAvailable = Boolean(state.setupStatus?.claudeCliAvailable);
@@ -2240,6 +2283,7 @@ function buildInitialSetupModel(items, readiness) {
             "先检查生成的命令；只有你确认后才安装本地 statusline hook。"
       ),
       id: "claude-code",
+      optional: claudeDesktopIsRequiredSlot,
       helper: claudeAutoSetupHelper ?? claudeMissingRateLimitsHelper ?? claudeCliHelper,
       number: "2",
       outcome: tx(
@@ -2291,6 +2335,55 @@ function buildInitialSetupModel(items, readiness) {
       )
     },
     {
+      actionLabel: claudeDesktopComplete
+        ? tx("Review Claude Desktop", "查看 Claude Desktop")
+        : tx("Refresh Claude Desktop", "刷新检测 Claude Desktop"),
+      actionTitle: tx(
+        "Detect Claude Desktop usage automatically",
+        "自动检测 Claude Desktop 用量"
+      ),
+      checklist: [
+        tx(
+          "Open Claude Desktop and use it normally.",
+          "正常打开并使用 Claude Desktop。"
+        ),
+        tx(
+          "AIQD reads its local usage history file automatically; nothing to install.",
+          "AIQD 会自动读取它的本地用量历史文件，不需要安装任何东西。"
+        )
+      ],
+      complete: claudeDesktopComplete,
+      detail:
+        claudeDesktop?.detail ??
+        tx(
+          "AIQD reads Claude Desktop's local plan-usage-history.json automatically.",
+          "AIQD 会自动读取 Claude Desktop 本地的 plan-usage-history.json。"
+        ),
+      id: "claude-desktop",
+      number: "2b",
+      optional: !claudeDesktopIsRequiredSlot,
+      outcome: tx(
+        "This is an optional alternative to the Claude Code CLI step above; you only need one of the two working.",
+        "这是上面 Claude Code CLI 步骤的可选替代方案，两者只需要满足一个。"
+      ),
+      progressDetail: claudeDesktopComplete
+        ? tx("Claude Desktop usage data received.", "已收到 Claude Desktop 用量数据。")
+        : tx(
+            "Waiting for a fresh Claude Desktop usage sample.",
+            "等待 Claude Desktop 记录新的用量样本。"
+          ),
+      refreshAction: !claudeDesktopComplete,
+      status: claudeDesktopComplete
+        ? tx("Done", "已完成")
+        : claudeDesktop?.status ?? tx("Waiting for Claude Desktop data", "等待 Claude Desktop 数据"),
+      target: "#settings-content",
+      title: tx("Claude Desktop (optional alternative)", "Claude Desktop（可选替代）"),
+      why: tx(
+        "If you would rather not install the Claude Code CLI, Claude Desktop's local usage history file works as a no-install alternative.",
+        "如果不想安装 Claude Code CLI，Claude Desktop 本地的用量历史文件可以作为免安装的替代方案。"
+      )
+    },
+    {
       actionLabel: readinessComplete
         ? tx("Open dashboard", "打开仪表盘")
         : tx("Verify real data", "验证真实数据"),
@@ -2300,8 +2393,8 @@ function buildInitialSetupModel(items, readiness) {
       ),
       checklist: [
         tx(
-          "Make sure Codex and Claude Code both show done.",
-          "确认 Codex 和 Claude Code 都显示完成。"
+          "Make sure Codex shows done, and Claude shows done via either Claude Code CLI or Claude Desktop.",
+          "确认 Codex 显示完成，且 Claude 通过 Claude Code CLI 或 Claude Desktop 中的任意一个显示完成。"
         ),
         tx(
           "Run the check from this page.",
@@ -2325,15 +2418,18 @@ function buildInitialSetupModel(items, readiness) {
       ),
       progressDetail: readinessComplete
         ? tx("Real-data check passed.", "真实数据检查已通过。")
-        : codexComplete && claudeComplete
+        : codexComplete && claudeSatisfied
           ? tx("Ready to run the final check.", "可以运行最后检查。")
-          : tx("Locked until Codex and Claude Code are done.", "等 Codex 和 Claude Code 完成后再进行。"),
+          : tx(
+              "Locked until Codex is done and Claude is done via CLI or Desktop.",
+              "等 Codex 完成，且 Claude 通过 CLI 或 Desktop 完成后再进行。"
+            ),
       refreshAction: !readinessComplete,
       status: readinessComplete
         ? tx("Ready for trial", "可以开始试用")
-        : codexComplete && claudeComplete
+        : codexComplete && claudeSatisfied
           ? tx("Ready to verify", "可以验证")
-          : tx("Finish steps 1 and 2 first", "先完成第 1 和第 2 步"),
+          : tx("Finish Codex and Claude first", "先完成 Codex 和 Claude"),
       target: "#real-data-content",
       title: tx("Verify dashboard", "验证仪表盘"),
       why: tx(
@@ -2342,21 +2438,24 @@ function buildInitialSetupModel(items, readiness) {
       )
     }
   ];
-  const currentStep = steps.find((step) => !step.complete) ?? steps[steps.length - 1];
+  const requiredSteps = steps.filter((step) => !step.optional);
+  const currentStep =
+    requiredSteps.find((step) => !step.complete) ??
+    requiredSteps[requiredSteps.length - 1];
 
   for (const step of steps) {
     step.current = step === currentStep && !step.complete;
     step.state = step.complete ? "pass" : step.current ? "warn" : "info";
   }
 
-  const completedCount = steps.filter((step) => step.complete).length;
+  const completedCount = requiredSteps.filter((step) => step.complete).length;
 
   return {
     completedCount,
     currentStep,
-    remainingCount: steps.length - completedCount,
+    remainingCount: requiredSteps.length - completedCount,
     steps,
-    totalCount: steps.length
+    totalCount: requiredSteps.length
   };
 }
 
@@ -2909,6 +3008,7 @@ function buildRealDataOverviewItems() {
   return [
     buildCodexOverviewItem(),
     buildClaudeOverviewItem(),
+    buildClaudeDesktopOverviewItem(),
     buildPathOverviewItem()
   ];
 }
@@ -3043,8 +3143,12 @@ function buildCodexOverviewItem() {
 
 function buildClaudeOverviewItem() {
   const status = state.setupStatus;
-  const ready = status?.readiness === "ready";
+  const cliReady = status?.readiness === "ready";
   const waiting = status?.readiness === "waiting_for_data";
+  const desktopReady = isFreshRealSnapshot(
+    findAgent("claude-desktop")?.primarySnapshot
+  );
+  const ready = cliReady || desktopReady;
   const detailParts = [];
 
   if (status?.latestWindowTypes?.length > 0) {
@@ -3063,30 +3167,77 @@ function buildClaudeOverviewItem() {
     );
   }
 
+  const coveredByDesktop = desktopReady && !cliReady;
+
   return {
     actionLabel: tx("Claude details", "Claude 详情"),
     command: undefined,
     countsTowardReady: true,
-    detail:
-      detailParts.length > 0
+    detail: coveredByDesktop
+      ? tx(
+          "Claude Code CLI is not required: AIQD is reading fresh quota from Claude Desktop instead.",
+          "不需要 Claude Code CLI：AIQD 正在改用 Claude Desktop 的最新额度数据。"
+        )
+      : detailParts.length > 0
         ? detailParts.join(" / ")
         : localizedNextAction(status?.nextAction) ??
           tx(
-            "Open Claude setup, then install or connect Claude Code from the guided button.",
-            "打开 Claude 设置，然后按引导按钮安装或接入 Claude Code。"
+            "Open Claude setup, then install or connect Claude Code from the guided button, or use Claude Desktop instead.",
+            "打开 Claude 设置，然后按引导按钮安装或接入 Claude Code，或者改用 Claude Desktop。"
           ),
     id: "claude-code",
-    label: "Claude Code",
-    nextAction:
-      localizedNextAction(status?.nextAction) ??
-      tx(
-        "Open Claude setup, then install or connect Claude Code from the guided button.",
-        "打开 Claude 设置，然后按引导按钮安装或接入 Claude Code。"
-      ),
+    label: "Claude",
+    nextAction: coveredByDesktop
+      ? tx(
+          "Claude Desktop usage was detected automatically; no CLI setup needed.",
+          "已自动检测到 Claude Desktop 用量；不需要再设置 CLI。"
+        )
+      : localizedNextAction(status?.nextAction) ??
+        tx(
+          "Open Claude setup, then install or connect Claude Code from the guided button, or use Claude Desktop instead.",
+          "打开 Claude 设置，然后按引导按钮安装或接入 Claude Code，或者改用 Claude Desktop。"
+        ),
     state: ready ? "pass" : waiting ? "info" : "warn",
-    status:
-      localizedReadinessLabel(status?.readinessLabel) ??
-      tx("Setup status unavailable", "设置状态不可用"),
+    status: coveredByDesktop
+      ? tx("Ready via Claude Desktop", "已通过 Claude Desktop 就绪")
+      : localizedReadinessLabel(status?.readinessLabel) ??
+        tx("Setup status unavailable", "设置状态不可用"),
+    target: "#settings-content"
+  };
+}
+
+function buildClaudeDesktopOverviewItem() {
+  const agent = findAgent("claude-desktop");
+  const snapshot = agent?.primarySnapshot;
+  const ready = isFreshRealSnapshot(snapshot);
+  const detail = snapshot
+    ? formatSnapshotOverview(snapshot)
+    : (agent?.emptyState?.detail ??
+      tx(
+        "AIQD reads Claude Desktop's local usage history file automatically. No install needed.",
+        "AIQD 会自动读取 Claude Desktop 本地的用量历史文件；不需要安装任何东西。"
+      ));
+
+  return {
+    actionLabel: tx("Claude Desktop details", "Claude Desktop 详情"),
+    command: undefined,
+    countsTowardReady: false,
+    detail,
+    id: "claude-desktop",
+    label: "Claude Desktop",
+    nextAction: ready
+      ? tx(
+          "Claude Desktop usage was detected automatically.",
+          "已自动检测到 Claude Desktop 用量。"
+        )
+      : tx(
+          "Open Claude Desktop so it records a new usage sample, then refresh AIQD.",
+          "打开 Claude Desktop，让它记录一次新的用量样本，然后刷新 AIQD。"
+        ),
+    state: ready ? "pass" : "info",
+    status: ready
+      ? tx("Detected", "已检测")
+      : tx("Waiting for Claude Desktop data", "等待 Claude Desktop 数据"),
     target: "#settings-content"
   };
 }
@@ -3741,6 +3892,77 @@ function renderSettings() {
 
         ${renderFieldPills(tx("Stored", "已保存"), status.savedFields, "healthy")}
         ${renderFieldPills(tx("Not stored", "未保存"), status.notSavedFields, "stale")}
+      `
+    )}
+
+    ${renderClaudeDesktopSettings()}
+  `;
+}
+
+function renderClaudeDesktopSettings() {
+  const agent = findAgent("claude-desktop");
+  const checks = state.doctorChecks.filter(
+    (check) => check.agent === "claude-desktop"
+  );
+  const pathCheck = checks.find((check) => check.id?.startsWith("claude-desktop:path:"));
+  const snapshot = agent?.primarySnapshot;
+  const ready = isFreshRealSnapshot(snapshot);
+
+  return `
+    <div class="setup-watch-notice">
+      <div>
+        <strong>${escapeHtml(
+          tx(
+            "Claude Desktop (optional, no CLI needed)",
+            "Claude Desktop（可选，不需要 CLI）"
+          )
+        )}</strong>
+        <div class="settings-detail">${escapeHtml(
+          ready
+            ? tx(
+                "AIQD is reading fresh Claude Desktop usage data. Claude Code CLI is not required.",
+                "AIQD 正在读取 Claude Desktop 的最新用量数据，不需要 Claude Code CLI。"
+              )
+            : tx(
+                "AIQD checks Claude Desktop's local usage history file automatically. Open Claude Desktop once, then refresh.",
+                "AIQD 会自动检查 Claude Desktop 本地的用量历史文件。打开一次 Claude Desktop，然后刷新。"
+              )
+        )}</div>
+      </div>
+      <span class="badge ${ready ? "healthy" : "warning"}">${escapeHtml(
+        ready ? tx("Detected", "已检测") : tx("Waiting", "等待中")
+      )}</span>
+    </div>
+
+    ${renderAdvancedDetails(
+      tx("Claude Desktop technical details", "Claude Desktop 技术细节"),
+      `
+        <div class="settings-list">
+          ${settingsRow(
+            tx("Usage history file", "用量历史文件"),
+            pathCheck?.status === "pass" ? tx("Found", "已找到") : tx("Not found", "未找到"),
+            pathCheck?.detail ?? "%APPDATA%\\Claude\\plan-usage-history.json",
+            pathCheck?.status === "pass" ? "healthy" : "stale"
+          )}
+          ${settingsRow(
+            tx("Latest sample", "最新样本"),
+            snapshot ? formatRelative(snapshot.observedAt) : tx("None yet", "还没有"),
+            snapshot
+              ? tx(
+                  "{percent}% used, confidence {confidence}",
+                  "已用 {percent}%，可信度 {confidence}",
+                  {
+                    percent: Math.round(snapshot.usedPercent ?? 0),
+                    confidence: confidenceLabel(snapshot.confidence)
+                  }
+                )
+              : tx(
+                  "Open Claude Desktop so it records a new usage sample.",
+                  "打开 Claude Desktop 让它记录一次新的用量样本。"
+                ),
+            ready ? "healthy" : "stale"
+          )}
+        </div>
       `
     )}
   `;
@@ -4716,6 +4938,13 @@ function agentEmptyText(agent) {
     return {
       detail: "按设置页当前步骤，从终端启动 Claude Code 一次。",
       title: "等待 Claude 数据"
+    };
+  }
+
+  if (agent.emptyState?.reason === "waiting_for_desktop_data") {
+    return {
+      detail: "打开 Claude Desktop，让它记录一次新的用量样本，然后刷新 AIQD。",
+      title: "等待 Claude Desktop 数据"
     };
   }
 

@@ -10,7 +10,8 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The core MVP is no 
 - SQLite persistence for normalized quota snapshots, reset events, and refresh runs
 - Codex quota detection from local CLI `rate_limits` events, with a manual visible-status fallback
 - Claude Code quota ingestion from official statusline `rate_limits`
-- P0 release-gate investigation for Claude Desktop local plan usage history
+- Claude Desktop quota ingestion from local `plan-usage-history.json`, an alternative to Claude Code so the CLI is not required
+- Real-data readiness passes the `anthropic` provider group when either Claude Code or Claude Desktop is fresh
 - Beginner Claude setup flow with explicit install and connect actions
 - Dashboard, Doctor, Settings, reset timeline, refresh history, and local export views
 - Strict real-data readiness checks shared by CLI, Settings, tray, and mini surfaces
@@ -72,15 +73,12 @@ The app is suitable for local real-data dogfooding by the maintainer and technic
 
 The launch-at-login plan is documented in [docs/distribution.md](distribution.md): startup must be explicit, reversible, and off by default. If v0.1 ships without that toggle, it should not create a startup entry.
 
-## P0 Release Gate
+## P0 Release Gate (resolved)
 
-Claude Desktop-only coverage is now the highest product priority before broad public release. The current implemented Claude source is Claude Code statusline, but most normal Claude users may rely on Claude Desktop or claude.ai instead of Claude Code CLI.
-
-On the maintainer Windows profile, Claude Desktop has a local `%APPDATA%\Claude\plan-usage-history.json` file containing plan usage samples with observation timestamps and compact usage fields. The next implementation should add a conservative adapter for that file, parse only usage percentages and timestamps, label the source clearly, and avoid UI scraping, cookies, hidden APIs, prompts, responses, or chat content.
+Claude Desktop-only coverage was the highest product priority before broad public release, because most normal Claude users may rely on Claude Desktop or claude.ai instead of Claude Code CLI. This is now implemented: AIQD reads the local `%APPDATA%\Claude\plan-usage-history.json` file as an independent `claude-desktop` adapter, and Claude readiness passes from either Claude Code statusline or Claude Desktop.
 
 ## Next Focus
 
-1. Implement and test the Claude Desktop local plan usage adapter.
-2. Run a true clean Windows user or VM trial from the installer through Codex, Claude Desktop, and Claude Code readiness.
-3. Refresh release screenshots for the final quota-card layout, mini panel, widget, and setup flow.
-4. Create the GitHub Release and upload the unsigned Windows installer artifact after final checklist review.
+1. Run a true clean Windows user or VM trial from the installer through Codex, Claude Desktop, and Claude Code readiness.
+2. Refresh release screenshots for the final quota-card layout, mini panel, widget, and setup flow, including the Claude Desktop card.
+3. Create the GitHub Release and upload the unsigned Windows installer artifact after final checklist review.

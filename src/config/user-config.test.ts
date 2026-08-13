@@ -152,4 +152,27 @@ describe("user config", () => {
       /Unsupported agent "gemini"/
     );
   });
+
+  it("supports claude-desktop as a configured agent", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-config-"));
+    const configPath = join(directory, "config.json");
+    const dataPath = join(directory, "claude-desktop-data");
+
+    try {
+      const added = await addUserConfigDataPath({
+        agent: "claude-desktop",
+        configPath,
+        dataPath
+      });
+      const loaded = await loadUserConfig(configPath);
+
+      assert.equal(added.added, true);
+      assert.deepEqual(readUserConfigDataPaths(loaded.config, "claude-desktop"), [
+        dataPath
+      ]);
+      assert.equal(parseSupportedAgent("claude-desktop"), "claude-desktop");
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
 });

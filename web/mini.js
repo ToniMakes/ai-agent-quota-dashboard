@@ -663,8 +663,10 @@ function isSameSnapshot(left, right) {
 function hasClaudeWaitingState(agents) {
   return agents.some(
     (agent) =>
-      agent.agent === "claude-code" &&
-      agent.emptyState?.reason === "waiting_for_statusline_data"
+      (agent.agent === "claude-code" &&
+        agent.emptyState?.reason === "waiting_for_statusline_data") ||
+      (agent.agent === "claude-desktop" &&
+        agent.emptyState?.reason === "waiting_for_desktop_data")
   );
 }
 
@@ -720,7 +722,7 @@ function readinessCheckTarget(check) {
     };
   }
 
-  if (check?.agent === "claude-code") {
+  if (check?.agent === "claude-code" || check?.agent === "claude-desktop") {
     return {
       action: "settings",
       target: "settings-content"
@@ -746,10 +748,17 @@ function readinessDisplayName(check) {
 }
 
 function setupProgress(agents) {
+  const claudeDesktopReady = Boolean(
+    agents.find((agent) => agent.agent === "claude-desktop")?.primarySnapshot
+  );
   const setupAgents = sortAgents(agents).filter((agent) =>
     ["codex", "claude-code"].includes(agent.agent)
   );
-  const missing = setupAgents.filter((agent) => !agent.primarySnapshot);
+  const missing = setupAgents.filter((agent) =>
+    agent.agent === "claude-code"
+      ? !agent.primarySnapshot && !claudeDesktopReady
+      : !agent.primarySnapshot
+  );
   const total = setupAgents.length || agents.length;
   const ready = Math.max(total - missing.length, 0);
   const missingNames = missing.map((agent) => setupAgentName(agent)).filter(Boolean);
@@ -787,6 +796,10 @@ function setupAgentName(agent) {
     return "Claude";
   }
 
+  if (agent.agent === "claude-desktop") {
+    return "Claude Desktop";
+  }
+
   return agent.shortName ?? agent.displayName ?? agent.agent;
 }
 
@@ -795,7 +808,7 @@ function setupAgentTarget(agent) {
     return "codex-snapshot-content";
   }
 
-  if (agent.agent === "claude-code") {
+  if (agent.agent === "claude-code" || agent.agent === "claude-desktop") {
     return "settings-content";
   }
 
@@ -811,6 +824,17 @@ function emptyStateGuidance(agent) {
       label: tx("waiting", "等待中"),
       target: "settings-content",
       title: tx("Claude listening", "正在监听 Claude")
+    };
+  }
+
+  if (agent.emptyState?.reason === "waiting_for_desktop_data") {
+    return {
+      action: "settings",
+      actionLabel: tx("Settings", "设置"),
+      detail: tx("Open Claude Desktop once", "打开 Claude Desktop 一次"),
+      label: tx("waiting", "等待中"),
+      target: "settings-content",
+      title: tx("Claude Desktop listening", "正在监听 Claude Desktop")
     };
   }
 
@@ -840,10 +864,21 @@ function emptyStateGuidance(agent) {
     return {
       action: "settings",
       actionLabel: tx("Install setup", "安装设置"),
-      detail: tx("Add local statusline sink", "添加本地 statusline sink"),
+      detail: tx("Add local statusline sink, or use Claude Desktop instead", "添加本地 statusline sink，或改用 Claude Desktop"),
       label: tx("setup 2", "设置 2"),
       target: "settings-content",
       title: tx("Claude statusline needed", "需要 Claude 状态栏")
+    };
+  }
+
+  if (agent.agent === "claude-desktop") {
+    return {
+      action: "settings",
+      actionLabel: tx("Open Claude Desktop", "打开 Claude Desktop"),
+      detail: tx("No install needed, just open it once", "不需要安装，打开一次即可"),
+      label: tx("optional", "可选"),
+      target: "settings-content",
+      title: tx("Claude Desktop data pending", "等待 Claude Desktop 数据")
     };
   }
 
@@ -860,7 +895,8 @@ function emptyStateGuidance(agent) {
 function sortAgents(agents) {
   const order = new Map([
     ["codex", 0],
-    ["claude-code", 1]
+    ["claude-code", 1],
+    ["claude-desktop", 2]
   ]);
 
   return [...agents].sort(

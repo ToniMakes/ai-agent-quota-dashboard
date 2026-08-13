@@ -1,6 +1,6 @@
 # v0.1.0 Desktop Preview Release Notes
 
-AI Agent Quota Dashboard v0.1.0 is the first desktop preview for local real-data dogfooding of Codex and Claude Code quota signals. The release target is installer-first for normal users, with source mode kept as a developer fallback.
+AI Agent Quota Dashboard v0.1.0 is the first desktop preview for local real-data dogfooding of Codex, Claude Code, and Claude Desktop quota signals. The release target is installer-first for normal users, with source mode kept as a developer fallback.
 
 ## Distribution
 
@@ -36,7 +36,8 @@ Code signing and update-channel decisions may remain later work if the release n
 - Codex quota detection from supported local CLI `rate_limits` events
 - Manual Codex visible-status fallback when automatic local data is unavailable
 - Claude Code official statusline `rate_limits` ingestion through an opt-in local sink
-- First-run Settings details stay collapsed until the user clicks `Set up Codex` or `Set up Claude`
+- Claude Desktop local `plan-usage-history.json` ingestion, an alternative Claude source that needs no CLI install and is treated as equal to Claude Code statusline
+- First-run Settings details stay collapsed until the user clicks `Set up Codex`, `Set up Claude Code CLI`, or `Check Claude Desktop`
 - Beginner Claude Code setup with separate `Install Claude Code CLI` and `Connect Claude data` actions
 - Internal Claude statusline commands hidden behind technical details during normal setup
 - Dashboard, Doctor, Settings, reset timeline, refresh history, and JSON/CSV export
@@ -61,7 +62,7 @@ npm run trial:preflight
 npm run trial:ready
 ```
 
-`trial:preflight` gives the shortest next action for Codex, Claude Code, or blocking Doctor issues. `trial:ready` requires fresh non-demo quota data for every configured agent.
+`trial:preflight` gives the shortest next action for Codex, Claude Code, Claude Desktop, or blocking Doctor issues. `trial:ready` requires fresh non-demo quota data for Codex, plus at least one fresh non-demo Claude source (Claude Code or Claude Desktop) — it does not require both Claude sources.
 
 Codex support is automatic when supported local `rate_limits` events are available. Otherwise, use the Settings fallback form or:
 
@@ -69,9 +70,11 @@ Codex support is automatic when supported local `rate_limits` events are availab
 node dist/index.js codex snapshot --remaining-percent 72 --reset-at 2026-08-16T03:00:00Z
 ```
 
-Claude Code support is configured from Settings:
+Claude Desktop support needs no setup: if `%APPDATA%\Claude\plan-usage-history.json` exists with a recent sample, AIQD reads it automatically. Click `Check Claude Desktop` in Settings to confirm.
 
-1. Click `Set up Claude` to expand the Claude setup details.
+Claude Code CLI support is optional and configured from Settings:
+
+1. Click `Set up Claude Code CLI` to expand the Claude Code setup details.
 2. If Claude Code CLI is missing, click `Install Claude Code CLI`.
 3. Click `Connect Claude data` if AIQD still needs to write the local capture setting.
 4. Open Claude Code once, finish Claude's own login/trust prompts, send one short message, and wait for the reply.
@@ -104,8 +107,8 @@ CI runs tests on Windows and Ubuntu with Node 24.
 - No system notification support yet
 - No update channel yet
 - App-managed launch-at-login may be absent until v0.2; if present, it must be explicit and off by default
-- Claude Code may report setup warnings until it renders a fresh statusline payload
-- Claude Desktop-only coverage is a P0 release gate: the local `plan-usage-history.json` source has been identified, but the adapter must land before this preview is broadly useful for users who never open Claude Code CLI
+- Claude Code may report setup warnings until it renders a fresh statusline payload; this no longer blocks Claude readiness when Claude Desktop is available
+- Claude Desktop reports no reset time; only remaining percentage and observed time are shown for this source
 - Restore default settings, historical trends, reset rhythm statistics, and Settings refresh interval presets are planned for v0.2
 - Additional providers are intentionally deferred until Codex and Claude sources are trustworthy
 

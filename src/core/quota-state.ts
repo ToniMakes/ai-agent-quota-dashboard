@@ -188,6 +188,12 @@ export function describeEmptyQuotaState(
       return statuslineEmptyState;
     }
 
+    const desktopEmptyState = describeClaudeDesktopEmptyState(manifest);
+
+    if (desktopEmptyState) {
+      return desktopEmptyState;
+    }
+
     return {
       reason: "no_supported_source",
       title: "No supported quota source",
@@ -240,6 +246,23 @@ function describeClaudeStatuslineEmptyState(
   };
 }
 
+function describeClaudeDesktopEmptyState(
+  manifest: AgentManifest
+): AgentEmptyState | undefined {
+  if (manifest.agent !== "claude-desktop") {
+    return undefined;
+  }
+
+  return {
+    reason: "waiting_for_desktop_data",
+    title: "Waiting for Claude Desktop data",
+    detail:
+      "AIQD found the Claude Desktop usage history file, but it has no sample recent enough to use yet.",
+    action:
+      "Open Claude Desktop so it records a new usage sample, then refresh AIQD."
+  };
+}
+
 function claudeStatuslineWaitingDetail(
   latestCheck: DoctorCheck | undefined
 ): string {
@@ -261,6 +284,10 @@ function supportedSourceAction(agent: string): string {
 
   if (agent === "codex") {
     return "Use Codex once and refresh; if no local CLI rate_limits are found, record a visible fallback with node dist/index.js codex snapshot --remaining-percent <0-100> --reset-at <iso-time>";
+  }
+
+  if (agent === "claude-desktop") {
+    return "Open Claude Desktop so it records a new usage sample, then refresh AIQD.";
   }
 
   return "Add a supported local quota source, then refresh.";
