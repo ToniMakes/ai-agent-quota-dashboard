@@ -636,7 +636,7 @@ function renderWindowRow(snapshot) {
     ? tx("Reported reset {time}", "报告 reset：{time}", {
         time: formatTimestamp(snapshot.resetAt, { long: true })
       })
-    : tx("No reported reset", "没有报告 reset");
+    : tx("No reported reset", "未报告重置时间");
   const used = formatUsedText(snapshot);
   const detailParts = [
     used ? tx("{amount} used", "已用 {amount}", { amount: used }) : "",
@@ -914,7 +914,7 @@ function emptyStateGuidance(agent) {
     return {
       action: "settings",
       actionLabel: tx("Save /status", "保存 /status"),
-      detail: tx("Paste visible quota + reset", "粘贴可见额度和 reset"),
+      detail: tx("Paste visible quota + reset", "粘贴可见额度和重置时间"),
       label: tx("setup 1", "设置 1"),
       target: "codex-snapshot-content",
       title: tx("Codex /status needed", "需要 Codex /status")
@@ -1021,7 +1021,7 @@ function isStaleSnapshot(snapshot) {
 
 function resetShortSummary(value) {
   if (!value) {
-    return tx("reset --", "reset --");
+    return tx("reset --", "重置 --");
   }
 
   return tx("reset {time}", "{time}重置", {

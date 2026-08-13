@@ -963,7 +963,7 @@ function renderPrimaryQuotaMeta(snapshot) {
     ? tx("Reset {time}", "{time}重置", {
         time: formatRelative(snapshot.resetAt)
       })
-    : tx("No reported reset", "没有报告 reset");
+    : tx("No reported reset", "未报告重置时间");
   const resetAbsolute = snapshot.resetAt ? formatTimestamp(snapshot.resetAt) : "";
 
   return `
@@ -995,7 +995,7 @@ function renderQuotaWindowRow(snapshot, options = {}) {
     ? tx("Reset {time}", "{time}重置", {
         time: formatRelative(snapshot.resetAt)
       })
-    : tx("No reported reset", "没有报告 reset");
+    : tx("No reported reset", "未报告重置时间");
   const resetAbsolute = snapshot.resetAt ? formatTimestamp(snapshot.resetAt) : "";
 
   return `
@@ -1164,7 +1164,7 @@ function renderResets() {
 
   if (snapshots.length === 0) {
     elements.resetList.innerHTML = `<p class="empty">${escapeHtml(
-      tx("No reset data.", "还没有 reset 数据。")
+      tx("No reset data.", "还没有重置数据。")
     )}</p>`;
     return;
   }
@@ -1558,7 +1558,7 @@ function formatRefreshRunDetail(run) {
 function renderEvents() {
   if (state.resetEvents.length === 0) {
     elements.eventList.innerHTML = `<p class="empty">${escapeHtml(
-      tx("No reset changes observed yet.", "还没有观测到 reset 变化。")
+      tx("No reset changes observed yet.", "还没有观测到重置变化。")
     )}</p>`;
     return;
   }
@@ -4712,7 +4712,7 @@ function eventDetail(event) {
 function renderResetValue(value) {
   if (!value) {
     return `<span class="reset-unavailable">${escapeHtml(
-      tx("No reported reset", "没有报告 reset")
+      tx("No reported reset", "未报告重置时间")
     )}</span>`;
   }
 
