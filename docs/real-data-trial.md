@@ -1,6 +1,6 @@
 # Real Data Trial
 
-This guide is for a local desktop trial with real Codex and Claude Code quota signals. It uses only visible or official local data sources.
+This guide is for a local desktop trial with real Codex and Claude (Claude Code or Claude Desktop) quota signals. It uses only visible or official local data sources.
 
 ## 1. Prepare
 
@@ -91,22 +91,31 @@ Manual Codex fallback snapshots expire at their reported reset time. If Codex la
 
 ## 4. Verify Claude Desktop Coverage
 
-Claude Desktop-only coverage is a P0 release gate before broad public release. Normal Claude users should not need to open Claude Code CLI only to make AIQD useful.
+Normal Claude users should not need to open Claude Code CLI just to make AIQD useful. If you use Claude Desktop, AIQD reads it automatically with nothing to install.
 
-Before release, verify the installed app can read the local Claude Desktop plan usage history source:
+Verify the app can read the local Claude Desktop plan usage history source:
 
 ```text
 %APPDATA%\Claude\plan-usage-history.json
 ```
 
-Expected: AIQD shows Claude Desktop five-hour and weekly usage from local plan usage samples, labels the source clearly, and does not read chat content, cookies, hidden API responses, prompts, responses, or attachments. If the adapter is not implemented yet, the release should remain blocked for ordinary Claude Desktop-only users.
+Normal-user path from the desktop app:
 
-## 5. Connect Claude Code
+1. Open Settings.
+2. In the first-run setup area, click `Check Claude Desktop` to expand the Claude Desktop details.
+3. If the file exists and has a recent sample, it shows as `Done` immediately — nothing to install or connect.
+4. If it shows `Waiting`, open Claude Desktop so it records a new usage sample, then click `Refresh Claude Desktop`.
+
+Expected: AIQD shows Claude Desktop five-hour and weekly usage from local plan usage samples, labels the source clearly (`Local snapshot`), and does not read chat content, cookies, hidden API responses, prompts, responses, or attachments. Claude readiness in Doctor and the real-data overview shows ready as soon as this source is fresh, even if Claude Code CLI is never set up.
+
+## 5. Connect Claude Code (optional if Claude Desktop is already ready)
+
+Skip this section if step 4 already shows Claude as ready via Claude Desktop. Claude Code CLI is an alternative source, not an additional requirement.
 
 Normal-user path from the desktop app:
 
 1. Open Settings.
-2. In the first-run setup area, click `Set up Claude` to expand the Claude setup details. Click it again to collapse, or click `Set up Codex` to switch to the Codex details.
+2. In the first-run setup area, click `Set up Claude Code CLI` to expand the Claude Code setup details. Click it again to collapse, or click `Set up Codex` to switch to the Codex details.
 3. If Claude Code CLI is missing, click `Install Claude Code CLI`.
 4. If AIQD still needs the local capture setting, click `Connect Claude data`.
 5. Open Claude Code in a project, finish Claude's own login/trust prompts, send one short message, and wait for the reply.
@@ -160,11 +169,11 @@ Expected:
 
 - `trial:preflight` gives the shortest next action or says `Overall: ready`.
 - `doctor` shows source checks and any non-blocking warnings.
-- `trial:ready` passes only when every configured agent has fresh non-demo quota data.
+- `trial:ready` passes when Codex has fresh non-demo quota data and at least one Claude source (Claude Code or Claude Desktop) has fresh non-demo quota data; it does not require both Claude sources.
 
 In the desktop app, check:
 
-- Dashboard shows Codex and/or Claude Code quota rows.
+- Dashboard shows Codex, Claude Code, and/or Claude Desktop quota rows.
 - Mini panel shows the most constrained remaining quota and reported reset.
 - Mini panel and always-on-top widget can switch between Chinese and English with the shared language preference.
 - Doctor first-run checklist shows quota sources ready or gives a specific next action.

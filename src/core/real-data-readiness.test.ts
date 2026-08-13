@@ -148,6 +148,63 @@ describe("real-data readiness", () => {
     );
   });
 
+  it("passes an anthropic provider group when only one of two Claude sources is fresh", () => {
+    const freshSnapshot = withSnapshotFreshness({
+      provider: "anthropic",
+      agent: "claude-desktop",
+      windowType: "session_5h",
+      unit: "percent",
+      remainingPercent: 65,
+      observedAt: "2026-08-13T00:00:00.000Z",
+      source: "local_quota_snapshot",
+      confidence: "high",
+      stale: false
+    });
+
+    const readiness = buildRealDataReadiness({
+      ...baseInput,
+      agents: [
+        {
+          provider: "anthropic",
+          agent: "claude-code",
+          displayName: "Claude Code",
+          shortName: "Claude Code",
+          status: "unknown",
+          doctorStatus: "warn",
+          snapshots: [],
+          emptyState: {
+            reason: "waiting_for_statusline_data",
+            title: "Waiting for Claude Code data",
+            detail: "No supported rate_limits snapshot has been received yet.",
+            action: "Open Claude Code once, then refresh."
+          }
+        },
+        {
+          provider: "anthropic",
+          agent: "claude-desktop",
+          displayName: "Claude Desktop",
+          shortName: "Claude Desktop",
+          status: "healthy",
+          doctorStatus: "pass",
+          primarySnapshot: freshSnapshot,
+          snapshots: [freshSnapshot],
+          lastObservedAt: freshSnapshot.observedAt
+        }
+      ],
+      checks: []
+    });
+
+    assert.equal(readiness.ok, true);
+    assert.equal(
+      readiness.checks.find((check) => check.agent === "claude-code")?.status,
+      "fail"
+    );
+    assert.equal(
+      readiness.checks.find((check) => check.agent === "claude-desktop")?.status,
+      "pass"
+    );
+  });
+
   it("treats blocking diagnostic failures as not ready", () => {
     assert.equal(hasBlockingDiagnosticFailures(baseInput), false);
     assert.equal(

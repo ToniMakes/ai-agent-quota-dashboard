@@ -5,7 +5,7 @@ import { isRecord } from "../adapters/parse-utils.js";
 import { uniquePaths } from "../adapters/path-utils.js";
 import { defaultUserConfigPath } from "./paths.js";
 
-export type SupportedConfigAgent = "codex" | "claude-code";
+export type SupportedConfigAgent = "codex" | "claude-code" | "claude-desktop";
 
 export type AgentUserConfig = {
   dataPaths: string[];
@@ -16,6 +16,7 @@ export type UserConfig = {
   agents: {
     codex?: AgentUserConfig;
     "claude-code"?: AgentUserConfig;
+    "claude-desktop"?: AgentUserConfig;
   };
 };
 
@@ -42,7 +43,11 @@ export type RemoveUserConfigDataPathResult = {
   config: UserConfig;
 };
 
-const supportedAgents = new Set<SupportedConfigAgent>(["codex", "claude-code"]);
+const supportedAgents = new Set<SupportedConfigAgent>([
+  "codex",
+  "claude-code",
+  "claude-desktop"
+]);
 
 export async function loadUserConfig(
   configPath = defaultUserConfigPath()
@@ -169,7 +174,9 @@ export function parseSupportedAgent(agent: string): SupportedConfigAgent {
     return agent as SupportedConfigAgent;
   }
 
-  throw new Error(`Unsupported agent "${agent}". Use codex or claude-code.`);
+  throw new Error(
+    `Unsupported agent "${agent}". Use codex, claude-code, or claude-desktop.`
+  );
 }
 
 export function createEmptyUserConfig(): UserConfig {

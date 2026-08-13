@@ -3,6 +3,10 @@ import {
   resolveClaudeCodeDataPaths
 } from "../adapters/claude-code/adapter.js";
 import {
+  getDefaultClaudeDesktopDataPaths,
+  resolveClaudeDesktopDataPaths
+} from "../adapters/claude-desktop/adapter.js";
+import {
   getDefaultCodexDataPaths,
   resolveCodexDataPaths
 } from "../adapters/codex/adapter.js";
@@ -50,6 +54,12 @@ const agents: AgentPathDescriptor[] = [
     displayName: "Claude Code",
     defaultDataPaths: getDefaultClaudeCodeDataPaths,
     effectiveDataPaths: resolveClaudeCodeDataPaths
+  },
+  {
+    agent: "claude-desktop",
+    displayName: "Claude Desktop",
+    defaultDataPaths: getDefaultClaudeDesktopDataPaths,
+    effectiveDataPaths: resolveClaudeDesktopDataPaths
   }
 ];
 

@@ -8,6 +8,9 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ### Added
 
+- Claude Desktop local `plan-usage-history.json` adapter, an alternative Claude quota source that needs no CLI install
+- Claude readiness now passes from either Claude Code statusline or Claude Desktop; the Claude Code CLI is no longer required
+- Settings, Doctor, and the first-run setup wizard show Claude Desktop status alongside Claude Code CLI as alternative sources
 - Installer-first v0.1.0 desktop-preview distribution target and release notes draft
 - Windows NSIS installer build through `electron-builder`
 - Packaged desktop runtime starts the local backend through Electron's bundled Node runtime, so users do not need Node.js

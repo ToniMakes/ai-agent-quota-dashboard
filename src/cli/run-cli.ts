@@ -284,7 +284,9 @@ async function runConfigPathCommand(argv: string[]): Promise<void> {
 
   if (action === "add") {
     if (!agent || !dataPath) {
-      throw new Error("Usage: ai-agent-quota config path add codex|claude-code <path>");
+      throw new Error(
+        "Usage: ai-agent-quota config path add codex|claude-code|claude-desktop <path>"
+      );
     }
 
     const result = await addUserConfigDataPath({
@@ -304,7 +306,9 @@ async function runConfigPathCommand(argv: string[]): Promise<void> {
 
   if (action === "remove") {
     if (!agent || !dataPath) {
-      throw new Error("Usage: ai-agent-quota config path remove codex|claude-code <path>");
+      throw new Error(
+        "Usage: ai-agent-quota config path remove codex|claude-code|claude-desktop <path>"
+      );
     }
 
     const result = await removeUserConfigDataPath({
@@ -323,8 +327,12 @@ async function runConfigPathCommand(argv: string[]): Promise<void> {
   }
 
   console.log("Usage: ai-agent-quota config path list");
-  console.log("       ai-agent-quota config path add codex|claude-code <path>");
-  console.log("       ai-agent-quota config path remove codex|claude-code <path>");
+  console.log(
+    "       ai-agent-quota config path add codex|claude-code|claude-desktop <path>"
+  );
+  console.log(
+    "       ai-agent-quota config path remove codex|claude-code|claude-desktop <path>"
+  );
 }
 
 async function startServer(argv: string[], entryPointUrl: string): Promise<void> {

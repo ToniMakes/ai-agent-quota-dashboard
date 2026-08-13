@@ -1,4 +1,5 @@
 import { createClaudeCodeAdapter } from "./claude-code/adapter.js";
+import { createClaudeDesktopAdapter } from "./claude-desktop/adapter.js";
 import { createCodexAdapter } from "./codex/adapter.js";
 import type { AgentAdapter } from "./contracts.js";
 import {
@@ -27,6 +28,12 @@ export function createDefaultRegistry(options: RegistryOptions): AdapterRegistry
       createClaudeCodeAdapter({
         configuredDataPaths: options.userConfig
           ? readUserConfigDataPaths(options.userConfig, "claude-code")
+          : [],
+        demoMode: options.demoMode
+      }),
+      createClaudeDesktopAdapter({
+        configuredDataPaths: options.userConfig
+          ? readUserConfigDataPaths(options.userConfig, "claude-desktop")
           : [],
         demoMode: options.demoMode
       })

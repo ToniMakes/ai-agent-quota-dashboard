@@ -1,6 +1,6 @@
 export type ProviderId = "openai" | "anthropic" | string;
 
-export type AgentId = "codex" | "claude-code" | string;
+export type AgentId = "codex" | "claude-code" | "claude-desktop" | string;
 
 export type QuotaWindowType =
   | "session_5h"
@@ -142,6 +142,7 @@ export type AgentEmptyStateReason =
   | "no_readable_paths"
   | "no_supported_source"
   | "waiting_for_statusline_data"
+  | "waiting_for_desktop_data"
   | "no_quota_data";
 
 export type AgentEmptyState = {

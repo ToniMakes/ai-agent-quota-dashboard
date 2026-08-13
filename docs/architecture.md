@@ -46,6 +46,8 @@ An adapter may return no snapshots. That is a valid result when reliable quota d
 
 - Codex: weekly quota first
 - Claude Code: 5-hour and weekly statusline quota first
-- Claude Desktop: P0 planned local plan usage history adapter before broad public release
+- Claude Desktop: 5-hour and weekly local plan usage history, an alternative to Claude Code so the CLI is not required
+
+Claude Code and Claude Desktop are independent adapters that both report as provider `anthropic`. Real-data readiness groups checks by provider and passes a group when any one agent in it is fresh, so Claude Code and Claude Desktop act as alternatives rather than both being mandatory.
 
 Additional agents should be added only when their data can be obtained legally, reliably, and transparently.
