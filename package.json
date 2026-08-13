@@ -56,6 +56,7 @@
     "productName": "AI Agent Quota Dashboard",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "asar": false,
+    "npmRebuild": false,
     "directories": {
       "output": "release"
     },
