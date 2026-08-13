@@ -569,7 +569,7 @@ function refreshRunTitle(run) {
     }),
     tx(
       "{snapshots} snapshots / {usage} usage events / {doctor} doctor checks / {reset} reset events",
-      "{snapshots} 个快照 / {usage} 条使用事件 / {doctor} 条诊断检查 / {reset} 条 reset 事件",
+      "{snapshots} 个快照 / {usage} 条使用事件 / {doctor} 条诊断检查 / {reset} 条重置事件",
       {
         doctor: run.doctorChecksSaved,
         reset: run.resetEventsSaved,
@@ -633,7 +633,7 @@ function renderWindowRows(agent) {
 function renderWindowRow(snapshot) {
   const reset = resetShortSummary(snapshot.resetAt);
   const resetTitle = snapshot.resetAt
-    ? tx("Reported reset {time}", "报告 reset：{time}", {
+    ? tx("Reported reset {time}", "报告重置：{time}", {
         time: formatTimestamp(snapshot.resetAt, { long: true })
       })
     : tx("No reported reset", "未报告重置时间");
@@ -1031,7 +1031,7 @@ function resetShortSummary(value) {
 
 function snapshotDetail(snapshot) {
   const parts = [
-    `${sourceLabel(snapshot.source)} / ${confidenceLabel(snapshot.confidence)}`,
+    sourceLabel(snapshot.source),
     tx("seen {time}", "观测于 {time}", {
       time: formatRelative(snapshot.observedAt)
     })
@@ -1189,18 +1189,6 @@ function sourceLabel(source) {
   };
 
   return labels[source] ?? source;
-}
-
-function confidenceLabel(confidence) {
-  const labels = {
-    estimated: tx("estimated", "估算"),
-    high: tx("high", "高"),
-    medium: tx("medium", "中"),
-    official: tx("official", "官方"),
-    unknown: tx("unknown", "未知")
-  };
-
-  return labels[confidence] ?? confidence;
 }
 
 function compactNumber(value) {

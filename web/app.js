@@ -751,7 +751,6 @@ function renderAgentCard(agent) {
   const source = primary
     ? sourceLabel(primary.source)
     : tx("Unavailable", "不可用");
-  const confidence = primary ? confidenceLabel(primary.confidence) : statusLabel("unknown");
   const quotaSummary = isStaleSnapshot(primary)
     ? renderStaleQuotaSummary(agent, primary)
     : renderPrimaryQuotaSummary(primary, status);
@@ -772,7 +771,7 @@ function renderAgentCard(agent) {
         ${renderSnapshotLines(agent)}
         <div class="quota-line">
           <span class="label">${escapeHtml(tx("Source", "来源"))}</span>
-          <span class="value">${escapeHtml(source)} / ${escapeHtml(confidence)}</span>
+          <span class="value">${escapeHtml(source)}</span>
         </div>
         ${primary ? renderObservedLine(primary) : ""}
       </div>
@@ -1548,7 +1547,7 @@ function formatRefreshRunDetail(run) {
     tx("{count} doctor checks", "{count} 条诊断检查", {
       count: run.doctorChecksSaved
     }),
-    tx("{count} reset events", "{count} 条 reset 事件", {
+    tx("{count} reset events", "{count} 条重置事件", {
       count: run.resetEventsSaved
     }),
     tx("{count} adapters", "{count} 个适配器", { count: run.adapterCount })
@@ -2479,7 +2478,7 @@ function buildInitialSetupModel(items, readiness) {
       number: "3",
       outcome: tx(
         "After it passes, the dashboard can show real remaining quota and reset dates.",
-        "通过后，仪表盘会显示真实剩余额度和 reset 日期。"
+        "通过后，仪表盘会显示真实剩余额度和重置日期。"
       ),
       progressDetail: readinessComplete
         ? tx("Real-data check passed.", "真实数据检查已通过。")
@@ -2596,7 +2595,7 @@ function renderSetupCurrentAction(model, selectedStep) {
           allDone
             ? tx(
                 "Result: you can now read real quota and reset dates.",
-                "结果：现在可以查看真实额度和 reset 日期。"
+                "结果：现在可以查看真实额度和重置日期。"
               )
             : stepComplete
               ? tx("Status: {status}", "状态：{status}", {
@@ -3119,7 +3118,7 @@ function formatSnapshotOverview(snapshot) {
 
   if (snapshot.resetAt) {
     parts.push(
-      tx("reset {time}", "reset：{time}", {
+      tx("reset {time}", "重置：{time}", {
         time: formatRelative(snapshot.resetAt)
       })
     );
@@ -3158,7 +3157,7 @@ function buildCodexOverviewItem() {
 
   if (status?.latestResetAt) {
     detailParts.push(
-      tx("reported reset {time}", "报告 reset：{time}", {
+      tx("reported reset {time}", "报告重置：{time}", {
         time: formatRelative(status.latestResetAt)
       })
     );
@@ -3752,7 +3751,7 @@ function renderCodexSnapshotSteps(status) {
             )
           : tx(
               "If Codex exposes no usable CLI rate_limits, write only the visible quota value and reported reset time.",
-              "如果 Codex 没有暴露可用 CLI rate_limits，只写入可见额度值和报告的 reset 时间。"
+              "如果 Codex 没有暴露可用 CLI rate_limits，只写入可见额度值和报告的重置时间。"
             ),
       command: autoDetected ? undefined : status.writeCommand,
       state: autoDetected || status.latestHasQuota ? "pass" : "warn"
@@ -3840,7 +3839,7 @@ function formatCodexSnapshotDetail(status) {
 
   if (status.latestResetAt) {
     parts.push(
-      tx("Reported reset {time}", "报告 reset：{time}", {
+      tx("Reported reset {time}", "报告重置：{time}", {
         time: formatRelative(status.latestResetAt)
       })
     );
@@ -4035,6 +4034,42 @@ function renderClaudeDesktopSettings() {
 
 function renderClaudeConnectionSummary(status) {
   const ready = status.readiness === "ready";
+  const desktopCoversClaude =
+    !ready && isFreshRealSnapshot(findAgent("claude-desktop")?.primarySnapshot);
+
+  if (desktopCoversClaude) {
+    return `
+      <div class="setup-watch-notice connection-summary">
+        <div>
+          <strong>${escapeHtml(tx("Claude is ready", "Claude 已就绪"))}</strong>
+          <div class="settings-detail">${escapeHtml(
+            tx(
+              "AIQD is reading fresh quota from Claude Desktop, so the Claude Code CLI checklist below is optional.",
+              "AIQD 正在读取 Claude Desktop 的最新额度，下面 Claude Code CLI 的检查清单是可选的。"
+            )
+          )}</div>
+        </div>
+        <div class="connection-summary-actions">
+          <span class="badge healthy">${escapeHtml(tx("Ready", "已就绪"))}</span>
+        </div>
+      </div>
+      <details class="optional-settings-details">
+        <summary>
+          <span>${escapeHtml(tx("Claude Code CLI checklist", "Claude Code CLI 检查清单"))}</span>
+          <small>${escapeHtml(
+            tx(
+              "Only needed if you'd rather use the CLI instead of Claude Desktop.",
+              "只有你想改用 CLI 而不是 Claude Desktop 时才需要看。"
+            )
+          )}</small>
+        </summary>
+        <div class="optional-settings-body">
+          ${renderRealDataSteps(status)}
+        </div>
+      </details>
+    `;
+  }
+
   const needsSetup = !status.statusLineManagedByApp || !status.shimExists;
   const title = ready
     ? tx("Claude is ready", "Claude 已就绪")
@@ -4139,6 +4174,10 @@ function claudeSetupActionForStatus(status) {
 
 function renderClaudeStatuslineWaitingNotice(status) {
   if (status.readiness !== "waiting_for_data") {
+    return "";
+  }
+
+  if (isFreshRealSnapshot(findAgent("claude-desktop")?.primarySnapshot)) {
     return "";
   }
 
@@ -4678,7 +4717,7 @@ function settingsRow(label, value, detail, badgeClass, badgeLabel = value) {
 
 function eventTitle(event) {
   if (event.eventType === "reset_anchor_changed") {
-    return tx("{window} reset time changed", "{window} reset 时间变化", {
+    return tx("{window} reset time changed", "{window}重置时间变化", {
       window: windowLabel(event.windowType)
     });
   }
@@ -4948,7 +4987,7 @@ function localizedNextAction(action) {
   const translations = [
     [
       "Open Codex /status",
-      "先刷新检测本地 Codex CLI 额度；如果没有读到，再把可见的剩余百分比和 reset 时间保存到下方。"
+      "先刷新检测本地 Codex CLI 额度；如果没有读到，再把可见的剩余百分比和重置时间保存到下方。"
     ],
     [
       "Use Codex once and refresh",

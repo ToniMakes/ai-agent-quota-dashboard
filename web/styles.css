@@ -367,6 +367,13 @@ h2 {
   gap: 10px;
 }
 
+.reset-list,
+.doctor-list,
+.event-list,
+.refresh-run-list {
+  margin-top: 14px;
+}
+
 .agent-empty-state {
   display: grid;
   gap: 6px;
