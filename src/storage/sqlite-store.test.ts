@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { describe, it } from "node:test";
 import { SqliteStore } from "./sqlite-store.js";
 import type { QuotaSnapshot, RefreshResult } from "../core/types.js";
@@ -18,6 +19,116 @@ const firstSnapshot: QuotaSnapshot = {
   confidence: "official",
   stale: false
 };
+
+describe("SqliteStore migrations", () => {
+  it("records every applied migration version on a fresh database", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-store-"));
+    const dbPath = join(directory, "quota.db");
+    const store = new SqliteStore(dbPath);
+
+    try {
+      const database = new DatabaseSync(dbPath);
+      const rows = database
+        .prepare("SELECT version FROM schema_migrations ORDER BY version;")
+        .all() as Array<{ version: number }>;
+      database.close();
+
+      assert.deepEqual(
+        rows.map((row) => row.version),
+        [1, 2]
+      );
+    } finally {
+      store.close();
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("upgrades a pre-migration database without duplicating the reset_events_saved column", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-store-"));
+    const dbPath = join(directory, "quota.db");
+
+    // Simulate a database created before schema_migrations existed: the
+    // refresh_runs table already has reset_events_saved (added by the old
+    // ad-hoc ALTER TABLE check), but there is no migration bookkeeping yet.
+    const legacyDatabase = new DatabaseSync(dbPath);
+    legacyDatabase.exec(`
+      CREATE TABLE refresh_runs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        observed_at TEXT NOT NULL,
+        snapshots_saved INTEGER NOT NULL,
+        usage_events_saved INTEGER NOT NULL,
+        doctor_checks_saved INTEGER NOT NULL,
+        reset_events_saved INTEGER NOT NULL DEFAULT 0,
+        adapter_count INTEGER NOT NULL,
+        errors_json TEXT NOT NULL
+      );
+    `);
+    legacyDatabase.close();
+
+    const store = new SqliteStore(dbPath);
+
+    try {
+      store.recordRefreshRun({
+        observedAt: "2026-08-09T00:00:00.000Z",
+        snapshotsSaved: 1,
+        usageEventsSaved: 0,
+        doctorChecksSaved: 2,
+        resetEventsSaved: 0,
+        adapterCount: 2,
+        errors: []
+      });
+
+      const runs = store.listRefreshRuns();
+
+      assert.equal(runs.length, 1);
+    } finally {
+      store.close();
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("adds the reset_events_saved column when a truly old database lacks it", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-store-"));
+    const dbPath = join(directory, "quota.db");
+
+    // Simulate the original v0.1 schema, before reset_events_saved existed
+    // at all.
+    const legacyDatabase = new DatabaseSync(dbPath);
+    legacyDatabase.exec(`
+      CREATE TABLE refresh_runs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        observed_at TEXT NOT NULL,
+        snapshots_saved INTEGER NOT NULL,
+        usage_events_saved INTEGER NOT NULL,
+        doctor_checks_saved INTEGER NOT NULL,
+        adapter_count INTEGER NOT NULL,
+        errors_json TEXT NOT NULL
+      );
+    `);
+    legacyDatabase.close();
+
+    const store = new SqliteStore(dbPath);
+
+    try {
+      store.recordRefreshRun({
+        observedAt: "2026-08-09T00:00:00.000Z",
+        snapshotsSaved: 1,
+        usageEventsSaved: 0,
+        doctorChecksSaved: 2,
+        resetEventsSaved: 3,
+        adapterCount: 2,
+        errors: []
+      });
+
+      const runs = store.listRefreshRuns();
+
+      assert.equal(runs[0]?.resetEventsSaved, 3);
+    } finally {
+      store.close();
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+});
 
 describe("SqliteStore reset events", () => {
   it("records reset events when an observed reset anchor changes", async () => {
