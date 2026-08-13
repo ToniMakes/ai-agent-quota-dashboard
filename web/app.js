@@ -674,14 +674,75 @@ async function pollClaudeStatusline() {
 }
 
 function renderAgents() {
-  if (state.agents.length === 0) {
+  const displayAgents = buildDisplayAgents(state.agents);
+
+  if (displayAgents.length === 0) {
     elements.agentGrid.innerHTML = `<p class="empty">${escapeHtml(
       tx("No agents configured.", "尚未配置 Agent。")
     )}</p>`;
     return;
   }
 
-  elements.agentGrid.innerHTML = state.agents.map(renderAgentCard).join("");
+  elements.agentGrid.innerHTML = displayAgents.map(renderAgentCard).join("");
+}
+
+// The dashboard shows one Claude card, not two: Claude Code CLI and Claude
+// Desktop report the same underlying account, so showing both side by side
+// reads as duplicate/contradictory data. AIQD auto-picks whichever source is
+// actually usable right now; Doctor and Settings still show each source's
+// own status separately for troubleshooting.
+function buildDisplayAgents(agents) {
+  const claudeCode = agents.find((agent) => agent.agent === "claude-code");
+  const claudeDesktop = agents.find((agent) => agent.agent === "claude-desktop");
+
+  if (!claudeCode && !claudeDesktop) {
+    return agents;
+  }
+
+  const winner = pickPrimaryClaudeAgent(claudeCode, claudeDesktop);
+  const merged = {
+    ...winner,
+    agent: "claude",
+    displayName: "Claude",
+    shortName: "Claude"
+  };
+
+  return agents
+    .filter((agent) => agent.agent !== "claude-code" && agent.agent !== "claude-desktop")
+    .concat([merged]);
+}
+
+function pickPrimaryClaudeAgent(claudeCode, claudeDesktop) {
+  if (!claudeDesktop) {
+    return claudeCode;
+  }
+
+  if (!claudeCode) {
+    return claudeDesktop;
+  }
+
+  const codeFresh = isFreshRealSnapshot(claudeCode.primarySnapshot);
+  const desktopFresh = isFreshRealSnapshot(claudeDesktop.primarySnapshot);
+
+  if (codeFresh !== desktopFresh) {
+    return codeFresh ? claudeCode : claudeDesktop;
+  }
+
+  if (codeFresh && desktopFresh) {
+    const codeAt = Date.parse(claudeCode.primarySnapshot?.observedAt ?? "") || 0;
+    const desktopAt = Date.parse(claudeDesktop.primarySnapshot?.observedAt ?? "") || 0;
+    return desktopAt > codeAt ? claudeDesktop : claudeCode;
+  }
+
+  if (claudeCode.primarySnapshot && !claudeDesktop.primarySnapshot) {
+    return claudeCode;
+  }
+
+  if (claudeDesktop.primarySnapshot && !claudeCode.primarySnapshot) {
+    return claudeDesktop;
+  }
+
+  return claudeCode;
 }
 
 function renderAgentCard(agent) {
@@ -756,12 +817,16 @@ function renderStaleQuotaSummary(agent, snapshot) {
       })
     : tx("It did not report a reset time.", "它没有报告重置时间。");
   const source = sourceLabel(snapshot.source);
-  const isClaudeCode = agent.agent === "claude-code";
-  const isClaudeDesktop = agent.agent === "claude-desktop";
+  // Based on the snapshot's own source, not agent.agent: the dashboard merges
+  // Claude Code and Claude Desktop into one "claude" card (see
+  // buildDisplayAgents), so agent.agent is no longer specific enough here.
+  const isClaudeCode = snapshot.source === "official_statusline";
+  const isClaudeDesktop =
+    agent.provider === "anthropic" && snapshot.source === "local_quota_snapshot";
   const detail = isClaudeCode
     ? tx(
-        "This is not zero quota. AIQD only has an old Claude Code statusline snapshot; try opening Claude Code again, or check the Claude Desktop card for a more current reading.",
-        "这不是额度用完。AIQD 只剩一条旧的 Claude Code 状态栏快照；可以再打开一次 Claude Code，或者看看 Claude Desktop 卡片是否有更新的数据。"
+        "This is not zero quota. AIQD only has an old Claude Code statusline snapshot.",
+        "这不是额度用完。AIQD 只剩一条旧的 Claude Code 状态栏快照。"
       )
     : isClaudeDesktop
       ? tx(
