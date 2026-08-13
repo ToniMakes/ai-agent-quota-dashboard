@@ -9,6 +9,8 @@ Open the dashboard and see, within a few seconds, how much quota is left for Cod
 
 Unlike general token or cost trackers, this project is quota-first. It focuses on remaining limits, reported reset times, and source confidence for local AI coding agents.
 
+AIQD only reads local files written by desktop apps or CLIs (Codex CLI, Claude Code CLI, Claude Desktop). It cannot see usage for an account that only uses a browser-based product, such as claude.ai or chatgpt.com in a web browser with no desktop app or CLI installed, because there is no local file for it to read.
+
 ## Status
 
 This repository is preparing the v0.1 desktop preview. The first public preview should be installer-first for normal users: install the app, open the desktop shortcut, then finish setup from Settings. Source mode remains available as a developer fallback before and after the packaged release.
@@ -324,6 +326,8 @@ The Settings view shows the same config path, whether configured scan roots are 
 AIQD reads Claude quota from two independent local sources and treats them as alternatives, not a chain: Claude Code statusline and Claude Desktop's local `plan-usage-history.json`. Either one being fresh is enough for Claude to count as ready; the Claude Code CLI is not required.
 
 On Windows, Claude Desktop maintains a local `%APPDATA%\Claude\plan-usage-history.json` file with plan usage samples. The adapter parses only narrow usage fields — 5-hour and weekly used percentages plus observation timestamps — and does not scrape the app UI, import cookies, call hidden APIs, or read chat content. Reset time is not reported by this file, so AIQD shows percentage and observed time only for this source.
+
+Note the name: "Claude Desktop" here means the installed desktop app, not claude.ai opened in a regular web browser. A browser-only account has no local file for AIQD to read, so it cannot be monitored by either Claude source.
 
 ## Claude Code Statusline
 

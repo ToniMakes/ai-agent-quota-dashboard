@@ -2,6 +2,8 @@
 
 The project should only parse data that is explicit, local or official, and narrow enough to avoid prompts, responses, source code, and chat content.
 
+Every source below depends on a local file or CLI output written by a desktop app or CLI (Codex CLI, Claude Code CLI, Claude Desktop). None of them can see usage for an account that only uses a browser-based product (claude.ai or chatgpt.com in a plain web browser, with no desktop app or CLI installed) — there is no local file for AIQD to read in that case.
+
 ## Local Path Configuration
 
 Users can add explicit scan roots with:
