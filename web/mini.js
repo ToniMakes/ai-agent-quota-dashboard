@@ -228,7 +228,7 @@ async function load(options = {}) {
 
 function render() {
   applyStaticTranslations();
-  const agents = sortAgents(state.agents);
+  const agents = sortAgents(buildDisplayAgents(state.agents));
 
   if (agents.length === 0) {
     elements.grid.innerHTML = `<p class="mini-empty">${escapeHtml(
@@ -239,6 +239,67 @@ function render() {
   }
 
   renderFooter();
+}
+
+// Mirrors app.js: Claude Code CLI and Claude Desktop report the same
+// underlying account, so the mini panel shows one auto-picked Claude card
+// instead of two, same as the main dashboard.
+function buildDisplayAgents(agents) {
+  const claudeCode = agents.find((agent) => agent.agent === "claude-code");
+  const claudeDesktop = agents.find((agent) => agent.agent === "claude-desktop");
+
+  if (!claudeCode && !claudeDesktop) {
+    return agents;
+  }
+
+  const winner = pickPrimaryClaudeAgent(claudeCode, claudeDesktop);
+  const merged = {
+    ...winner,
+    agent: "claude",
+    displayName: "Claude",
+    shortName: "Claude"
+  };
+
+  return agents
+    .filter((agent) => agent.agent !== "claude-code" && agent.agent !== "claude-desktop")
+    .concat([merged]);
+}
+
+function pickPrimaryClaudeAgent(claudeCode, claudeDesktop) {
+  if (!claudeDesktop) {
+    return claudeCode;
+  }
+
+  if (!claudeCode) {
+    return claudeDesktop;
+  }
+
+  const codeFresh = Boolean(
+    claudeCode.primarySnapshot && !isStaleSnapshot(claudeCode.primarySnapshot)
+  );
+  const desktopFresh = Boolean(
+    claudeDesktop.primarySnapshot && !isStaleSnapshot(claudeDesktop.primarySnapshot)
+  );
+
+  if (codeFresh !== desktopFresh) {
+    return codeFresh ? claudeCode : claudeDesktop;
+  }
+
+  if (codeFresh && desktopFresh) {
+    const codeAt = Date.parse(claudeCode.primarySnapshot?.observedAt ?? "") || 0;
+    const desktopAt = Date.parse(claudeDesktop.primarySnapshot?.observedAt ?? "") || 0;
+    return desktopAt > codeAt ? claudeDesktop : claudeCode;
+  }
+
+  if (claudeCode.primarySnapshot && !claudeDesktop.primarySnapshot) {
+    return claudeCode;
+  }
+
+  if (claudeDesktop.primarySnapshot && !claudeCode.primarySnapshot) {
+    return claudeDesktop;
+  }
+
+  return claudeCode;
 }
 
 function renderAgent(agent) {
@@ -895,6 +956,7 @@ function emptyStateGuidance(agent) {
 function sortAgents(agents) {
   const order = new Map([
     ["codex", 0],
+    ["claude", 1],
     ["claude-code", 1],
     ["claude-desktop", 2]
   ]);
