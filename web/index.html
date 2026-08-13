@@ -19,7 +19,7 @@
           <p
             class="topbar-subtitle"
             data-i18n-en="See remaining quota, reset time, and local source readiness at a glance."
-            data-i18n-zh="一眼看清剩余额度、reset 时间和本地数据源是否就绪。"
+            data-i18n-zh="一眼看清剩余额度、重置时间和本地数据源是否就绪。"
           >See remaining quota, reset time, and local source readiness at a glance.</p>
         </div>
         <div class="topbar-actions">
@@ -75,25 +75,26 @@
 
       <section id="dashboard-view" class="view is-active">
         <div id="agent-grid" class="agent-grid" aria-live="polite"></div>
-        <section class="panel">
-          <div class="panel-header">
-            <div>
-              <h2 data-i18n-en="Reported Resets" data-i18n-zh="已报告的 Reset">Reported Resets</h2>
-              <p
-                class="panel-note"
-                data-i18n-en="Observed source values; reset anchors can change."
-                data-i18n-zh="来自本地数据源的观测值；reset 锚点可能会变化。"
-              >Observed source values; reset anchors can change.</p>
-            </div>
-          </div>
+        <details class="panel advanced-settings-panel">
+          <summary>
+            <span data-i18n-en="Reported Resets" data-i18n-zh="即将到来的重置">Reported Resets</span>
+            <small
+              data-i18n-en="Observed source values; reset anchors can change."
+              data-i18n-zh="来自本地数据源的观测值；重置时间可能会变化。"
+            >Observed source values; reset anchors can change.</small>
+          </summary>
           <div id="reset-list" class="reset-list"></div>
-        </section>
-        <section class="panel">
-          <div class="panel-header">
-            <h2 data-i18n-en="Recent Changes" data-i18n-zh="最近变化">Recent Changes</h2>
-          </div>
+        </details>
+        <details class="panel advanced-settings-panel">
+          <summary>
+            <span data-i18n-en="Recent Changes" data-i18n-zh="最近变化">Recent Changes</span>
+            <small
+              data-i18n-en="Reset-time and quota change history. Useful for spotting patterns, not needed day to day."
+              data-i18n-zh="重置时间和额度变化的历史记录，用于观察规律，日常不用特意查看。"
+            >Reset-time and quota change history. Useful for spotting patterns, not needed day to day.</small>
+          </summary>
           <div id="event-list" class="event-list"></div>
-        </section>
+        </details>
       </section>
 
       <section id="doctor-view" class="view">
@@ -111,18 +112,26 @@
           </div>
           <div id="doctor-checklist" class="settings-content"></div>
         </div>
-        <div class="panel">
-          <div class="panel-header">
-            <h2 data-i18n-en="Doctor" data-i18n-zh="诊断">Doctor</h2>
-          </div>
+        <details class="panel advanced-settings-panel">
+          <summary>
+            <span data-i18n-en="Raw diagnostics" data-i18n-zh="原始诊断信息">Raw diagnostics</span>
+            <small
+              data-i18n-en="Technical detail per source. Usually only needed when troubleshooting."
+              data-i18n-zh="每个数据源的技术细节，一般排障时才需要看。"
+            >Technical detail per source. Usually only needed when troubleshooting.</small>
+          </summary>
           <div id="doctor-list" class="doctor-list"></div>
-        </div>
-        <div class="panel">
-          <div class="panel-header">
-            <h2 data-i18n-en="Refresh History" data-i18n-zh="刷新历史">Refresh History</h2>
-          </div>
+        </details>
+        <details class="panel advanced-settings-panel">
+          <summary>
+            <span data-i18n-en="Refresh History" data-i18n-zh="刷新历史">Refresh History</span>
+            <small
+              data-i18n-en="Local refresh log. Usually not needed unless a refresh fails."
+              data-i18n-zh="本地刷新记录，一般只有刷新失败时才需要看。"
+            >Local refresh log. Usually not needed unless a refresh fails.</small>
+          </summary>
           <div id="refresh-run-list" class="refresh-run-list"></div>
-        </div>
+        </details>
       </section>
 
       <section id="settings-view" class="view">
