@@ -622,7 +622,7 @@ function secureWebPreferences() {
     contextIsolation: true,
     nodeIntegration: false,
     preload: preloadPath,
-    sandbox: false
+    sandbox: true
   };
 }
 
