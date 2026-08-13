@@ -2,6 +2,14 @@
 
 Use this checklist before tagging a release.
 
+## Per-Change Checklist (before merging any feature, not just before release)
+
+Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` have previously described a source as "planned" for a full session after it shipped, because nothing prompted an update until the pre-release pass below. Do this check as part of the change itself, not the release:
+
+- [ ] If this change adds/changes a data source, adapter, or readiness rule: `docs/data-sources.md` and `docs/architecture.md` describe the current behavior, not the pre-change one
+- [ ] If this change is the thing a roadmap/status entry was waiting on: that entry is updated to reflect it shipped, in the same commit or PR
+- [ ] `CHANGELOG.md`'s `[Unreleased]` section has an entry
+
 ## Required
 
 - [ ] `npm test` passes locally
