@@ -1,6 +1,18 @@
-const languageStorageKey = "aiqd.language";
-const defaultLanguage = "en";
+import {
+  clamp,
+  createI18n,
+  escapeHtml,
+  isSameSnapshot,
+  isStaleSnapshot,
+  languageStorageKey,
+  primaryMeterClass,
+  resolveInitialLanguage
+} from "./shared.js";
+
 let currentLanguage = resolveInitialLanguage();
+const { tx, locale, sourceLabel, compactNumber, formatRelative } = createI18n(
+  () => currentLanguage
+);
 
 const state = {
   agents: [],
@@ -116,29 +128,6 @@ function dashboardHref(view, target) {
   const hash = target ? `#${encodeURIComponent(target)}` : "";
 
   return `/?view=${encodeURIComponent(view)}${hash}`;
-}
-
-function resolveInitialLanguage() {
-  const savedLanguage = window.localStorage?.getItem(languageStorageKey);
-
-  if (savedLanguage === "zh" || savedLanguage === "en") {
-    return savedLanguage;
-  }
-
-  return defaultLanguage;
-}
-
-function locale() {
-  return currentLanguage === "zh" ? "zh-CN" : "en-US";
-}
-
-function tx(english, chinese, values = {}) {
-  const template = currentLanguage === "zh" ? chinese : english;
-
-  return Object.entries(values).reduce(
-    (text, [key, value]) => text.replaceAll(`{${key}}`, String(value)),
-    template
-  );
 }
 
 function applyStaticTranslations() {
@@ -689,14 +678,6 @@ function windowMeterClass(snapshot) {
   return snapshot.stale ? "stale" : "standard";
 }
 
-function primaryMeterClass(snapshot, status) {
-  if (snapshot?.windowType === "session_5h" && status === "healthy") {
-    return "session";
-  }
-
-  return status;
-}
-
 function prioritizeSnapshots(snapshots, primary) {
   if (!primary) {
     return snapshots;
@@ -708,17 +689,6 @@ function prioritizeSnapshots(snapshots, primary) {
       (snapshot) => !isSameSnapshot(snapshot, primary)
     )
   ];
-}
-
-function isSameSnapshot(left, right) {
-  return Boolean(
-    left &&
-      right &&
-      left.provider === right.provider &&
-      left.agent === right.agent &&
-      left.windowType === right.windowType &&
-      left.observedAt === right.observedAt
-  );
 }
 
 function hasClaudeWaitingState(agents) {
@@ -1011,14 +981,6 @@ function meterValue(snapshot) {
   return 0;
 }
 
-function isStaleSnapshot(snapshot) {
-  return Boolean(
-    snapshot?.freshness?.status === "stale" ||
-      snapshot?.stale ||
-      (snapshot?.expiresAt && Date.parse(snapshot.expiresAt) <= Date.now())
-  );
-}
-
 function resetShortSummary(value) {
   if (!value) {
     return tx("reset --", "重置 --");
@@ -1092,31 +1054,6 @@ function formatUsedText(snapshot) {
   return "";
 }
 
-function formatRelative(value) {
-  if (!value) {
-    return "--";
-  }
-
-  const date = new Date(value);
-  const deltaSeconds = Math.round((date.getTime() - Date.now()) / 1000);
-  const absoluteSeconds = Math.abs(deltaSeconds);
-  const units = [
-    ["day", 86400],
-    ["hour", 3600],
-    ["minute", 60],
-    ["second", 1]
-  ];
-  const formatter = new Intl.RelativeTimeFormat(locale(), { numeric: "auto" });
-
-  for (const [unit, seconds] of units) {
-    if (absoluteSeconds >= seconds || unit === "second") {
-      return formatter.format(Math.round(deltaSeconds / seconds), unit);
-    }
-  }
-
-  return date.toLocaleString(locale());
-}
-
 function formatResetDistance(value) {
   if (!value) {
     return "--";
@@ -1175,33 +1112,6 @@ function windowLabel(windowType) {
   return labels[windowType] ?? windowType;
 }
 
-function sourceLabel(source) {
-  const labels = {
-    official_api: tx("Official API", "官方 API"),
-    official_cli: tx("Official CLI", "官方 CLI"),
-    official_statusline: tx("Claude Code statusline", "Claude Code 状态栏"),
-    local_quota_snapshot: tx("Local snapshot", "本地快照"),
-    local_usage_log: tx("Local log", "本地日志"),
-    estimated: tx("Estimated", "估算"),
-    manual: tx("Manual", "手动"),
-    demo: tx("Demo", "演示"),
-    unavailable: tx("Unavailable", "不可用")
-  };
-
-  return labels[source] ?? source;
-}
-
-function compactNumber(value) {
-  return new Intl.NumberFormat(locale(), {
-    maximumFractionDigits: 1,
-    notation: "compact"
-  }).format(value);
-}
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
 async function fetchJson(url, options) {
   const response = await fetch(url, options);
 
@@ -1210,13 +1120,4 @@ async function fetchJson(url, options) {
   }
 
   return response.json();
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }
