@@ -29,7 +29,7 @@
     "desktop:smoke": "npm run build && electron --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process desktop/main.cjs --smoke",
     "doctor": "npm run build && node dist/index.js doctor",
     "icons:generate": "electron scripts/generate-icons.cjs",
-    "package:win": "npm run build && electron-builder --win --x64",
+    "package:win": "npm run build && electron-builder --win --x64 --publish never",
     "package:win:dir": "npm run build && electron-builder --win --x64 --dir",
     "trial:preflight": "npm run build && node dist/index.js trial preflight",
     "trial:ready": "npm run build && node dist/index.js doctor --strict",
