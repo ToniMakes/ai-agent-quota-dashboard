@@ -25,9 +25,11 @@ npm run desktop:local
 
 On Windows PowerShell, if `npm` is blocked by the local execution policy, use `npm.cmd` for the same commands.
 
-Launch-at-login is not a hidden side effect. If startup support ships in this preview, it must be explicit and off by default. Otherwise, startup controls remain v0.2 work.
+Launch-at-login is not a hidden side effect. The installer checkbox is off by default, and the same startup entry can be enabled or disabled later from Settings > Desktop Startup.
 
-Code signing and update-channel decisions may remain later work if the release notes call that out clearly.
+Signature status before publishing: this formal release should use a SignPath Foundation signed installer if approval is complete. If this release is published unsigned, this section must be edited to say so prominently before upload.
+
+Code signing policy: [docs/code-signing.md](https://github.com/isToniLiu/ai-agent-quota-dashboard/blob/main/docs/code-signing.md).
 
 ## Highlights
 
@@ -45,7 +47,9 @@ Code signing and update-channel decisions may remain later work if the release n
 - Electron desktop shell with tray mini panel, always-on-top widget, and AIQD-only shortcuts
 - Mini panel hides duplicate primary quota rows and shows compact secondary-window bars, including a yellow Claude Code 5-hour bar
 - Windows NSIS installer generated with `electron-builder`
+- SignPath Foundation code signing policy and GitHub Actions packaging path for signed release artifacts
 - Packaged app launches its local backend through Electron's bundled Node runtime, so users do not need Node.js or npm
+- Opt-in launch-at-login for packaged desktop builds, using a background tray startup and a reversible Settings toggle
 - Shared AIQD app icon assets for the desktop tray, main window, and shortcut
 - Desktop-entry launch mode that opens the main dashboard window
 - Strict real-data readiness shared by CLI, Settings, tray, and mini surfaces
@@ -91,8 +95,8 @@ npm test
 npm run desktop:smoke
 npm run desktop:first-run-smoke
 npm run package:win:dir
-.\release\win-unpacked\AI Agent Quota Dashboard.exe --smoke
-.\release\win-unpacked\AI Agent Quota Dashboard.exe --smoke-first-run-guide
+& ".\release\win-unpacked\AI Agent Quota Dashboard.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process --smoke
+& ".\release\win-unpacked\AI Agent Quota Dashboard.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process --smoke-first-run-guide
 npm run package:win
 npm run trial:preflight
 npm run trial:ready
@@ -103,10 +107,10 @@ CI runs tests on Windows and Ubuntu with Node 24.
 
 ## Known Limits
 
-- Windows installer is currently unsigned; Windows SmartScreen may warn until a signing certificate and reputation path are in place
+- Unsigned RC/pre-release artifacts may be used for SignPath review; the formal release should upload the signed installer if SignPath approval is complete
 - No system notification support yet
 - No update channel yet
-- App-managed launch-at-login may be absent until v0.2; if present, it must be explicit and off by default
+- Launch-at-login is Windows-first for this preview; macOS/Linux distribution polish remains later work
 - Claude Code may report setup warnings until it renders a fresh statusline payload; this no longer blocks Claude readiness when Claude Desktop is available
 - Claude Desktop reports no reset time; only remaining percentage and observed time are shown for this source
 - Restore default settings, historical trends, reset rhythm statistics, and Settings refresh interval presets are planned for v0.2

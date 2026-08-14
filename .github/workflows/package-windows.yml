@@ -1,0 +1,112 @@
+name: Package Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      sign_with_signpath:
+        description: Submit the unsigned installer artifact to SignPath
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  package:
+    name: Windows installer
+    runs-on: windows-latest
+
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: false
+      INSTALLER_PATH: release/AI Agent Quota Dashboard-0.1.0-win-x64.exe
+      SIGNED_ARTIFACT_DIR: release-signed
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run desktop smoke
+        run: npm run desktop:smoke
+
+      - name: Run first-run smoke
+        run: npm run desktop:first-run-smoke
+
+      - name: Build Windows installer
+        run: npm run package:win
+
+      - name: Run packaged smoke
+        shell: pwsh
+        run: |
+          & ".\release\win-unpacked\AI Agent Quota Dashboard.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process --smoke
+
+      - name: Run packaged first-run smoke
+        shell: pwsh
+        run: |
+          & ".\release\win-unpacked\AI Agent Quota Dashboard.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process --smoke-first-run-guide
+
+      - name: Verify unsigned installer exists
+        shell: pwsh
+        run: |
+          if (-not (Test-Path $env:INSTALLER_PATH)) {
+            throw "Installer was not created at $env:INSTALLER_PATH"
+          }
+          Get-Item $env:INSTALLER_PATH | Format-List FullName,Length,LastWriteTime
+
+      - name: Upload unsigned installer artifact
+        id: upload-unsigned-installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: aiqd-windows-installer-unsigned
+          path: ${{ env.INSTALLER_PATH }}
+          if-no-files-found: error
+
+      - name: Submit signing request to SignPath
+        if: ${{ inputs.sign_with_signpath }}
+        uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          github-artifact-id: ${{ steps.upload-unsigned-installer.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 3600
+          output-artifact-directory: ${{ env.SIGNED_ARTIFACT_DIR }}
+          parameters: |
+            version: "${{ github.ref_name }}"
+
+      - name: Verify signed installer signature
+        if: ${{ inputs.sign_with_signpath }}
+        shell: pwsh
+        run: |
+          $signedInstaller = Get-ChildItem $env:SIGNED_ARTIFACT_DIR -Recurse -Filter "*.exe" | Select-Object -First 1
+          if (-not $signedInstaller) {
+            throw "No signed installer was downloaded to $env:SIGNED_ARTIFACT_DIR"
+          }
+          $signature = Get-AuthenticodeSignature $signedInstaller.FullName
+          $signature | Format-List Status,StatusMessage,SignerCertificate,TimeStamperCertificate
+          if ($signature.Status -ne "Valid") {
+            throw "Signed installer Authenticode status was $($signature.Status), expected Valid"
+          }
+
+      - name: Upload signed installer artifact
+        if: ${{ inputs.sign_with_signpath }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: aiqd-windows-installer-signed
+          path: ${{ env.SIGNED_ARTIFACT_DIR }}/**/*.exe
+          if-no-files-found: error
