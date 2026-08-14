@@ -81,7 +81,13 @@ The clean Windows VM first-run protocol is now spelled out in [docs/real-data-tr
 
 Clean Windows VM trial tracking issue: https://github.com/isToniLiu/ai-agent-quota-dashboard/issues/1
 
-Friend clean-Windows testing of `v0.1.0-rc.1` found leftover Electron app data at `%APPDATA%\AI Agent Quota` after uninstall. The follow-up fix is to use the full product name for Electron app data, enable NSIS app-data cleanup, and explicitly remove the old RC1 short-name app data directory during uninstall. This needs a `v0.1.0-rc.2` package and uninstall retest.
+Friend clean-Windows testing of `v0.1.0-rc.1` found leftover Electron app data at `%APPDATA%\AI Agent Quota` after uninstall. `v0.1.0-rc.2` was published to retest that uninstall cleanup:
+
+- Release page: https://github.com/isToniLiu/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.2
+- Workflow run: https://github.com/isToniLiu/ai-agent-quota-dashboard/actions/runs/31805252401
+- Asset SHA256: `3F0BC6183A7A435E3181A006CEEF9BC21DF35AF1D607F639496AD014527C545B`
+
+The fix uses the full product name for Electron app data, enables NSIS app-data cleanup, and explicitly removes the old RC1 short-name app data directory during uninstall. This still needs a clean Windows uninstall retest against `v0.1.0-rc.2`.
 
 ## Current Product State
 
@@ -95,6 +101,6 @@ Claude Desktop-only coverage was the highest product priority before broad publi
 
 ## Next Focus
 
-1. Run a true clean Windows user or VM trial from the RC installer through Codex, Claude Desktop, and Claude Code readiness while SignPath review is pending.
+1. Retest uninstall cleanup from the `v0.1.0-rc.2` installer on the clean Windows machine while SignPath review is pending.
 2. After SignPath approval, configure GitHub secrets/variables and rerun the Windows package workflow with signing enabled.
 3. Run a final checklist/CI pass immediately before tagging `v0.1.0`.

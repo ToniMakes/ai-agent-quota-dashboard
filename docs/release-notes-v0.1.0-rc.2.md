@@ -17,7 +17,7 @@ Release page: https://github.com/isToniLiu/ai-agent-quota-dashboard/releases/tag
 SHA256:
 
 ```text
-TODO: fill after CI package artifact is uploaded.
+3F0BC6183A7A435E3181A006CEEF9BC21DF35AF1D607F639496AD014527C545B
 ```
 
 ## Changes Since v0.1.0-rc.1
