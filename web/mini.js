@@ -10,7 +10,7 @@ import {
 } from "./shared.js";
 
 let currentLanguage = resolveInitialLanguage();
-const { tx, locale, sourceLabel, compactNumber, formatRelative } = createI18n(
+const { tx, locale, compactNumber, formatRelative } = createI18n(
   () => currentLanguage
 );
 
@@ -993,17 +993,33 @@ function resetShortSummary(value) {
 
 function snapshotDetail(snapshot) {
   const parts = [
-    sourceLabel(snapshot.source),
-    tx("seen {time}", "观测于 {time}", {
+    snapshotTimingDetail(snapshot),
+    tx("updated {time}", "更新于 {time}", {
       time: formatRelative(snapshot.observedAt)
     })
-  ];
+  ].filter(Boolean);
 
   if (snapshot.freshness?.status === "stale") {
     parts.push(staleReasonLabel(snapshot));
   }
 
   return parts.join(" / ");
+}
+
+function snapshotTimingDetail(snapshot) {
+  if (snapshot?.resetAt) {
+    return tx("reset {time}", "{time}重置", {
+      time: formatResetDistance(snapshot.resetAt)
+    });
+  }
+
+  if (snapshot?.expiresAt) {
+    return tx("expires {time}", "{time}过期", {
+      time: formatResetDistance(snapshot.expiresAt)
+    });
+  }
+
+  return "";
 }
 
 function formatRemainingText(snapshot) {
@@ -1060,24 +1076,29 @@ function formatResetDistance(value) {
   }
 
   const date = new Date(value);
-  const deltaSeconds = Math.round((date.getTime() - Date.now()) / 1000);
+  const timestamp = date.getTime();
+
+  if (Number.isNaN(timestamp)) {
+    return "--";
+  }
+
+  const deltaSeconds = Math.round((timestamp - Date.now()) / 1000);
   const absoluteSeconds = Math.abs(deltaSeconds);
-  const suffix =
-    deltaSeconds < 0 ? tx("ago", "前") : tx("left", "后");
+  let amount;
 
   if (absoluteSeconds >= 86400) {
-    return `${Math.round(absoluteSeconds / 86400)}d ${suffix}`;
+    amount = `${Math.round(absoluteSeconds / 86400)}d`;
+  } else if (absoluteSeconds >= 3600) {
+    amount = `${Math.round(absoluteSeconds / 3600)}h`;
+  } else if (absoluteSeconds >= 60) {
+    amount = `${Math.round(absoluteSeconds / 60)}m`;
+  } else {
+    amount = `${absoluteSeconds}s`;
   }
 
-  if (absoluteSeconds >= 3600) {
-    return `${Math.round(absoluteSeconds / 3600)}h ${suffix}`;
-  }
-
-  if (absoluteSeconds >= 60) {
-    return `${Math.round(absoluteSeconds / 60)}m ${suffix}`;
-  }
-
-  return `${absoluteSeconds}s ${suffix}`;
+  return deltaSeconds < 0
+    ? tx("{amount} ago", "{amount} 前", { amount })
+    : tx("in {amount}", "{amount} 后", { amount });
 }
 
 function formatTimestamp(value, options = {}) {
