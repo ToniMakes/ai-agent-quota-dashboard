@@ -62,7 +62,7 @@ Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` h
 - [ ] GitHub account MFA is enabled for maintainers with repository or SignPath access
 - [x] Code signing roles in `docs/code-signing.md` match the actual maintainers
 - [x] A clearly labeled unsigned RC/pre-release exists if SignPath needs a downloadable release artifact before approval
-- [ ] SignPath Foundation OSS application submitted
+- [x] SignPath Foundation OSS application submitted
 - [ ] SignPath Foundation OSS application approved
 - [ ] SignPath project, signing policy, and default artifact configuration are configured for the NSIS installer
 - [ ] GitHub secret `SIGNPATH_API_TOKEN` is configured

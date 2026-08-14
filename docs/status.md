@@ -73,6 +73,7 @@ The unsigned `v0.1.0-rc.1` GitHub Pre-release has been created for clean-machine
 - Release page: https://github.com/isToniLiu/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.1
 - Workflow run: https://github.com/isToniLiu/ai-agent-quota-dashboard/actions/runs/31796488211
 - Asset SHA256: `D938A30F4289EE676FD181AC804B5DE0F372EEF502706FFE43142B85F26A0F72`
+- SignPath Foundation OSS application: submitted, awaiting review
 
 The latest installed-app trial used the maintainer's existing Windows profile and preserved existing AIQD, Codex, and Claude Code state. It validates the packaged installer and normal desktop entry path, but a true clean Windows user or VM first-run remains useful before broad distribution.
 
@@ -90,7 +91,6 @@ Claude Desktop-only coverage was the highest product priority before broad publi
 
 ## Next Focus
 
-1. Submit the SignPath Foundation OSS application using the `v0.1.0-rc.1` pre-release URL, privacy policy, and code signing policy.
-2. Run a true clean Windows user or VM trial from the RC installer through Codex, Claude Desktop, and Claude Code readiness.
-3. After SignPath approval, configure GitHub secrets/variables and rerun the Windows package workflow with signing enabled.
-4. Run a final checklist/CI pass immediately before tagging `v0.1.0`.
+1. Run a true clean Windows user or VM trial from the RC installer through Codex, Claude Desktop, and Claude Code readiness while SignPath review is pending.
+2. After SignPath approval, configure GitHub secrets/variables and rerun the Windows package workflow with signing enabled.
+3. Run a final checklist/CI pass immediately before tagging `v0.1.0`.
