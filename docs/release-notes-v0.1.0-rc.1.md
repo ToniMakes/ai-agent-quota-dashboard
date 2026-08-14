@@ -9,7 +9,15 @@ This is not the preferred formal public installer. The formal `v0.1.0` release s
 Windows x64 installer asset:
 
 ```text
-AI Agent Quota Dashboard-0.1.0-win-x64.exe
+AI.Agent.Quota.Dashboard-0.1.0-win-x64.exe
+```
+
+Release page: https://github.com/isToniLiu/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.1
+
+SHA256:
+
+```text
+D938A30F4289EE676FD181AC804B5DE0F372EEF502706FFE43142B85F26A0F72
 ```
 
 ## Signature Status

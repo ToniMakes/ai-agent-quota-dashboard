@@ -68,6 +68,12 @@ Demo release screenshots have been refreshed for the dashboard, Doctor, Settings
 
 The first public preview distribution shape is installer-first desktop preview. A local Windows x64 NSIS artifact has been generated at `release/AI Agent Quota Dashboard-0.1.0-win-x64.exe`; `release/` is ignored and the artifact should be uploaded to a GitHub Release rather than committed. The current local artifact is unsigned and is suitable as an RC/testing artifact, not the preferred formal release artifact. `docs/release-notes-v0.1.0.md` is the draft GitHub Release text.
 
+The unsigned `v0.1.0-rc.1` GitHub Pre-release has been created for clean-machine testing and SignPath Foundation review:
+
+- Release page: https://github.com/isToniLiu/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.1
+- Workflow run: https://github.com/isToniLiu/ai-agent-quota-dashboard/actions/runs/31796488211
+- Asset SHA256: `D938A30F4289EE676FD181AC804B5DE0F372EEF502706FFE43142B85F26A0F72`
+
 The latest installed-app trial used the maintainer's existing Windows profile and preserved existing AIQD, Codex, and Claude Code state. It validates the packaged installer and normal desktop entry path, but a true clean Windows user or VM first-run remains useful before broad distribution.
 
 The clean Windows VM first-run protocol is now spelled out in [docs/real-data-trial.md](real-data-trial.md), including startup checkbox off/on passes, Settings startup toggle checks, uninstall cleanup, and fresh Codex, Claude Desktop, and Claude Code readiness. It still needs to be executed on an actual clean Windows profile or VM.
@@ -84,7 +90,7 @@ Claude Desktop-only coverage was the highest product priority before broad publi
 
 ## Next Focus
 
-1. Prepare and submit the SignPath Foundation OSS application using a clearly labeled unsigned RC/pre-release artifact if needed.
-2. Run a true clean Windows user or VM trial from the installer through Codex, Claude Desktop, and Claude Code readiness.
-3. Run the GitHub Actions Windows package workflow; after SignPath approval, use it to produce a signed installer.
+1. Submit the SignPath Foundation OSS application using the `v0.1.0-rc.1` pre-release URL, privacy policy, and code signing policy.
+2. Run a true clean Windows user or VM trial from the RC installer through Codex, Claude Desktop, and Claude Code readiness.
+3. After SignPath approval, configure GitHub secrets/variables and rerun the Windows package workflow with signing enabled.
 4. Run a final checklist/CI pass immediately before tagging `v0.1.0`.
