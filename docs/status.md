@@ -53,7 +53,7 @@ The current maintainer checkout has passed:
 - Browser interaction smoke for the decluttered dashboard and mini quota-window layouts
 - Browser/API smoke against demo mode for `/`, `/mini.html`, `/api/health`, `/api/agents`, `/api/trial-readiness`, and `/api/export?format=json`
 - Maintainer-profile installer trial: silent NSIS install exited `0`, desktop and Start menu shortcuts target the installed packaged executable, the desktop shortcut opens the installed app backend on `127.0.0.1:4317`, `/api/trial-readiness` reports `ok: true`, and browser smoke passes for the installed dashboard and mini panel
-- Clean-copy trial from `.tmp/fresh-trial-current`: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, and `npm run trial:ready`
+- Clean-copy trial from `.tmp/fresh-trial-v0.1.0-rc.1`: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, `npm run trial:ready`, and browser/API smoke
 - GitHub Actions CI on `main`
 
 ## Latest Clean Trial Notes
