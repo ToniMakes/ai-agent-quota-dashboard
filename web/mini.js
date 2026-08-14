@@ -242,10 +242,18 @@ function buildDisplayAgents(agents) {
   }
 
   const winner = pickPrimaryClaudeAgent(claudeCode, claudeDesktop);
+  const sources = [claudeCode, claudeDesktop].filter(Boolean);
+  const snapshots = mergeClaudeSnapshots(winner.snapshots ?? [], sources);
+  const primarySnapshot = mergeClaudeSnapshotTiming(
+    winner.primarySnapshot,
+    sources.flatMap((source) => source.snapshots ?? [])
+  );
   const merged = {
     ...winner,
     agent: "claude",
     displayName: "Claude",
+    primarySnapshot,
+    snapshots,
     shortName: "Claude"
   };
 
@@ -291,12 +299,56 @@ function pickPrimaryClaudeAgent(claudeCode, claudeDesktop) {
   return claudeCode;
 }
 
+function mergeClaudeSnapshots(winnerSnapshots, sources) {
+  const sourceSnapshots = sources.flatMap((source) => source.snapshots ?? []);
+  const byWindow = new Map();
+
+  for (const snapshot of winnerSnapshots) {
+    byWindow.set(
+      snapshot.windowType,
+      mergeClaudeSnapshotTiming(snapshot, sourceSnapshots)
+    );
+  }
+
+  for (const snapshot of sourceSnapshots) {
+    if (byWindow.has(snapshot.windowType) || isStaleSnapshot(snapshot)) {
+      continue;
+    }
+
+    byWindow.set(snapshot.windowType, snapshot);
+  }
+
+  return Array.from(byWindow.values());
+}
+
+function mergeClaudeSnapshotTiming(snapshot, sourceSnapshots) {
+  if (!snapshot || snapshot.resetAt) {
+    return snapshot;
+  }
+
+  const timingSource = sourceSnapshots.find(
+    (candidate) =>
+      candidate.windowType === snapshot.windowType &&
+      candidate.resetAt &&
+      !isStaleSnapshot(candidate)
+  );
+
+  if (!timingSource) {
+    return snapshot;
+  }
+
+  return {
+    ...snapshot,
+    resetAt: timingSource.resetAt
+  };
+}
+
 function renderAgent(agent) {
   const primary = agent.primarySnapshot;
   const status = agent.status ?? "unknown";
   const stalePrimary = isStaleSnapshot(primary);
   const guidance = primary ? undefined : emptyStateGuidance(agent);
-  const detail = primary ? snapshotDetail(primary) : guidance.detail;
+  const detail = primary ? agentDetail(agent) : guidance.detail;
   const label = primary
     ? stalePrimary
       ? tx("{window} needs refresh", "{window} 需刷新", {
@@ -620,20 +672,16 @@ function renderWindowRows(agent) {
 }
 
 function renderWindowRow(snapshot) {
-  const reset = resetShortSummary(snapshot.resetAt);
-  const resetTitle = snapshot.resetAt
-    ? tx("Reported reset {time}", "报告重置：{time}", {
-        time: formatTimestamp(snapshot.resetAt, { long: true })
-      })
-    : tx("No reported reset", "未报告重置时间");
+  const timing = snapshotTimingDetail(snapshot);
+  const timingTitle = snapshotTimingTitle(snapshot);
   const used = formatUsedText(snapshot);
   const detailParts = [
     used ? tx("{amount} used", "已用 {amount}", { amount: used }) : "",
-    reset
+    timing
   ].filter(Boolean);
 
   return `
-    <div class="mini-window-row ${escapeHtml(windowMeterClass(snapshot))}" title="${escapeHtml(resetTitle)}">
+    <div class="mini-window-row ${escapeHtml(windowMeterClass(snapshot))}" title="${escapeHtml(timingTitle)}">
       <div class="mini-window-heading">
         <span>${escapeHtml(windowLabel(snapshot.windowType))}</span>
         <strong>${escapeHtml(formatRemainingText(snapshot))}</strong>
@@ -981,45 +1029,84 @@ function meterValue(snapshot) {
   return 0;
 }
 
-function resetShortSummary(value) {
-  if (!value) {
-    return tx("reset --", "重置 --");
-  }
-
-  return tx("reset {time}", "{time}重置", {
-    time: formatResetDistance(value)
-  });
-}
-
-function snapshotDetail(snapshot) {
+function agentDetail(agent) {
+  const snapshots = prioritizeSnapshots(agent.snapshots ?? [], agent.primarySnapshot);
+  const timingParts = snapshots
+    .slice(0, agent.agent === "claude" ? 2 : 1)
+    .map((snapshot) => snapshotTimingDetail(snapshot, { includeWindow: true }))
+    .filter(Boolean);
+  const observedAt = latestObservedAt(snapshots) ?? agent.primarySnapshot?.observedAt;
+  const shouldShowUpdate = agent.agent !== "claude" || timingParts.length < 2;
   const parts = [
-    snapshotTimingDetail(snapshot),
-    tx("updated {time}", "更新于 {time}", {
-      time: formatRelative(snapshot.observedAt)
-    })
+    ...timingParts,
+    shouldShowUpdate
+      ? tx("updated {time}", "更新于 {time}", {
+          time: formatRelative(observedAt)
+        })
+      : ""
   ].filter(Boolean);
 
-  if (snapshot.freshness?.status === "stale") {
-    parts.push(staleReasonLabel(snapshot));
+  if (agent.primarySnapshot?.freshness?.status === "stale") {
+    parts.push(staleReasonLabel(agent.primarySnapshot));
   }
 
   return parts.join(" / ");
 }
 
-function snapshotTimingDetail(snapshot) {
+function snapshotTimingDetail(snapshot, options = {}) {
+  if (!snapshot) {
+    return "";
+  }
+
+  const prefix = options.includeWindow
+    ? `${windowLabel(snapshot.windowType)} `
+    : "";
+
   if (snapshot?.resetAt) {
-    return tx("reset {time}", "{time}重置", {
+    return tx("{window}reset {time}", "{window}{time}重置", {
+      window: prefix,
       time: formatResetDistance(snapshot.resetAt)
     });
   }
 
   if (snapshot?.expiresAt) {
-    return tx("expires {time}", "{time}过期", {
+    return tx("{window}refresh {time}", "{window}{time}刷新", {
+      window: prefix,
       time: formatResetDistance(snapshot.expiresAt)
     });
   }
 
-  return "";
+  return tx("{window}reset --", "{window}重置 --", {
+    window: prefix
+  });
+}
+
+function snapshotTimingTitle(snapshot) {
+  if (snapshot?.resetAt) {
+    return tx("Reported reset {time}", "报告重置：{time}", {
+      time: formatTimestamp(snapshot.resetAt, { long: true })
+    });
+  }
+
+  if (snapshot?.expiresAt) {
+    return tx("Refresh local sample by {time}", "本地样本需刷新：{time}", {
+      time: formatTimestamp(snapshot.expiresAt, { long: true })
+    });
+  }
+
+  return tx("No reported reset", "未报告重置时间");
+}
+
+function latestObservedAt(snapshots) {
+  const timestamps = snapshots
+    .map((snapshot) => Date.parse(snapshot.observedAt))
+    .filter((timestamp) => !Number.isNaN(timestamp));
+
+  if (timestamps.length === 0) {
+    return undefined;
+  }
+
+  return new Date(Math.max(...timestamps)).toISOString();
 }
 
 function formatRemainingText(snapshot) {
@@ -1048,7 +1135,7 @@ function staleReasonLabel(snapshot) {
   }
 
   if (snapshot?.freshness?.reason === "source_marked_stale" || snapshot?.stale) {
-    return tx("marked stale by source", "数据源标记过期");
+    return tx("marked stale by source", "数据源要求刷新");
   }
 
   return tx("needs fresh data", "需要新数据");

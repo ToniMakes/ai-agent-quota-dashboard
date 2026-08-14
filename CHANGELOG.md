@@ -93,7 +93,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ### Changed
 
-- Mini panel quota cards now replace visible source labels with reset/expiry timing plus the last update time
+- Mini panel quota cards now replace visible source labels with window-level reset or refresh timing; the merged Claude card shows both 5h and weekly timing when available
 
 ### Fixed
 
