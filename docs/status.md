@@ -17,7 +17,7 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The core MVP is no 
 - Strict real-data readiness checks shared by CLI, Settings, tray, and mini surfaces
 - Electron desktop shell with tray mini panel, always-on-top widget, safe AIQD-only shortcuts, and first-run deep links
 - Dashboard and mini quota cards hide duplicate primary-window rows while keeping extra windows, such as Claude Code's 5-hour quota, visible as progress rows
-- Mini quota cards show reset or expiry timing plus update time instead of exposing source labels in the compact surface
+- Mini quota cards show window-level reset or refresh timing instead of exposing source labels in the compact surface; the merged Claude card can show both 5h and weekly timing
 - Windows NSIS installer build via `electron-builder`
 - Packaged desktop runtime starts the local backend through Electron's bundled Node runtime
 - Opt-in packaged launch-at-login, with installer checkbox off by default and a reversible Settings toggle
@@ -96,7 +96,12 @@ The fix uses the full product name for Electron app data, enables NSIS app-data 
 - Release page: https://github.com/isToniLiu/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.3
 - Asset SHA256: `1F8D300E6A30E54426A1751770EF77278C53D334C94BAB0F468B2A2F2C12BEAF`
 
-The mini panel now replaces visible source labels such as `Official CLI` or `Local snapshot` with reset or expiry timing plus the last update time. The clean Windows uninstall retest remains relevant and should now use the latest RC installer.
+`v0.1.0-rc.4` replaces `v0.1.0-rc.3` for mini timing retest after feedback that the `expires` / `过期` wording was unclear and that Claude should expose both 5h and weekly timing:
+
+- Release page: https://github.com/isToniLiu/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.4
+- Asset SHA256: `4FEE3E936DAD393C885257A0F8E5AEB58116F125045047935BDB9439FF40C347`
+
+The mini panel now shows `reset` / `重置` only for real reset timestamps, uses `refresh` / `刷新` for local freshness deadlines, and shows both 5h and weekly timing on the merged Claude card. The clean Windows uninstall retest remains relevant and should now use the latest RC installer.
 
 ## Current Product State
 
@@ -110,6 +115,6 @@ Claude Desktop-only coverage was the highest product priority before broad publi
 
 ## Next Focus
 
-1. Retest mini panel timing copy and uninstall cleanup from the `v0.1.0-rc.3` installer on the clean Windows machine while SignPath review is pending.
+1. Retest mini panel 5h/weekly timing copy and uninstall cleanup from the `v0.1.0-rc.4` installer on the clean Windows machine while SignPath review is pending.
 2. After SignPath approval, configure GitHub secrets/variables and rerun the Windows package workflow with signing enabled.
 3. Run a final checklist/CI pass immediately before tagging `v0.1.0`.
