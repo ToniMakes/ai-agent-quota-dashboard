@@ -89,7 +89,7 @@
       "shortcutName": "AI Agent Quota Dashboard",
       "include": "build/installer.nsh",
       "runAfterFinish": true,
-      "deleteAppDataOnUninstall": false
+      "deleteAppDataOnUninstall": true
     }
   },
   "devDependencies": {

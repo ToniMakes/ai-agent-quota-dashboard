@@ -81,6 +81,8 @@ The clean Windows VM first-run protocol is now spelled out in [docs/real-data-tr
 
 Clean Windows VM trial tracking issue: https://github.com/isToniLiu/ai-agent-quota-dashboard/issues/1
 
+Friend clean-Windows testing of `v0.1.0-rc.1` found leftover Electron app data at `%APPDATA%\AI Agent Quota` after uninstall. The follow-up fix is to use the full product name for Electron app data, enable NSIS app-data cleanup, and explicitly remove the old RC1 short-name app data directory during uninstall. This needs a `v0.1.0-rc.2` package and uninstall retest.
+
 ## Current Product State
 
 The app is suitable for local real-data dogfooding by the maintainer and technically curious early testers. For the first public preview, normal users should install a packaged desktop build and finish setup from Settings. Source checkout remains the developer fallback path.
