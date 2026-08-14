@@ -85,7 +85,7 @@ let saveWidgetBoundsTimer;
 let showPanelWhenReady = false;
 let showDashboardWhenReady = false;
 
-app.setName("AI Agent Quota");
+app.setName("AI Agent Quota Dashboard");
 app.setAppUserModelId("com.isToniLiu.ai-agent-quota-dashboard");
 
 if (smokeUserDataDir) {

@@ -93,6 +93,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ### Fixed
 
+- Windows uninstall now removes Electron app data left under `%APPDATA%\AI Agent Quota` by earlier RC builds
 - Claude Code statusline reset times now also expire quota snapshots, so old 5-hour windows stop looking fresh after their reported reset
 - Claude Code statusline labels are clearer in dashboard and mini surfaces to avoid implying Claude desktop app usage-limit support
 - Dashboard and mini surfaces no longer show stale primary quota percentages as current remaining quota

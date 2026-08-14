@@ -96,6 +96,7 @@ Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` h
 - [x] Startup launches only the tray shell and local backend unless setup or recovery needs attention
 - [x] Disabling startup removes AIQD's OS startup entry
 - [x] Uninstall or app removal does not leave an orphaned startup entry
+- [ ] Uninstall removes AIQD-owned Electron app data such as `%APPDATA%\AI Agent Quota`
 - [x] Startup behavior preserves the same local-first privacy boundary as manual launch
 
 ## Optional
