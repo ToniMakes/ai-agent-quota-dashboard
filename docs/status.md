@@ -79,6 +79,8 @@ The latest installed-app trial used the maintainer's existing Windows profile an
 
 The clean Windows VM first-run protocol is now spelled out in [docs/real-data-trial.md](real-data-trial.md), including startup checkbox off/on passes, Settings startup toggle checks, uninstall cleanup, and fresh Codex, Claude Desktop, and Claude Code readiness. It still needs to be executed on an actual clean Windows profile or VM.
 
+Clean Windows VM trial tracking issue: https://github.com/isToniLiu/ai-agent-quota-dashboard/issues/1
+
 ## Current Product State
 
 The app is suitable for local real-data dogfooding by the maintainer and technically curious early testers. For the first public preview, normal users should install a packaged desktop build and finish setup from Settings. Source checkout remains the developer fallback path.
