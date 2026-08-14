@@ -28,7 +28,7 @@ Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` h
 - [ ] Normal-user first run can reach Settings without typing `npm`, `node`, or PowerShell commands
 - [x] Claude Desktop local plan usage adapter is implemented, tested, and clearly labeled for desktop-only users, as an alternative to Claude Code CLI
 - [x] Claude setup offers an explicit install action when Claude Code CLI is missing and a separate connect action for local quota capture
-- [ ] CI is green on `main`
+- [x] CI is green on `main`
 - [ ] `CHANGELOG.md` has a release entry
 - [x] README describes current capabilities accurately
 - [x] README explains the installer path for normal users and labels source mode as a developer fallback
@@ -100,8 +100,9 @@ Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` h
 
 ## Optional
 
-- [ ] Browser smoke test of the local dashboard
-- [ ] Fresh clone / fresh machine real-data trial
+- [x] Browser smoke test of the local dashboard
+- [x] Fresh clone developer fallback trial
+- [ ] Fresh machine real-data trial
 - [x] GitHub release notes drafted from `CHANGELOG.md`
 - [x] Screenshots refreshed when the UI changes materially
 
