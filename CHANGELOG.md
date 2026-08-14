@@ -8,12 +8,14 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ### Added
 
+- SignPath Foundation code signing policy and a manual Windows package workflow that can upload unsigned RC artifacts or submit approved release artifacts for signing
 - Claude Desktop local `plan-usage-history.json` adapter, an alternative Claude quota source that needs no CLI install
 - Claude readiness now passes from either Claude Code statusline or Claude Desktop; the Claude Code CLI is no longer required
 - Settings, Doctor, and the first-run setup wizard show Claude Desktop status alongside Claude Code CLI as alternative sources
 - Installer-first v0.1.0 desktop-preview distribution target and release notes draft
 - Windows NSIS installer build through `electron-builder`
 - Packaged desktop runtime starts the local backend through Electron's bundled Node runtime, so users do not need Node.js
+- Opt-in launch-at-login for packaged desktop builds, with a default-off installer checkbox, Settings toggle, background tray startup, and uninstall cleanup
 - Collapsible first-run setup details controlled by the Codex and Claude setup buttons
 - Mini panel now hides duplicate primary quota rows and uses compact secondary-window bars, with Claude Code's 5-hour quota highlighted in yellow
 - Main dashboard quota windows were decluttered by moving primary-window used/reset details below the main meter and keeping extra windows, such as Claude Code's 5-hour quota, as separate progress rows
@@ -96,6 +98,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Dashboard and mini surfaces no longer show stale primary quota percentages as current remaining quota
 - Expired quota cards now explain that AIQD needs a fresh local snapshot instead of implying the quota is used up
 - Desktop shortcut launches now open the main dashboard even when AIQD is already running in the tray
+- Background startup launches no longer open the mini panel when no setup or recovery guidance is needed
 - SQLite refreshes now wait briefly for an existing writer instead of failing immediately on a short-lived database lock
 - Desktop first-run smoke now isolates provider data paths and exits non-zero when its deep-link assertion fails
 - Dashboard quota cards now clarify remaining quota versus official pages that display used quota

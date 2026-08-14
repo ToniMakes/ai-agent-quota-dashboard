@@ -24,13 +24,19 @@ const { tmpdir } = require("node:os");
 const path = require("node:path");
 const {
   buildSmokeBackendEnv,
+  buildLaunchAtStartupStatus,
   buildTrayMenuTemplate,
   dashboardPath,
   firstRunGuideTarget,
   formatStartupError,
+  isBackgroundLaunch,
+  launchAtStartupQueryOptions,
+  launchAtStartupSetOptions,
+  parseLaunchAtStartupCliValue,
   resolveDesktopShortcuts,
   resolveWidgetBounds: resolveSavedWidgetBounds,
   shouldRefreshForClaudeStatusline,
+  shouldShowPanelFromLaunch,
   shouldOpenDashboardFromLaunch,
   summarizeDesktopStatus
 } = require("./helpers.cjs");
@@ -47,6 +53,15 @@ const widgetSize = { width: 340, height: 196 };
 const smokeMode = process.argv.includes("--smoke");
 const firstRunGuideSmokeMode = process.argv.includes("--smoke-first-run-guide");
 const smokeLikeMode = smokeMode || firstRunGuideSmokeMode;
+let launchAtStartupCliValue;
+let launchAtStartupCliError;
+
+try {
+  launchAtStartupCliValue = parseLaunchAtStartupCliValue(process.argv);
+} catch (error) {
+  launchAtStartupCliError = error;
+}
+
 const smokeUserDataDir = smokeLikeMode
   ? path.join(tmpdir(), `aiqd-desktop-smoke-${process.pid}`)
   : undefined;
@@ -80,9 +95,35 @@ if (smokeUserDataDir) {
   app.disableHardwareAcceleration();
 }
 
-const hasSingleInstanceLock = app.requestSingleInstanceLock();
-
-if (!hasSingleInstanceLock) {
+if (launchAtStartupCliError) {
+  console.error(
+    launchAtStartupCliError instanceof Error
+      ? launchAtStartupCliError.message
+      : String(launchAtStartupCliError)
+  );
+  app.exit(1);
+} else if (launchAtStartupCliValue !== undefined) {
+  app
+    .whenReady()
+    .then(() => {
+      const status = setLaunchAtStartupEnabled(launchAtStartupCliValue);
+      console.log(
+        JSON.stringify(
+          {
+            ok: true,
+            status
+          },
+          null,
+          2
+        )
+      );
+      app.exit(0);
+    })
+    .catch((error) => {
+      console.error(error instanceof Error ? error.message : String(error));
+      app.exit(1);
+    });
+} else if (!app.requestSingleInstanceLock()) {
   console.log("AIQD desktop is already running; focusing the existing instance.");
   app.quit();
 } else {
@@ -91,12 +132,17 @@ if (!hasSingleInstanceLock) {
       return;
     }
 
+    if (isBackgroundLaunch(commandLine)) {
+      return;
+    }
+
     const wantsDashboard = shouldOpenDashboardFromLaunch(commandLine);
+    const wantsPanel = shouldShowPanelFromLaunch(commandLine);
 
     if (!baseUrl || !tray) {
       if (wantsDashboard) {
         showDashboardWhenReady = true;
-      } else {
+      } else if (wantsPanel) {
         showPanelWhenReady = true;
       }
       return;
@@ -104,7 +150,7 @@ if (!hasSingleInstanceLock) {
 
     if (wantsDashboard) {
       openDashboardWindow();
-    } else {
+    } else if (wantsPanel) {
       showPanelWindow();
     }
   });
@@ -178,9 +224,11 @@ async function startDesktopApp() {
   if (showDashboardWhenReady || shouldOpenDashboardFromLaunch(process.argv)) {
     showDashboardWhenReady = false;
     void openFirstRunGuide({ readyFallback: "dashboard" });
-  } else if (showPanelWhenReady) {
+  } else if (showPanelWhenReady || shouldShowPanelFromLaunch(process.argv)) {
     showPanelWhenReady = false;
     showPanelWindow();
+  } else if (isBackgroundLaunch(process.argv)) {
+    void openFirstRunGuide({ quietWhenReady: true });
   } else {
     void openFirstRunGuide();
   }
@@ -297,6 +345,12 @@ function registerIpc() {
     openDashboardWindow(view, target);
     panelWindow?.hide();
   });
+
+  ipcMain.handle("launch-at-startup:get", () => getLaunchAtStartupStatus());
+
+  ipcMain.handle("launch-at-startup:set", (_event, enabled) =>
+    setLaunchAtStartupEnabled(enabled === true)
+  );
 
   ipcMain.handle("toggle-widget", () => {
     toggleWidgetWindow();
@@ -555,6 +609,8 @@ async function openFirstRunGuide(options = {}) {
 
     if (options.readyFallback === "dashboard") {
       openDashboardWindow();
+    } else if (options.quietWhenReady) {
+      return;
     } else {
       showPanelWindow();
     }
@@ -624,6 +680,41 @@ function secureWebPreferences() {
     preload: preloadPath,
     sandbox: true
   };
+}
+
+function getLaunchAtStartupStatus() {
+  if (!app.isPackaged || !["win32", "darwin"].includes(process.platform)) {
+    return buildLaunchAtStartupStatus({
+      isPackaged: app.isPackaged,
+      platform: process.platform
+    });
+  }
+
+  const settings = app.getLoginItemSettings(
+    launchAtStartupQueryOptions(process.execPath, process.platform)
+  );
+
+  return buildLaunchAtStartupStatus({
+    isPackaged: true,
+    platform: process.platform,
+    settings
+  });
+}
+
+function setLaunchAtStartupEnabled(enabled) {
+  const current = getLaunchAtStartupStatus();
+
+  if (!current.canConfigure) {
+    throw new Error(
+      "Launch at startup is available only in packaged Windows or macOS desktop builds."
+    );
+  }
+
+  app.setLoginItemSettings(
+    launchAtStartupSetOptions(enabled, process.execPath, process.platform)
+  );
+
+  return getLaunchAtStartupStatus();
 }
 
 function createTrayIcon() {

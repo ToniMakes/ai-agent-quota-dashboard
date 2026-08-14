@@ -25,6 +25,9 @@ const state = {
   codexSnapshotStatus: undefined,
   desktopShortcutsStatus: undefined,
   doctorChecks: [],
+  launchAtStartupPending: false,
+  launchAtStartupSaveStatus: undefined,
+  launchAtStartupStatus: undefined,
   pathsStatus: undefined,
   refreshRuns: [],
   refreshStatus: undefined,
@@ -53,6 +56,7 @@ const elements = {
   refreshRunList: document.querySelector("#refresh-run-list"),
   resetList: document.querySelector("#reset-list"),
   settingsContent: document.querySelector("#settings-content"),
+  startupContent: document.querySelector("#startup-content"),
   tabs: document.querySelectorAll(".tab"),
   views: document.querySelectorAll(".view")
 };
@@ -90,6 +94,14 @@ document.addEventListener("change", (event) => {
   const target = event.target;
 
   if (!(target instanceof Element)) {
+    return;
+  }
+
+  if (
+    target instanceof HTMLInputElement &&
+    target.matches("[data-launch-at-startup-toggle]")
+  ) {
+    void setLaunchAtStartup(target.checked);
     return;
   }
 
@@ -322,6 +334,7 @@ async function load() {
     pathsResponse,
     refreshRunsResponse,
     setupResponse,
+    startupStatus,
     trialReadinessResponse
   ] = await Promise.all([
     fetch("/api/agents"),
@@ -332,6 +345,7 @@ async function load() {
     fetch("/api/setup/local-paths"),
     fetch("/api/refresh-runs"),
     fetch("/api/setup/claude-statusline"),
+    loadLaunchAtStartupStatus(),
     fetch("/api/trial-readiness")
   ]);
   const agentsPayload = await agentsResponse.json();
@@ -352,10 +366,36 @@ async function load() {
   state.pathsStatus = pathsPayload.status;
   state.refreshRuns = refreshRunsPayload.runs ?? [];
   state.setupStatus = setupPayload.status;
+  state.launchAtStartupStatus = startupStatus;
   state.trialReadiness = trialReadinessPayload.readiness;
   state.generatedAt = agentsPayload.generatedAt;
 
   render();
+}
+
+async function loadLaunchAtStartupStatus() {
+  if (!window.aiqdDesktop?.getLaunchAtStartup) {
+    return {
+      canConfigure: false,
+      enabled: false,
+      platform: "browser",
+      reason: "desktop_bridge_unavailable",
+      supported: false
+    };
+  }
+
+  try {
+    return await window.aiqdDesktop.getLaunchAtStartup();
+  } catch (error) {
+    return {
+      canConfigure: false,
+      enabled: false,
+      error: error instanceof Error ? error.message : String(error),
+      platform: "unknown",
+      reason: "status_error",
+      supported: false
+    };
+  }
 }
 
 function render() {
@@ -373,6 +413,7 @@ function render() {
   renderRealDataOverview();
   renderCodexSnapshotSettings();
   renderSettings();
+  renderDesktopStartupSettings();
   renderPathSettings();
   renderDesktopShortcutsSettings();
   scheduleStatuslineWatch();
@@ -4376,6 +4417,232 @@ function formatLatestSnapshotStatus(status) {
   return parts.join("\n");
 }
 
+async function setLaunchAtStartup(enabled) {
+  if (state.launchAtStartupPending) {
+    return;
+  }
+
+  if (!window.aiqdDesktop?.setLaunchAtStartup) {
+    state.launchAtStartupSaveStatus = {
+      kind: "warning",
+      message: tx(
+        "Open Settings from the packaged desktop app to change startup.",
+        "请从打包后的桌面应用打开 Settings 后再修改启动项。"
+      )
+    };
+    renderDesktopStartupSettings();
+    return;
+  }
+
+  state.launchAtStartupPending = true;
+  state.launchAtStartupSaveStatus = {
+    kind: "pending",
+    message: enabled
+      ? tx("Enabling startup...", "正在开启开机启动...")
+      : tx("Disabling startup...", "正在关闭开机启动...")
+  };
+  renderDesktopStartupSettings();
+
+  try {
+    state.launchAtStartupStatus = await window.aiqdDesktop.setLaunchAtStartup(
+      enabled
+    );
+    state.launchAtStartupSaveStatus = {
+      kind: "healthy",
+      message: enabled
+        ? tx("AIQD will start in the tray when you sign in.", "AIQD 会在登录系统时从托盘启动。")
+        : tx("AIQD startup entry was removed.", "AIQD 的开机启动项已移除。")
+    };
+  } catch (error) {
+    state.launchAtStartupStatus = await loadLaunchAtStartupStatus();
+    state.launchAtStartupSaveStatus = {
+      kind: "warning",
+      message: tx("Startup setting could not be changed.", "无法修改开机启动设置。"),
+      detail: error instanceof Error ? error.message : String(error)
+    };
+  } finally {
+    state.launchAtStartupPending = false;
+    renderDesktopStartupSettings();
+  }
+}
+
+function renderDesktopStartupSettings() {
+  if (!elements.startupContent) {
+    return;
+  }
+
+  const status = state.launchAtStartupStatus;
+
+  if (!status) {
+    elements.startupContent.innerHTML = `<p class="empty">${escapeHtml(
+      tx("Startup status unavailable.", "开机启动状态不可用。")
+    )}</p>`;
+    return;
+  }
+
+  const canConfigure = status.canConfigure === true;
+  const enabled = status.enabled === true;
+  const pending = state.launchAtStartupPending;
+  const disabled = !canConfigure || pending;
+  const statusMessage = state.launchAtStartupSaveStatus;
+  const statusMessageBadgeClass =
+    statusMessage?.kind === "pending" ? "warning" : statusMessage?.kind;
+
+  elements.startupContent.innerHTML = `
+    <div class="setup-watch-notice">
+      <div>
+        <strong>${escapeHtml(tx("Launch at startup", "开机启动"))}</strong>
+        <div class="settings-detail">${escapeHtml(
+          launchAtStartupDetail(status)
+        )}</div>
+      </div>
+      <span class="badge ${escapeHtml(launchAtStartupBadgeClass(status))}">${escapeHtml(
+        launchAtStartupStatusLabel(status)
+      )}</span>
+    </div>
+    <label class="toggle-row ${disabled ? "is-disabled" : ""}">
+      <input
+        type="checkbox"
+        data-launch-at-startup-toggle
+        ${enabled ? "checked" : ""}
+        ${disabled ? "disabled" : ""}
+      />
+      <span class="toggle-switch" aria-hidden="true"></span>
+      <span>
+        <strong>${escapeHtml(tx("Launch at startup", "开机启动"))}</strong>
+        <span class="settings-detail">${escapeHtml(
+          tx(
+            "Starts only the tray shell and local backend unless setup or recovery needs attention.",
+            "登录时只启动托盘 shell 和本地 backend；只有需要设置或恢复时才打开引导窗口。"
+          )
+        )}</span>
+      </span>
+    </label>
+    ${
+      status.hasDifferentEntry
+        ? `<div class="setup-watch-notice">
+            <div>
+              <strong>${escapeHtml(tx("Different startup entry detected", "检测到不同的启动项"))}</strong>
+              <div class="settings-detail">${escapeHtml(
+                tx(
+                  "Windows reports this executable can launch at sign-in with different arguments. The AIQD-managed background entry is still off.",
+                  "Windows 显示这个程序会用不同参数在登录时启动；AIQD 管理的后台启动项仍处于关闭状态。"
+                )
+              )}</div>
+            </div>
+            <span class="badge warning">${escapeHtml(tx("review", "检查"))}</span>
+          </div>`
+        : ""
+    }
+    ${
+      statusMessage
+        ? `<div class="setup-watch-notice">
+            <div>
+              <strong>${escapeHtml(statusMessage.message)}</strong>
+              ${
+                statusMessage.detail
+                  ? `<div class="settings-detail">${escapeHtml(statusMessage.detail)}</div>`
+                  : ""
+              }
+            </div>
+            <span class="badge ${escapeHtml(statusMessageBadgeClass)}">${escapeHtml(
+              statusMessage.kind === "pending"
+                ? tx("working", "处理中")
+                : statusMessage.kind === "healthy"
+                  ? tx("saved", "已保存")
+                  : tx("check", "检查")
+            )}</span>
+          </div>`
+        : ""
+    }
+  `;
+}
+
+function launchAtStartupStatusLabel(status) {
+  if (status.requiresApproval) {
+    return tx("Needs approval", "需要批准");
+  }
+
+  if (status.enabled) {
+    return tx("On", "开启");
+  }
+
+  if (status.hasDifferentEntry) {
+    return tx("Different entry", "不同启动项");
+  }
+
+  if (status.supported === false || status.canConfigure === false) {
+    return tx("Unavailable", "不可用");
+  }
+
+  return tx("Off", "关闭");
+}
+
+function launchAtStartupBadgeClass(status) {
+  if (status.requiresApproval || status.hasDifferentEntry) {
+    return "warning";
+  }
+
+  if (status.enabled) {
+    return "healthy";
+  }
+
+  return "stale";
+}
+
+function launchAtStartupDetail(status) {
+  if (status.reason === "desktop_bridge_unavailable") {
+    return tx(
+      "Open this page from the packaged desktop app to control startup.",
+      "请从打包后的桌面应用打开此页面来控制开机启动。"
+    );
+  }
+
+  if (status.reason === "packaged_app_required") {
+    return tx(
+      "Available after installing the packaged desktop app. Source mode does not create an official startup entry.",
+      "安装打包后的桌面应用后可用；源码模式不会创建正式开机启动项。"
+    );
+  }
+
+  if (status.reason === "unsupported_platform") {
+    return tx(
+      "Startup control is supported for packaged Windows and macOS desktop builds.",
+      "开机启动控制支持打包后的 Windows 和 macOS 桌面版本。"
+    );
+  }
+
+  if (status.reason === "status_error") {
+    return tx("Could not read the OS startup state.", "无法读取系统启动项状态。");
+  }
+
+  if (status.reason === "requires_approval") {
+    return tx(
+      "The OS may require approval before AIQD can launch at sign-in.",
+      "系统可能需要批准后，AIQD 才能在登录时启动。"
+    );
+  }
+
+  if (status.reason === "different_entry_detected") {
+    return tx(
+      "The AIQD-managed background startup entry is off, but Windows reports another entry for this executable.",
+      "AIQD 管理的后台启动项已关闭，但 Windows 报告此程序还有另一条启动项。"
+    );
+  }
+
+  if (status.enabled) {
+    return tx(
+      "AIQD will start in the tray when you sign in.",
+      "AIQD 会在登录系统时从托盘启动。"
+    );
+  }
+
+  return tx(
+    "AIQD will not add a startup entry unless you enable it here or in the installer.",
+    "除非你在这里或安装器里开启，否则 AIQD 不会添加开机启动项。"
+  );
+}
+
 function renderPathSettings() {
   const status = state.pathsStatus;
 
@@ -5039,4 +5306,3 @@ function formatDuration(seconds) {
 
   return `${seconds}s`;
 }
-

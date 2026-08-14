@@ -1,5 +1,8 @@
 const path = require("node:path");
 
+const launchAtStartupName = "AI Agent Quota Dashboard";
+const launchAtStartupBackgroundArg = "--background";
+
 function summarizeAgents(agents, options = {}) {
   if (!Array.isArray(agents) || agents.length === 0) {
     return "No agents configured";
@@ -83,13 +86,169 @@ function dashboardPath(view, target) {
 }
 
 function shouldOpenDashboardFromLaunch(commandLine = []) {
+  return desktopLaunchMode(commandLine) === "dashboard";
+}
+
+function shouldShowPanelFromLaunch(commandLine = []) {
+  return desktopLaunchMode(commandLine) === "mini";
+}
+
+function isBackgroundLaunch(commandLine = []) {
+  return desktopLaunchMode(commandLine) === "background";
+}
+
+function desktopLaunchMode(commandLine = []) {
   if (commandLine.includes("--open-dashboard")) {
+    return "dashboard";
+  }
+
+  if (commandLine.includes("--open-mini")) {
+    return "mini";
+  }
+
+  if (
+    commandLine.includes(launchAtStartupBackgroundArg) ||
+    commandLine.includes("--tray")
+  ) {
+    return "background";
+  }
+
+  return "dashboard";
+}
+
+function launchAtStartupArgsForPlatform(platform = process.platform) {
+  return platform === "win32" ? [launchAtStartupBackgroundArg] : [];
+}
+
+function launchAtStartupQueryOptions(executablePath, platform = process.platform) {
+  if (platform !== "win32") {
+    return {};
+  }
+
+  return {
+    args: launchAtStartupArgsForPlatform(platform),
+    path: executablePath
+  };
+}
+
+function launchAtStartupSetOptions(
+  enabled,
+  executablePath,
+  platform = process.platform
+) {
+  if (platform === "win32") {
+    return {
+      args: launchAtStartupArgsForPlatform(platform),
+      enabled,
+      name: launchAtStartupName,
+      openAtLogin: enabled,
+      path: executablePath
+    };
+  }
+
+  if (platform === "darwin") {
+    return {
+      openAsHidden: true,
+      openAtLogin: enabled
+    };
+  }
+
+  return {
+    openAtLogin: enabled
+  };
+}
+
+function buildLaunchAtStartupStatus(input = {}) {
+  const platform = input.platform ?? process.platform;
+  const platformSupported = platform === "win32" || platform === "darwin";
+
+  if (!platformSupported) {
+    return {
+      canConfigure: false,
+      enabled: false,
+      platform,
+      reason: "unsupported_platform",
+      supported: false
+    };
+  }
+
+  if (input.isPackaged !== true) {
+    return {
+      canConfigure: false,
+      enabled: false,
+      platform,
+      reason: "packaged_app_required",
+      supported: false
+    };
+  }
+
+  const settings = input.settings ?? {};
+  const enabled = Boolean(settings.openAtLogin);
+  const executableWillLaunchAtLogin =
+    platform === "win32" ? Boolean(settings.executableWillLaunchAtLogin) : undefined;
+  const hasDifferentEntry = Boolean(
+    platform === "win32" && executableWillLaunchAtLogin && !enabled
+  );
+  const status =
+    typeof settings.status === "string" ? settings.status : undefined;
+  const requiresApproval = status === "requires-approval";
+
+  return {
+    canConfigure: true,
+    enabled,
+    executableWillLaunchAtLogin,
+    hasDifferentEntry,
+    launchBehavior: "background",
+    platform,
+    reason: requiresApproval
+      ? "requires_approval"
+      : hasDifferentEntry
+        ? "different_entry_detected"
+        : enabled
+          ? "enabled"
+          : "disabled",
+    requiresApproval,
+    status,
+    supported: true
+  };
+}
+
+function parseLaunchAtStartupCliValue(commandLine = []) {
+  const flags = ["--set-launch-at-login", "--set-launch-at-startup"];
+
+  for (const flag of flags) {
+    const exactIndex = commandLine.indexOf(flag);
+
+    if (exactIndex !== -1) {
+      const nextValue = commandLine[exactIndex + 1];
+      return parseLaunchAtStartupBoolean(
+        nextValue && !nextValue.startsWith("-") ? nextValue : "true",
+        flag
+      );
+    }
+
+    const inline = commandLine.find((value) => value.startsWith(`${flag}=`));
+
+    if (inline) {
+      return parseLaunchAtStartupBoolean(inline.slice(flag.length + 1), flag);
+    }
+  }
+
+  return undefined;
+}
+
+function parseLaunchAtStartupBoolean(value, flag) {
+  const normalized = String(value).trim().toLowerCase();
+
+  if (["1", "true", "yes", "on", "enabled", "enable"].includes(normalized)) {
     return true;
   }
 
-  return !["--background", "--open-mini", "--tray"].some((flag) =>
-    commandLine.includes(flag)
-  );
+  if (["0", "false", "no", "off", "disabled", "disable"].includes(normalized)) {
+    return false;
+  }
+
+  throw new Error(`${flag} must be true or false.`);
 }
 
 function firstRunGuideTarget(agents, readiness) {
@@ -441,16 +600,24 @@ function buildSmokeBackendEnv(baseEnv = {}, smokeUserDataDir) {
 
 module.exports = {
   buildSmokeBackendEnv,
+  buildLaunchAtStartupStatus,
   buildTrayMenuTemplate,
   clampBoundsToWorkArea,
   dashboardPath,
+  desktopLaunchMode,
   formatResetDistance,
   formatStartupError,
   firstRunGuideTarget,
   hasClaudeWaitingState,
   isSavedWidgetBounds,
+  isBackgroundLaunch,
+  launchAtStartupArgsForPlatform,
+  launchAtStartupQueryOptions,
+  launchAtStartupSetOptions,
+  parseLaunchAtStartupCliValue,
   resolveWidgetBounds,
   resolveDesktopShortcuts,
+  shouldShowPanelFromLaunch,
   shouldRefreshForClaudeStatusline,
   shouldOpenDashboardFromLaunch,
   summarizeAgent,

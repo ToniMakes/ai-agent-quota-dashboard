@@ -430,6 +430,74 @@ h2 {
   padding-top: 0;
 }
 
+.toggle-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.toggle-row input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toggle-row.is-disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 86%, #000 14%);
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
+}
+
+.toggle-switch::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--muted);
+  content: "";
+  transition:
+    background 120ms ease,
+    transform 120ms ease;
+}
+
+.toggle-row input:checked + .toggle-switch {
+  border-color: color-mix(in srgb, var(--accent) 72%, #000 28%);
+  background: color-mix(in srgb, var(--accent) 24%, var(--panel));
+}
+
+.toggle-row input:checked + .toggle-switch::after {
+  background: var(--accent);
+  transform: translateX(18px);
+}
+
+.toggle-row input:focus-visible + .toggle-switch {
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  outline-offset: 2px;
+}
+
+.toggle-row .settings-detail {
+  display: block;
+  margin-top: 4px;
+}
+
 .quota-window-heading,
 .quota-window-meta {
   display: grid;

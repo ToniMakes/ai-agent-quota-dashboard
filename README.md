@@ -15,7 +15,7 @@ AIQD only reads local files written by desktop apps or CLIs (Codex CLI, Claude C
 
 This repository is preparing the v0.1 desktop preview. The first public preview should be installer-first for normal users: install the app, open the desktop shortcut, then finish setup from Settings. Source mode remains available as a developer fallback before and after the packaged release.
 
-Claude Code CLI is no longer required for Claude coverage: AIQD reads Claude quota from either the Claude Code statusline or Claude Desktop's local `plan-usage-history.json`, and treats them as alternatives, so desktop-only Claude users are already covered. Remaining release gate: a true clean Windows user/VM trial from the installer before broad public release.
+Claude Code CLI is no longer required for Claude coverage: AIQD reads Claude quota from either the Claude Code statusline or Claude Desktop's local `plan-usage-history.json`, and treats them as alternatives, so desktop-only Claude users are already covered. Remaining release gates: SignPath Foundation signing prep, a true clean Windows user/VM trial from the installer, and a final CI/release pass before broad public release.
 
 See [docs/status.md](docs/status.md) for the current project snapshot. The current app includes:
 
@@ -52,6 +52,7 @@ See [docs/status.md](docs/status.md) for the current project snapshot. The curre
 - Local trial scripts for desktop launch, Doctor, and Claude statusline self-test
 - Windows NSIS installer build through `electron-builder`
 - Packaged desktop smoke checks that run without requiring a system Node.js install
+- Opt-in launch-at-login for packaged desktop builds, defaulting off and reversible from Settings
 - Real-data trial preflight command with source-specific next actions
 - Strict real-data readiness check before desktop trials
 - Settings view status for desktop shortcut bindings and overrides
@@ -115,7 +116,7 @@ Normal-user release target:
 
 1. Download the installer from the GitHub Release assets.
    The Windows x64 artifact is named `AI Agent Quota Dashboard-0.1.0-win-x64.exe`.
-2. Run the installer.
+2. Run the installer. The optional `Start AIQD when I sign in` checkbox defaults to off.
 3. Open the AIQD desktop shortcut.
 4. In Settings, click `Set up Codex`, `Set up Claude Code CLI`, or `Check Claude Desktop` to reveal only the setup details you need.
 5. For Claude, either source is enough: if you already use Claude Desktop, AIQD reads its local usage file automatically with nothing to install. If you prefer Claude Code CLI, use `Install Claude Code CLI` if it is missing, then `Connect Claude data`.
@@ -194,6 +195,7 @@ npm run desktop
 It starts the local backend, adds an AI Agent Quota tray icon, and provides:
 
 - a desktop-entry mode, `npm run desktop:open`, that opens the main dashboard window on launch
+- a packaged launch-at-login mode that starts only the tray shell and local backend unless setup or recovery needs attention
 - a tray mini panel that hides when it loses focus
 - an optional always-on-top desktop widget
 - a tray tooltip and menu summary for the current quota state
@@ -214,7 +216,7 @@ Desktop shortcuts do not approve or automate other apps. Override or disable the
 
 Source mode is a development shell. The v0.1 public preview should ship a packaged desktop installer so non-technical users do not need `npm`, `node`, or source checkout steps.
 
-The startup plan is documented in [docs/distribution.md](docs/distribution.md). The installed desktop shortcut should open the main dashboard. Launch-at-login should stay explicit, reversible, and off by default for the first packaged release.
+Startup behavior is documented in [docs/distribution.md](docs/distribution.md). The installed desktop shortcut opens the main dashboard. Launch-at-login is explicit, reversible from Settings, and off by default for the first packaged release.
 
 If the local backend cannot start, the desktop shell shows recovery guidance with the backend error tail and the same Doctor/smoke commands used in development.
 
@@ -238,11 +240,24 @@ For a faster packaged-app smoke test without running the installer:
 
 ```bash
 npm run package:win:dir
-release\win-unpacked\AI Agent Quota Dashboard.exe --smoke
-release\win-unpacked\AI Agent Quota Dashboard.exe --smoke-first-run-guide
+```
+
+Then, from PowerShell:
+
+```powershell
+& ".\release\win-unpacked\AI Agent Quota Dashboard.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process --smoke
+& ".\release\win-unpacked\AI Agent Quota Dashboard.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process --smoke-first-run-guide
 ```
 
 The packaged app starts its local backend through Electron's bundled Node runtime, so normal users do not need to install Node.js or npm.
+
+The installer includes an optional `Start AIQD when I sign in` checkbox. It is off by default; the same setting can be enabled or disabled later from Settings > Desktop Startup.
+
+The formal desktop preview should use a signed installer through SignPath Foundation open-source signing if approval is completed before release. Unsigned RC or preview artifacts may be used for testing and SignPath review, but must be labeled as unsigned. See [docs/code-signing.md](docs/code-signing.md).
+
+### Code Signing Policy
+
+Code signing policy: [docs/code-signing.md](docs/code-signing.md). Free code signing provided by SignPath.io, certificate by SignPath Foundation.
 
 ## Doctor CLI
 
@@ -257,7 +272,7 @@ node dist/index.js doctor --strict
 
 The command prints refresh counts, each agent's quota or empty-state guidance, and the underlying Doctor checks. It exits with code `1` only for blocking failures such as adapter errors or invalid config. Missing quota sources are warnings because a freshly installed app may simply need setup.
 
-Use `npm run trial:ready` or `doctor --strict` before a real-data desktop trial. Strict mode also requires fresh non-demo quota snapshots for every configured agent, so it fails when Codex or Claude Code still needs setup. The Settings real-data overview shows the same strict readiness result through `/api/trial-readiness`.
+Use `npm run trial:ready` or `doctor --strict` before a real-data desktop trial. Strict mode requires fresh non-demo quota snapshots for the required provider groups: Codex plus either Claude Code or Claude Desktop for Claude coverage. The Settings real-data overview shows the same strict readiness result through `/api/trial-readiness`.
 
 Use `npm run trial:preflight` when you want the shortest setup answer first. It runs one local refresh and prints source-specific next actions for Codex, Claude Code, and blocking Doctor issues without modifying external agent settings.
 

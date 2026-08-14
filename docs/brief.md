@@ -140,12 +140,12 @@ v0.5: 浏览器插件读取网页可见 quota，但只做 opt-in
 
 v0.1 目标改为提供安装包或等价桌面发布 artifact。普通用户路径不应要求 `npm`、`node`、PowerShell 或源码 checkout；这些只保留在开发者文档里。
 
-packaged desktop 的开机启动应放在两个位置：
+packaged desktop 的开机启动已经放在两个位置：
 
 - 安装包选项：`Start AIQD when I sign in`
 - App 设置页开关：`Launch at startup`
 
-第一版安装包建议默认不勾选开机启动。AIQD 会启动本地 backend 和托盘壳，所以这个行为必须显式、可逆、容易理解。
+第一版安装包默认不勾选开机启动。AIQD 会启动本地 backend 和托盘壳，所以这个行为必须显式、可逆、容易理解。
 
 行为边界：
 
@@ -867,7 +867,6 @@ v0.2 再考虑：
 
 - system notification
 - installer polish / signing / update channel
-- opt-in launch at startup：安装包里默认关闭，Settings 中可随时开关
 - Settings 自动刷新间隔预设：手动、15 秒、30 秒、1 分钟、5 分钟、15 分钟；文案强调这是 AIQD 本地扫描频率，不保证 provider 一定产生新观测
 - Restore default settings：只重置 AIQD 自己的偏好；清除本地历史和断开 Claude/Codex 外部接入必须拆成高级危险操作
 - 简单趋势/预测
@@ -1054,7 +1053,7 @@ Troubleshooting actions
 6. 准备 README 截图/GIF：主 dashboard、小面板、桌面 widget、Settings 首次接入
 7. 第一版按 installer-first desktop preview 发布；源码运行作为开发者 fallback
 8. 更新 `CHANGELOG.md` release entry，按 `docs/release-checklist.md` 验证后打 tag
-9. v0.2 再考虑签名/update channel、Settings 开机启动开关、Settings 自动刷新间隔预设、恢复默认设置、低额度系统通知、Reset Rhythm 和简单趋势/预测
+9. v0.2 再考虑签名/update channel、Settings 自动刷新间隔预设、恢复默认设置、低额度系统通知、Reset Rhythm 和简单趋势/预测
 10. 只有当 Codex + Claude Code 体验足够可信后，再评估 Gemini CLI / Cursor
 
 ## 18. 给新窗口的启动 Prompt
@@ -1066,7 +1065,7 @@ Troubleshooting actions
 
 请先阅读 docs/status.md、docs/roadmap.md、README.md、CHANGELOG.md 和 docs/brief.md。当前已经实现 TypeScript/Node 本地服务、SQLite、Codex CLI rate_limits 自动检测、Claude Code statusline rate_limits、Dashboard/Doctor/Settings、Electron tray mini panel、always-on-top widget、Windows installer-first 打包配置、严格 trial readiness 和默认英文的中英双语 UI。
 
-下一步请不要扩展新 provider，先围绕“早期用户能否顺利完成真实数据体验”和 v0.2 分发体验继续打磨：检查文档是否最新，跑 npm test / desktop smoke / trial readiness，修复新手引导、跨系统命令、UI 文案、截图、release checklist、安装包范围、开机启动开关方案、Settings 自动刷新间隔预设和恢复默认设置。隐私边界保持不变：不读 cookie、不模拟登录、不上传 prompt/response/source code、不调用隐藏接口。
+下一步请不要扩展新 provider，先围绕“早期用户能否顺利完成真实数据体验”和 v0.2 分发体验继续打磨：检查文档是否最新，跑 npm test / desktop smoke / trial readiness，修复新手引导、跨系统命令、UI 文案、截图、release checklist、安装包范围、Settings 自动刷新间隔预设和恢复默认设置。隐私边界保持不变：不读 cookie、不模拟登录、不上传 prompt/response/source code、不调用隐藏接口。
 ```
 
 ## 19. 核心产品原则

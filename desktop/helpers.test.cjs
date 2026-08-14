@@ -3,15 +3,23 @@ const path = require("node:path");
 const { describe, it } = require("node:test");
 const {
   buildSmokeBackendEnv,
+  buildLaunchAtStartupStatus,
   buildTrayMenuTemplate,
   clampBoundsToWorkArea,
   dashboardPath,
+  desktopLaunchMode,
   formatStartupError,
   firstRunGuideTarget,
   hasClaudeWaitingState,
+  isBackgroundLaunch,
   isSavedWidgetBounds,
+  launchAtStartupArgsForPlatform,
+  launchAtStartupQueryOptions,
+  launchAtStartupSetOptions,
+  parseLaunchAtStartupCliValue,
   resolveDesktopShortcuts,
   resolveWidgetBounds,
+  shouldShowPanelFromLaunch,
   shouldOpenDashboardFromLaunch,
   shouldRefreshForClaudeStatusline,
   summarizeDesktopStatus,
@@ -93,6 +101,7 @@ describe("desktop helpers", () => {
   });
 
   it("opens the dashboard for normal desktop launches", () => {
+    assert.equal(desktopLaunchMode([]), "dashboard");
     assert.equal(shouldOpenDashboardFromLaunch([]), true);
     assert.equal(
       shouldOpenDashboardFromLaunch([
@@ -115,11 +124,138 @@ describe("desktop helpers", () => {
       false
     );
     assert.equal(
-      shouldOpenDashboardFromLaunch([
+      isBackgroundLaunch([
+        "AI Agent Quota Dashboard.exe",
+        "--background"
+      ]),
+      true
+    );
+    assert.equal(
+      shouldShowPanelFromLaunch([
         "AI Agent Quota Dashboard.exe",
         "--open-mini"
       ]),
+      true
+    );
+    assert.equal(desktopLaunchMode(["AIQD.exe", "--tray"]), "background");
+  });
+
+  it("builds launch-at-startup login item options", () => {
+    assert.deepEqual(launchAtStartupArgsForPlatform("win32"), ["--background"]);
+    assert.deepEqual(launchAtStartupArgsForPlatform("darwin"), []);
+    assert.deepEqual(
+      launchAtStartupQueryOptions("C:\\Program Files\\AIQD\\AIQD.exe", "win32"),
+      {
+        args: ["--background"],
+        path: "C:\\Program Files\\AIQD\\AIQD.exe"
+      }
+    );
+    assert.deepEqual(
+      launchAtStartupSetOptions(true, "C:\\Program Files\\AIQD\\AIQD.exe", "win32"),
+      {
+        args: ["--background"],
+        enabled: true,
+        name: "AI Agent Quota Dashboard",
+        openAtLogin: true,
+        path: "C:\\Program Files\\AIQD\\AIQD.exe"
+      }
+    );
+    assert.deepEqual(launchAtStartupSetOptions(false, "/Applications/AIQD.app", "darwin"), {
+      openAsHidden: true,
+      openAtLogin: false
+    });
+  });
+
+  it("normalizes launch-at-startup status", () => {
+    assert.deepEqual(
+      buildLaunchAtStartupStatus({
+        isPackaged: false,
+        platform: "win32"
+      }),
+      {
+        canConfigure: false,
+        enabled: false,
+        platform: "win32",
+        reason: "packaged_app_required",
+        supported: false
+      }
+    );
+    assert.deepEqual(
+      buildLaunchAtStartupStatus({
+        isPackaged: true,
+        platform: "linux"
+      }),
+      {
+        canConfigure: false,
+        enabled: false,
+        platform: "linux",
+        reason: "unsupported_platform",
+        supported: false
+      }
+    );
+    assert.deepEqual(
+      buildLaunchAtStartupStatus({
+        isPackaged: true,
+        platform: "win32",
+        settings: {
+          executableWillLaunchAtLogin: true,
+          openAtLogin: true
+        }
+      }),
+      {
+        canConfigure: true,
+        enabled: true,
+        executableWillLaunchAtLogin: true,
+        hasDifferentEntry: false,
+        launchBehavior: "background",
+        platform: "win32",
+        reason: "enabled",
+        requiresApproval: false,
+        status: undefined,
+        supported: true
+      }
+    );
+    assert.equal(
+      buildLaunchAtStartupStatus({
+        isPackaged: true,
+        platform: "win32",
+        settings: {
+          executableWillLaunchAtLogin: true,
+          openAtLogin: false
+        }
+      }).reason,
+      "different_entry_detected"
+    );
+    assert.equal(
+      buildLaunchAtStartupStatus({
+        isPackaged: true,
+        platform: "darwin",
+        settings: {
+          openAtLogin: false,
+          status: "requires-approval"
+        }
+      }).reason,
+      "requires_approval"
+    );
+  });
+
+  it("parses installer launch-at-startup command line values", () => {
+    assert.equal(parseLaunchAtStartupCliValue([]), undefined);
+    assert.equal(
+      parseLaunchAtStartupCliValue(["AIQD.exe", "--set-launch-at-login=1"]),
+      true
+    );
+    assert.equal(
+      parseLaunchAtStartupCliValue(["AIQD.exe", "--set-launch-at-startup", "off"]),
       false
+    );
+    assert.equal(
+      parseLaunchAtStartupCliValue(["AIQD.exe", "--set-launch-at-login"]),
+      true
+    );
+    assert.throws(
+      () => parseLaunchAtStartupCliValue(["AIQD.exe", "--set-launch-at-login=maybe"]),
+      /must be true or false/
     );
   });
 
