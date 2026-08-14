@@ -1,6 +1,6 @@
 # Roadmap
 
-Last updated: 2026-08-13
+Last updated: 2026-08-14
 
 ## Current Milestone: v0.1 Desktop Preview
 
@@ -22,11 +22,13 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 - Electron desktop shell with tray mini panel and always-on-top widget
 - Windows installer build through `electron-builder` / NSIS
 - Packaged desktop smoke checks that run without requiring system Node.js
+- Opt-in packaged launch-at-login with installer checkbox, Settings toggle, background tray startup, and uninstall cleanup
 - Safe AIQD-only global shortcuts for mini panel, refresh, and widget
 - One-time first-run desktop guide with deep links to exact setup or Doctor sections
 - English-by-default Chinese/English language switching in the main dashboard and mini surfaces
 - Collapsible first-run Settings details behind the Codex and Claude setup buttons
 - Dashboard and mini quota cards hide duplicate primary-window rows and use separate progress rows for extra windows such as Claude Code's 5-hour quota
+- Demo release screenshots refreshed for the dashboard, Doctor, Settings setup flow with Claude Desktop, mini panel, and widget surfaces
 - Beginner Claude Code setup flow that separates `Install Claude Code CLI` from `Connect Claude data`
 - Technical Claude statusline commands hidden behind advanced details in the normal setup flow
 - Claude Desktop local `plan-usage-history.json` adapter, an alternative Claude source that needs no CLI install
@@ -36,10 +38,9 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 ### Remaining Before First Public Preview
 
 - True clean Windows user or VM real-data trial from installer to Codex, Claude Desktop, and Claude Code readiness
-- Signing decision for the Windows installer, or explicit unsigned-preview warning in release notes
+- SignPath Foundation application, CI signing configuration, and final signed-installer verification, or an explicit maintainer decision to ship the formal preview unsigned
 - Developer fallback trial from clone to Codex + Claude Code readiness
 - Beginner onboarding copy pass for Windows, macOS, and Linux
-- Refresh release screenshots or short GIFs for the final quota-card layout, mini panel, widget, and setup flow
 - Create the GitHub Release and upload the installer artifact after final verification
 
 ### First Preview Work Plan
@@ -51,12 +52,11 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 5. Developer fallback: verify a clean clone still works for technical testers.
 6. Onboarding pass: tighten Settings and README instructions around the next action, expected result, and recovery path for each platform.
 7. Release assets: capture dashboard, tray mini panel, widget, and setup-flow screenshots or short GIFs.
-8. Release finish: update `CHANGELOG.md`, complete `docs/release-checklist.md`, verify CI on `main`, tag the preview, and create the GitHub Release.
+8. Release finish: submit/complete SignPath signing if available, update `CHANGELOG.md`, complete `docs/release-checklist.md`, verify CI on `main`, tag the preview, and create the GitHub Release.
 
 ## v0.2
 
-- Installer polish: signing decision, update-channel decision, and any missing platform packaging gaps
-- Opt-in launch-at-login support: installer checkbox plus reversible Settings toggle, defaulting to off
+- Installer polish: update-channel decision and any missing platform packaging gaps
 - Settings-controlled automatic refresh interval presets: manual, 15 seconds, 30 seconds, 1 minute, 5 minutes, and 15 minutes; label this as local refresh cadence because actual quota observation depends on Codex or Claude Code producing new data
 - Settings safety reset: a `Restore default settings` action for AIQD-owned preferences only, such as language, refresh cadence, shortcut overrides, launch-at-login preference, and remembered window/widget positions
 - Separate advanced actions for destructive or external changes, such as clearing local quota history or disconnecting Claude Code data capture; these must require explicit confirmation and must not be bundled into the normal defaults reset

@@ -2,7 +2,111 @@
 
 This guide is for a local desktop trial with real Codex and Claude (Claude Code or Claude Desktop) quota signals. It uses only visible or official local data sources.
 
-## 1. Prepare
+## 1. Clean Windows VM Release Gate
+
+This is the required first-public-preview gate. It must be run on a clean Windows user profile or VM, not on the maintainer development machine, because the development machine already has AIQD, Codex, Claude Code, and Claude Desktop state.
+
+Record the trial in the release notes or issue used for the release:
+
+```text
+Windows version:
+VM or clean user profile:
+AIQD installer filename:
+Installer checksum, if recorded:
+Startup checkbox trial: off / on / both
+Codex source result:
+Claude Desktop source result:
+Claude Code source result:
+Final readiness result:
+Confusing copy or recovery notes:
+```
+
+### Clean-State Checks
+
+Before installing AIQD, confirm the profile has no AIQD state:
+
+```powershell
+Test-Path "$env:USERPROFILE\.ai-agent-quota-dashboard"
+Test-Path "$env:APPDATA\AI Agent Quota"
+Test-Path "$env:APPDATA\AI Agent Quota Dashboard"
+Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -ErrorAction SilentlyContinue |
+  Select-Object "AI Agent Quota Dashboard", "com.isToniLiu.ai-agent-quota-dashboard", "com.istoniliu.ai-agent-quota-dashboard"
+```
+
+Expected:
+
+- The path checks return `False`.
+- The startup registry query does not show an AIQD value.
+- Codex, Claude Desktop, and Claude Code may be absent at the start of the trial. If they are installed, they must not already contain usable local quota state for this Windows profile.
+
+### Installer Startup Off
+
+1. Run `AI Agent Quota Dashboard-0.1.0-win-x64.exe`.
+2. Leave `Start AIQD when I sign in` unchecked.
+3. Launch AIQD from the desktop or Start menu entry.
+4. Confirm the main dashboard window opens, not only the mini panel.
+5. Open Settings > Desktop Startup.
+
+Expected:
+
+- Settings shows `Launch at startup` as off.
+- The UI can reach Settings without `npm`, `node`, or PowerShell.
+- No AIQD startup entry is created.
+
+Optional PowerShell confirmation:
+
+```powershell
+Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -ErrorAction SilentlyContinue |
+  Select-Object "AI Agent Quota Dashboard", "com.isToniLiu.ai-agent-quota-dashboard", "com.istoniliu.ai-agent-quota-dashboard"
+```
+
+### Settings Startup Toggle
+
+1. In Settings > Desktop Startup, turn `Launch at startup` on.
+2. Confirm the setting changes to on.
+3. Turn it off again.
+4. Confirm the setting changes to off.
+
+Expected:
+
+- Enabling creates only an AIQD-managed login item for the packaged executable.
+- Disabling removes the AIQD-managed login item.
+- The app does not approve global shortcuts, configure Codex or Claude, add data sources, or read extra files as part of startup changes.
+
+### Installer Startup On
+
+Run this as a second pass after uninstalling AIQD, or from a clean VM snapshot:
+
+1. Install AIQD again.
+2. Check `Start AIQD when I sign in`.
+3. Open Settings > Desktop Startup.
+
+Expected:
+
+- Settings shows `Launch at startup` as on.
+- The Windows startup command launches the packaged AIQD executable with `--background`.
+- If setup is still missing, first-run guidance may open Settings or Doctor. After setup is complete and the guide has already been shown, sign-in should start only the tray shell and local backend.
+
+Optional PowerShell confirmation:
+
+```powershell
+Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -ErrorAction SilentlyContinue |
+  Select-Object "AI Agent Quota Dashboard"
+```
+
+### Uninstall Cleanup
+
+1. Quit AIQD from the tray menu.
+2. Uninstall AIQD from Windows Settings or Control Panel.
+3. Check startup entries again.
+
+Expected:
+
+- AIQD is removed.
+- No AIQD startup entry remains.
+- AIQD does not delete provider-owned Codex, Claude Desktop, or Claude Code files.
+
+## 2. Normal-User First Run
 
 Normal-user installer trial:
 
@@ -10,6 +114,8 @@ Normal-user installer trial:
 2. Open AIQD from the installed desktop or Start menu entry.
 3. Confirm the main dashboard window opens.
 4. Open Settings if the first-run guide does not take you there automatically.
+
+The normal-user first run should not require `npm`, `node`, or source checkout commands. PowerShell checks in this document are maintainer verification aids only.
 
 Developer source-mode trial:
 
@@ -37,7 +143,7 @@ npm.cmd run desktop:first-run-smoke
 
 The first-run smoke uses temporary paths. It does not read your real Codex or Claude Code data.
 
-## 2. Launch The Desktop App
+## 3. Launch The Desktop App
 
 ```bash
 npm run desktop:local
@@ -62,7 +168,7 @@ npm run doctor
 
 Startup failures should show recovery guidance with the backend error tail. The smoke command checks whether the desktop shell can launch its local backend without touching real Codex or Claude Code data.
 
-## 3. Detect Codex
+## 4. Detect Codex
 
 First action: use Codex once, then click `Refresh` in AIQD or run:
 
@@ -89,7 +195,7 @@ node dist/index.js codex snapshot --remaining-percent 72 --reset-at 2026-08-16T0
 
 Manual Codex fallback snapshots expire at their reported reset time. If Codex later changes the reset anchor, refresh first; if no CLI data appears, record a new visible fallback value.
 
-## 4. Verify Claude Desktop Coverage
+## 5. Verify Claude Desktop Coverage
 
 Normal Claude users should not need to open Claude Code CLI just to make AIQD useful. If you use Claude Desktop, AIQD reads it automatically with nothing to install.
 
@@ -108,9 +214,9 @@ Normal-user path from the desktop app:
 
 Expected: AIQD shows Claude Desktop five-hour and weekly usage from local plan usage samples, labels the source clearly (`Local snapshot`), and does not read chat content, cookies, hidden API responses, prompts, responses, or attachments. Claude readiness in Doctor and the real-data overview shows ready as soon as this source is fresh, even if Claude Code CLI is never set up.
 
-## 5. Connect Claude Code (optional if Claude Desktop is already ready)
+## 6. Connect Claude Code
 
-Skip this section if step 4 already shows Claude as ready via Claude Desktop. Claude Code CLI is an alternative source, not an additional requirement.
+For product readiness, Claude Code CLI is an alternative source and is not required when Claude Desktop is fresh. For the clean Windows VM release gate, still run this section once so both Claude paths are verified on a fresh profile.
 
 Normal-user path from the desktop app:
 
@@ -157,7 +263,7 @@ Platform notes:
 
 If not ready: run `npm run trial:preflight`. A common next action is `Open Claude Code to refresh the statusline snapshot`, which means Claude is configured but has not sent a fresh supported `rate_limits` payload yet.
 
-## 6. Verify
+## 7. Verify
 
 ```bash
 npm run trial:preflight

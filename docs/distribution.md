@@ -1,6 +1,6 @@
 # Distribution and Startup
 
-Last updated: 2026-08-11
+Last updated: 2026-08-14
 
 ## Current Release Shape
 
@@ -12,9 +12,9 @@ The Windows x64 installer artifact is:
 release/AI Agent Quota Dashboard-0.1.0-win-x64.exe
 ```
 
-The current local artifact is unsigned. Release notes must mention that Windows SmartScreen may warn until a signing certificate and reputation path are in place.
+The current local artifact is unsigned. It may be used as a release-candidate or SignPath application artifact, but should not be treated as the formal public installer unless maintainers explicitly decide to ship unsigned.
 
-Do not tag the first public preview until this artifact exists, the packaged smoke checks pass, and the release notes explain the normal-user install path. Code signing, update channels, and app-managed launch-at-login can still be later work if they are called out clearly.
+The preferred formal `v0.1.0` path is a SignPath Foundation signed Windows installer. Do not tag the first formal public preview until the artifact exists, packaged smoke checks pass, release notes explain the normal-user install path, and the signing status is explicit. If SignPath approval is complete, the GitHub Release should upload the signed artifact only.
 
 Build commands:
 
@@ -26,22 +26,58 @@ npm run package:win
 Packaged smoke commands:
 
 ```powershell
-.\release\win-unpacked\AI Agent Quota Dashboard.exe --smoke
-.\release\win-unpacked\AI Agent Quota Dashboard.exe --smoke-first-run-guide
+& ".\release\win-unpacked\AI Agent Quota Dashboard.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process --smoke
+& ".\release\win-unpacked\AI Agent Quota Dashboard.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process --smoke-first-run-guide
 ```
 
 The packaged app uses Electron's bundled Node runtime for the local backend. Normal users should not need a separate Node.js or npm install.
 
+## Code Signing
+
+AIQD's preferred no-cost signing path is SignPath Foundation open-source signing. The repository policy is documented in [Code Signing Policy](code-signing.md).
+
+Release candidates may be unsigned and clearly labeled as such so SignPath can review a released/downloadable Windows artifact. The formal release should be signed if approval is available in time.
+
+The manual Windows packaging workflow can:
+
+- build and upload an unsigned installer artifact for RC testing
+- submit the GitHub Actions artifact to SignPath after approval and secret configuration
+- verify the downloaded signed artifact with Windows Authenticode before release upload
+
+Required GitHub configuration after SignPath approval:
+
+- repository secret: `SIGNPATH_API_TOKEN`
+- repository variables: `SIGNPATH_ORGANIZATION_ID`, `SIGNPATH_PROJECT_SLUG`, `SIGNPATH_SIGNING_POLICY_SLUG`
+
+The SignPath project should use the workflow artifact as the signing input. Maintainers should not sign locally built release binaries with the SignPath Foundation certificate.
+
+Recommended signing sequence:
+
+1. Run the manual `Package Windows` GitHub Actions workflow with `sign_with_signpath` set to `false`.
+2. Create a GitHub Pre-release such as `v0.1.0-rc.1`, upload the unsigned installer, and use `docs/release-notes-v0.1.0-rc.1.md` as the release text.
+3. Submit the SignPath Foundation OSS application with the repository URL, RC release URL, license, privacy policy, and code signing policy.
+4. After approval, configure the SignPath GitHub secret and variables listed above.
+5. Run the same workflow with `sign_with_signpath` set to `true` from the intended release commit or tag.
+6. Verify the signed installer and upload only that artifact to the formal release.
+
 ## Startup Decision
 
-Launch at login should be part of the packaged desktop story, not a hidden side effect of source mode.
+Launch at login is part of the packaged desktop story, not a hidden side effect of source mode.
 
-For packaged releases, provide startup control in two places when the feature is ready:
+For packaged releases, startup control is provided in two places:
 
 - Installer option: `Start AIQD when I sign in`
 - App Settings toggle: `Launch at startup`
 
-The first packaged release should default startup to off. If v0.1.0 ships before a reliable startup toggle exists, omit launch-at-login entirely instead of creating a hidden startup entry. AIQD runs a local backend and a tray shell, so startup behavior should be explicit, reversible, and easy to understand.
+The first packaged release defaults startup to off. AIQD runs a local backend and a tray shell, so startup behavior is explicit, reversible, and easy to understand.
+
+Implementation notes:
+
+- The Settings toggle uses Electron's packaged-app login item APIs: `app.setLoginItemSettings()` and `app.getLoginItemSettings()`.
+- Windows startup entries use the packaged executable with `--background`, so sign-in starts only the tray shell and local backend unless setup or recovery guidance needs attention.
+- Source mode does not create an official startup entry.
+- The NSIS installer checkbox calls the packaged app's short `--set-launch-at-login=1` mode, so Electron owns the login-item write.
+- The uninstaller removes AIQD-owned Windows Run and StartupApproved entries to avoid orphaned startup entries.
 
 The installed desktop shortcut should open the main dashboard window. The tray mini panel remains a quick-access surface from the system tray, not the primary result of double-clicking the app entry.
 
