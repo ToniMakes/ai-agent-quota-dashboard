@@ -91,6 +91,10 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Copy buttons for setup commands, local path commands, and command-backed empty states, with selection fallback when clipboard access is unavailable
 - Diagnostics guide and issue template prompts for privacy-safe bug reports
 
+### Changed
+
+- Mini panel quota cards now replace visible source labels with reset/expiry timing plus the last update time
+
 ### Fixed
 
 - Windows uninstall now removes Electron app data left under `%APPDATA%\AI Agent Quota` by earlier RC builds

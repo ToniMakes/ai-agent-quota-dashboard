@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-08-14
+Last updated: 2026-08-15
 
 AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The core MVP is no longer just a scaffold: the local dashboard, desktop tray shell, real-data setup flow, and strict trial readiness checks are implemented and passing CI. The first public preview target is now installer-first for normal users, with source mode retained as a developer fallback.
 
@@ -17,6 +17,7 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The core MVP is no 
 - Strict real-data readiness checks shared by CLI, Settings, tray, and mini surfaces
 - Electron desktop shell with tray mini panel, always-on-top widget, safe AIQD-only shortcuts, and first-run deep links
 - Dashboard and mini quota cards hide duplicate primary-window rows while keeping extra windows, such as Claude Code's 5-hour quota, visible as progress rows
+- Mini quota cards show reset or expiry timing plus update time instead of exposing source labels in the compact surface
 - Windows NSIS installer build via `electron-builder`
 - Packaged desktop runtime starts the local backend through Electron's bundled Node runtime
 - Opt-in packaged launch-at-login, with installer checkbox off by default and a reversible Settings toggle
@@ -53,6 +54,7 @@ The current maintainer checkout has passed:
 - Browser interaction smoke for the decluttered dashboard and mini quota-window layouts
 - Browser/API smoke against demo mode for `/`, `/mini.html`, `/api/health`, `/api/agents`, `/api/trial-readiness`, and `/api/export?format=json`
 - Maintainer-profile installer trial: silent NSIS install exited `0`, desktop and Start menu shortcuts target the installed packaged executable, the desktop shortcut opens the installed app backend on `127.0.0.1:4317`, `/api/trial-readiness` reports `ok: true`, and browser smoke passes for the installed dashboard and mini panel
+- Maintainer-profile desktop and Start menu entries were refreshed to the latest installed packaged executable after the `v0.1.0-rc.3` build
 - Clean-copy trial from `.tmp/fresh-trial-v0.1.0-rc.1`: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, `npm run trial:ready`, and browser/API smoke
 - GitHub Actions CI on `main`
 
@@ -89,6 +91,13 @@ Friend clean-Windows testing of `v0.1.0-rc.1` found leftover Electron app data a
 
 The fix uses the full product name for Electron app data, enables NSIS app-data cleanup, and explicitly removes the old RC1 short-name app data directory during uninstall. This still needs a clean Windows uninstall retest against `v0.1.0-rc.2`.
 
+`v0.1.0-rc.3` was prepared to retest the tray mini panel timing copy after tester feedback that source labels were less useful in the compact surface:
+
+- Release page: https://github.com/isToniLiu/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.3
+- Asset SHA256: `1F8D300E6A30E54426A1751770EF77278C53D334C94BAB0F468B2A2F2C12BEAF`
+
+The mini panel now replaces visible source labels such as `Official CLI` or `Local snapshot` with reset or expiry timing plus the last update time. The clean Windows uninstall retest remains relevant and should now use the latest RC installer.
+
 ## Current Product State
 
 The app is suitable for local real-data dogfooding by the maintainer and technically curious early testers. For the first public preview, normal users should install a packaged desktop build and finish setup from Settings. Source checkout remains the developer fallback path.
@@ -101,6 +110,6 @@ Claude Desktop-only coverage was the highest product priority before broad publi
 
 ## Next Focus
 
-1. Retest uninstall cleanup from the `v0.1.0-rc.2` installer on the clean Windows machine while SignPath review is pending.
+1. Retest mini panel timing copy and uninstall cleanup from the `v0.1.0-rc.3` installer on the clean Windows machine while SignPath review is pending.
 2. After SignPath approval, configure GitHub secrets/variables and rerun the Windows package workflow with signing enabled.
 3. Run a final checklist/CI pass immediately before tagging `v0.1.0`.
