@@ -68,7 +68,7 @@ Demo release screenshots have been refreshed for the dashboard, Doctor, Settings
 
 The first public preview distribution shape is installer-first desktop preview. A local Windows x64 NSIS artifact has been generated at `release/AI Agent Quota Dashboard-0.1.0-win-x64.exe`; `release/` is ignored and the artifact should be uploaded to a GitHub Release rather than committed. The current local artifact is unsigned and is suitable as an RC/testing artifact, not the preferred formal release artifact. `docs/release-notes-v0.1.0.md` is the draft GitHub Release text.
 
-The unsigned `v0.1.0-rc.1` GitHub Pre-release has been created for clean-machine testing and SignPath Foundation review:
+The unsigned `v0.1.0-rc.1` GitHub Pre-release has been created for clean-machine testing and SignPath Foundation review. A copy-paste application draft is available in [docs/signpath-application.md](signpath-application.md).
 
 - Release page: https://github.com/isToniLiu/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.1
 - Workflow run: https://github.com/isToniLiu/ai-agent-quota-dashboard/actions/runs/31796488211
