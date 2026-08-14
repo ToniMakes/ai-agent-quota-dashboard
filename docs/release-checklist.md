@@ -60,7 +60,7 @@ Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` h
 
 - [x] GitHub repository is public, MIT-licensed, documented, and has a visible download/release page
 - [ ] GitHub account MFA is enabled for maintainers with repository or SignPath access
-- [ ] Code signing roles in `docs/code-signing.md` match the actual maintainers
+- [x] Code signing roles in `docs/code-signing.md` match the actual maintainers
 - [x] A clearly labeled unsigned RC/pre-release exists if SignPath needs a downloadable release artifact before approval
 - [ ] SignPath Foundation OSS application submitted
 - [ ] SignPath Foundation OSS application approved
