@@ -58,16 +58,16 @@ Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` h
 
 ## SignPath Release Path
 
-- [ ] GitHub repository is public, MIT-licensed, documented, and has a visible download/release page
+- [x] GitHub repository is public, MIT-licensed, documented, and has a visible download/release page
 - [ ] GitHub account MFA is enabled for maintainers with repository or SignPath access
 - [ ] Code signing roles in `docs/code-signing.md` match the actual maintainers
-- [ ] A clearly labeled unsigned RC/pre-release exists if SignPath needs a downloadable release artifact before approval
+- [x] A clearly labeled unsigned RC/pre-release exists if SignPath needs a downloadable release artifact before approval
 - [ ] SignPath Foundation OSS application submitted
 - [ ] SignPath Foundation OSS application approved
 - [ ] SignPath project, signing policy, and default artifact configuration are configured for the NSIS installer
 - [ ] GitHub secret `SIGNPATH_API_TOKEN` is configured
 - [ ] GitHub variables `SIGNPATH_ORGANIZATION_ID`, `SIGNPATH_PROJECT_SLUG`, and `SIGNPATH_SIGNING_POLICY_SLUG` are configured
-- [ ] `.github/workflows/package-windows.yml` produces the unsigned installer artifact
+- [x] `.github/workflows/package-windows.yml` produces the unsigned installer artifact
 - [ ] `.github/workflows/package-windows.yml` submits the artifact to SignPath and downloads the signed installer
 - [ ] `Get-AuthenticodeSignature` reports `Valid` for the final installer
 - [ ] GitHub Release uploads the signed installer for the formal release, or explicitly documents an approved unsigned fallback
