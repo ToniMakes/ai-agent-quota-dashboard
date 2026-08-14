@@ -9,6 +9,7 @@
 - [Real data trial](real-data-trial.md)
 - [v0.1.0-rc.1 release notes draft](release-notes-v0.1.0-rc.1.md)
 - [v0.1.0-rc.2 release notes draft](release-notes-v0.1.0-rc.2.md)
+- [v0.1.0-rc.3 release notes draft](release-notes-v0.1.0-rc.3.md)
 - [v0.1.0 release notes draft](release-notes-v0.1.0.md)
 - [SignPath application draft](signpath-application.md)
 - [Roadmap](roadmap.md)
