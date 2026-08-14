@@ -4,6 +4,7 @@ release/
 .env
 .env.*
 !.env.example
+.tmp/
 *.db
 *.db-shm
 *.db-wal
