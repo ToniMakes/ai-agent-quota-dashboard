@@ -104,6 +104,7 @@ Expected:
 
 - AIQD is removed.
 - No AIQD startup entry remains.
+- `%APPDATA%\AI Agent Quota` and `%APPDATA%\AI Agent Quota Dashboard` do not remain after uninstall.
 - AIQD does not delete provider-owned Codex, Claude Desktop, or Claude Code files.
 
 ## 2. Normal-User First Run

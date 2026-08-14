@@ -75,6 +75,8 @@ FunctionEnd
 !endif
 
 !macro customUnInstall
+  RMDir /r "$APPDATA\AI Agent Quota"
+
   DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "AI Agent Quota Dashboard"
   DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "com.isToniLiu.ai-agent-quota-dashboard"
   DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "com.istoniliu.ai-agent-quota-dashboard"
