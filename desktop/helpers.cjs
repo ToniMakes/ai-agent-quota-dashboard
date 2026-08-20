@@ -2,6 +2,35 @@ const path = require("node:path");
 
 const launchAtStartupName = "AI Agent Quota Dashboard";
 const launchAtStartupBackgroundArg = "--background";
+const dashboardClosePreferenceModes = new Set(["ask", "tray", "quit"]);
+
+function isDashboardClosePreferenceMode(mode) {
+  return dashboardClosePreferenceModes.has(mode);
+}
+
+function normalizeDashboardClosePreferenceMode(value) {
+  const mode =
+    typeof value === "string"
+      ? value
+      : value && typeof value === "object"
+        ? value.mode
+        : undefined;
+
+  return isDashboardClosePreferenceMode(mode) ? mode : "ask";
+}
+
+function buildDashboardClosePreferenceStatus(state = {}) {
+  const mode = normalizeDashboardClosePreferenceMode(
+    state.dashboardClosePreference
+  );
+
+  return {
+    actionWhenNotAsking: mode === "quit" ? "quit" : "tray",
+    askBeforeClose: mode === "ask",
+    mode,
+    supported: true
+  };
+}
 
 function summarizeAgents(agents, options = {}) {
   if (!Array.isArray(agents) || agents.length === 0) {
@@ -183,11 +212,15 @@ function buildLaunchAtStartupStatus(input = {}) {
   }
 
   const settings = input.settings ?? {};
-  const enabled = Boolean(settings.openAtLogin);
+  const registryEntry = input.registryEntry ?? {};
+  const registryMatches = Boolean(registryEntry.matchesExpected);
+  const enabled = Boolean(settings.openAtLogin || registryMatches);
   const executableWillLaunchAtLogin =
     platform === "win32" ? Boolean(settings.executableWillLaunchAtLogin) : undefined;
   const hasDifferentEntry = Boolean(
-    platform === "win32" && executableWillLaunchAtLogin && !enabled
+    platform === "win32" &&
+      ((executableWillLaunchAtLogin && !enabled) ||
+        (registryEntry.exists && !registryMatches))
   );
   const status =
     typeof settings.status === "string" ? settings.status : undefined;
@@ -366,6 +399,32 @@ function formatStartupError(input = {}) {
   ].filter(Boolean);
 
   return details.length > 0 ? [...lines, "", ...details].join("\n") : lines.join("\n");
+}
+
+function isIgnorablePipeWriteError(error) {
+  return (
+    error &&
+    (error.code === "EPIPE" || error.code === "ERR_STREAM_DESTROYED")
+  );
+}
+
+function ignorePipeWriteError(error) {
+  if (!isIgnorablePipeWriteError(error)) {
+    throw error;
+  }
+}
+
+function safeWriteProcessStream(stream, chunk) {
+  if (!stream || stream.destroyed || stream.writableEnded) {
+    return false;
+  }
+
+  try {
+    return stream.write(chunk);
+  } catch (error) {
+    ignorePipeWriteError(error);
+    return false;
+  }
 }
 
 function trimLogTail(value, maxLength = 1600) {
@@ -599,6 +658,7 @@ function buildSmokeBackendEnv(baseEnv = {}, smokeUserDataDir) {
 }
 
 module.exports = {
+  buildDashboardClosePreferenceStatus,
   buildSmokeBackendEnv,
   buildLaunchAtStartupStatus,
   buildTrayMenuTemplate,
@@ -609,14 +669,19 @@ module.exports = {
   formatStartupError,
   firstRunGuideTarget,
   hasClaudeWaitingState,
+  ignorePipeWriteError,
+  isIgnorablePipeWriteError,
+  isDashboardClosePreferenceMode,
   isSavedWidgetBounds,
   isBackgroundLaunch,
   launchAtStartupArgsForPlatform,
   launchAtStartupQueryOptions,
   launchAtStartupSetOptions,
+  normalizeDashboardClosePreferenceMode,
   parseLaunchAtStartupCliValue,
   resolveWidgetBounds,
   resolveDesktopShortcuts,
+  safeWriteProcessStream,
   shouldShowPanelFromLaunch,
   shouldRefreshForClaudeStatusline,
   shouldOpenDashboardFromLaunch,

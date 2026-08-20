@@ -12,6 +12,7 @@ import type {
   AgentSummary,
   DoctorCheck,
   QuotaSnapshot,
+  QuotaWindowType,
   RefreshRun,
   RefreshResult,
   ResetEvent
@@ -130,7 +131,9 @@ export class AgentQuotaService {
   }
 
   listResetEvents(limit?: number): ResetEvent[] {
-    return this.store.listResetEvents(limit);
+    return this.store
+      .listResetEvents(limit)
+      .filter((event) => this.isVisibleQuotaWindow(event));
   }
 
   listRefreshRuns(limit?: number): RefreshRun[] {
@@ -140,11 +143,23 @@ export class AgentQuotaService {
   private listVisibleQuotaSnapshots(): QuotaSnapshot[] {
     const snapshots = this.store.listLatestQuotaSnapshots();
 
-    if (this.options.includeDemoSnapshots) {
-      return snapshots;
-    }
+    return snapshots.filter(
+      (snapshot) =>
+        (this.options.includeDemoSnapshots || snapshot.source !== "demo") &&
+        this.isVisibleQuotaWindow(snapshot)
+    );
+  }
 
-    return snapshots.filter((snapshot) => snapshot.source !== "demo");
+  private isVisibleQuotaWindow(item: {
+    provider: string;
+    agent: string;
+    windowType: QuotaWindowType;
+  }): boolean {
+    const manifest = this.registry.adapters
+      .map((adapter) => adapter.manifest)
+      .find((candidate) => isSameAgent(candidate, item));
+
+    return manifest?.supportedWindows.includes(item.windowType) ?? true;
   }
 }
 

@@ -48,9 +48,9 @@ Function aiqdStartupPageCreate
 
   ${NSD_CreateLabel} 0 0 100% 18u "Startup"
   Pop $0
-  ${NSD_CreateLabel} 0 20u 100% 28u "AIQD can start in the tray when you sign in. This is optional and can be changed later in Settings."
+  ${NSD_CreateLabel} 0 20u 100% 28u "AIQD can start in the tray when you sign in. This is optional and can be changed later in AIQD Settings."
   Pop $0
-  ${NSD_CreateCheckbox} 0 58u 100% 14u "Start AIQD when I sign in"
+  ${NSD_CreateCheckbox} 0 58u 100% 14u "Start AIQD when I sign in (tray only)"
   Pop $launchAtLoginCheckbox
 
   ${If} $launchAtLoginWanted == ${BST_CHECKED}
