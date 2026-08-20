@@ -18,7 +18,7 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The core MVP is no 
 - Strict real-data readiness checks shared by CLI, Settings, tray, and mini surfaces
 - Electron desktop shell with tray mini panel, always-on-top widget, safe AIQD-only shortcuts, and first-run deep links
 - Dashboard and mini quota cards hide duplicate primary-window rows while keeping extra windows, such as Claude Code's 5-hour quota, visible as progress rows
-- Mini quota cards show window-level reset or refresh timing instead of exposing source labels in the compact surface; the merged Claude card can show both 5h and weekly timing
+- Mini quota cards show reported reset timing instead of exposing source labels in the compact surface; local freshness deadlines are used for stale checks, not visible reset timing
 - Windows NSIS installer build via `electron-builder`
 - Packaged desktop runtime starts the local backend through Electron's bundled Node runtime
 - Packaged desktop launches tolerate disconnected GUI stdout/stderr pipes instead of crashing with `EPIPE`

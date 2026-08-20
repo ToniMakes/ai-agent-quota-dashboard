@@ -5,6 +5,8 @@ import {
   isSameSnapshot,
   isStaleSnapshot,
   languageStorageKey,
+  mergeClaudeSnapshots,
+  mergeSnapshotResetTiming,
   primaryMeterClass,
   resolveInitialLanguage
 } from "./shared.js";
@@ -1438,10 +1440,18 @@ function buildDisplayAgents(agents) {
   }
 
   const winner = pickPrimaryClaudeAgent(claudeCode, claudeDesktop);
+  const sources = [claudeCode, claudeDesktop].filter(Boolean);
+  const snapshots = mergeClaudeSnapshots(winner.snapshots ?? [], sources);
+  const primarySnapshot = mergeSnapshotResetTiming(
+    winner.primarySnapshot,
+    sources.flatMap((source) => source.snapshots ?? [])
+  );
   const merged = {
     ...winner,
     agent: "claude",
     displayName: "Claude",
+    primarySnapshot,
+    snapshots,
     shortName: "Claude"
   };
 

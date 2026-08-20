@@ -5,6 +5,9 @@ import {
   createI18n,
   defaultLanguage,
   escapeHtml,
+  hasUsableResetAt,
+  mergeClaudeSnapshots,
+  mergeSnapshotResetTiming,
   isSameSnapshot,
   isStaleSnapshot,
   languageStorageKey,
@@ -169,6 +172,100 @@ describe("isSameSnapshot", () => {
   it("does not match when either snapshot is missing", () => {
     assert.equal(isSameSnapshot(base, undefined), false);
     assert.equal(isSameSnapshot(undefined, base), false);
+  });
+});
+
+describe("hasUsableResetAt", () => {
+  it("accepts future reset timestamps", () => {
+    assert.equal(
+      hasUsableResetAt({ resetAt: "2999-01-01T00:00:00.000Z" }),
+      true
+    );
+  });
+
+  it("rejects missing, invalid, or past reset timestamps", () => {
+    assert.equal(hasUsableResetAt({}), false);
+    assert.equal(hasUsableResetAt({ resetAt: "not-a-date" }), false);
+    assert.equal(
+      hasUsableResetAt({ resetAt: "2000-01-01T00:00:00.000Z" }),
+      false
+    );
+  });
+});
+
+describe("mergeSnapshotResetTiming", () => {
+  it("borrows a future reset for the same window", () => {
+    const snapshot = {
+      provider: "anthropic",
+      agent: "claude-desktop",
+      windowType: "weekly",
+      observedAt: "2026-08-20T00:00:00.000Z"
+    };
+
+    const merged = mergeSnapshotResetTiming(snapshot, [
+      {
+        provider: "anthropic",
+        agent: "claude-code",
+        windowType: "weekly",
+        observedAt: "2026-08-20T00:00:00.000Z",
+        resetAt: "2999-01-01T00:00:00.000Z",
+        expiresAt: "2000-01-01T00:00:00.000Z"
+      }
+    ]);
+
+    assert.equal(merged.resetAt, "2999-01-01T00:00:00.000Z");
+  });
+
+  it("does not borrow freshness expiry as reset timing", () => {
+    const snapshot = {
+      provider: "anthropic",
+      agent: "claude-desktop",
+      windowType: "weekly",
+      observedAt: "2026-08-20T00:00:00.000Z"
+    };
+
+    const merged = mergeSnapshotResetTiming(snapshot, [
+      {
+        provider: "anthropic",
+        agent: "claude-desktop",
+        windowType: "weekly",
+        observedAt: "2026-08-20T00:00:00.000Z",
+        expiresAt: "2999-01-01T00:00:00.000Z"
+      }
+    ]);
+
+    assert.equal(merged.resetAt, undefined);
+  });
+});
+
+describe("mergeClaudeSnapshots", () => {
+  it("keeps winner percentages while adding reset timing from another source", () => {
+    const desktopSnapshot = {
+      provider: "anthropic",
+      agent: "claude-desktop",
+      windowType: "session_5h",
+      remainingPercent: 26,
+      observedAt: "2026-08-20T00:00:00.000Z"
+    };
+
+    const [merged] = mergeClaudeSnapshots([desktopSnapshot], [
+      { snapshots: [desktopSnapshot] },
+      {
+        snapshots: [
+          {
+            provider: "anthropic",
+            agent: "claude-code",
+            windowType: "session_5h",
+            remainingPercent: 100,
+            observedAt: "2026-08-20T00:00:00.000Z",
+            resetAt: "2999-01-01T00:00:00.000Z"
+          }
+        ]
+      }
+    ]);
+
+    assert.equal(merged.remainingPercent, 26);
+    assert.equal(merged.resetAt, "2999-01-01T00:00:00.000Z");
   });
 });
 
