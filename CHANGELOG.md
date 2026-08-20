@@ -101,10 +101,11 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Desktop startup and close-confirmation settings now render as compact preference rows instead of explanatory status blocks
 - First-run guidance now opens the dashboard and lets the modal handle setup choices instead of deep-linking into Settings
 - Claude stale-data recovery copy now points desktop users to Claude Desktop local usage history first, with Claude Code CLI kept optional
-- Mini panel quota cards now replace visible source labels with window-level reset or refresh timing; the merged Claude card shows both 5h and weekly timing when available
+- Mini panel quota cards now replace visible source labels with reported reset timing when available; local freshness deadlines stay out of visible quota timing
 
 ### Fixed
 
+- Claude Desktop freshness deadlines no longer appear as visible quota reset or refresh timing in the mini panel; the merged Claude card only borrows future `resetAt` values from sources that actually report them
 - Codex monthly windows are hidden from dashboard, mini panel, exports, and reset timelines unless the Codex adapter explicitly supports them, matching the current official visible usage surfaces
 - Packaged desktop launches now tolerate disconnected stdout/stderr pipes, avoiding `EPIPE: broken pipe` main-process crashes when opened from Windows desktop or Start menu entries
 - Windows startup toggle now reads and writes AIQD's current-user Run entry directly, avoiding a saved startup entry being shown as off

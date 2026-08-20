@@ -113,6 +113,60 @@ export function isSameSnapshot(left, right) {
   );
 }
 
+export function hasUsableResetAt(snapshot) {
+  if (!snapshot?.resetAt) {
+    return false;
+  }
+
+  const resetAtMs = Date.parse(snapshot.resetAt);
+  return !Number.isNaN(resetAtMs) && resetAtMs > Date.now();
+}
+
+export function mergeSnapshotResetTiming(snapshot, sourceSnapshots) {
+  if (!snapshot || hasUsableResetAt(snapshot)) {
+    return snapshot;
+  }
+
+  const timingSource = sourceSnapshots.find(
+    (candidate) =>
+      candidate.windowType === snapshot.windowType && hasUsableResetAt(candidate)
+  );
+
+  if (!timingSource) {
+    return snapshot;
+  }
+
+  return {
+    ...snapshot,
+    resetAt: timingSource.resetAt
+  };
+}
+
+export function mergeClaudeSnapshots(winnerSnapshots, sources) {
+  const sourceSnapshots = sources.flatMap((source) => source.snapshots ?? []);
+  const byWindow = new Map();
+
+  for (const snapshot of winnerSnapshots) {
+    byWindow.set(
+      snapshot.windowType,
+      mergeSnapshotResetTiming(snapshot, sourceSnapshots)
+    );
+  }
+
+  for (const snapshot of sourceSnapshots) {
+    if (byWindow.has(snapshot.windowType) || isStaleSnapshot(snapshot)) {
+      continue;
+    }
+
+    byWindow.set(
+      snapshot.windowType,
+      mergeSnapshotResetTiming(snapshot, sourceSnapshots)
+    );
+  }
+
+  return Array.from(byWindow.values());
+}
+
 export function primaryMeterClass(snapshot, status) {
   if (snapshot?.windowType === "session_5h" && status === "healthy") {
     return "session";

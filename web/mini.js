@@ -5,6 +5,8 @@ import {
   isSameSnapshot,
   isStaleSnapshot,
   languageStorageKey,
+  mergeClaudeSnapshots,
+  mergeSnapshotResetTiming,
   primaryMeterClass,
   resolveInitialLanguage
 } from "./shared.js";
@@ -390,7 +392,7 @@ function buildDisplayAgents(agents) {
   const winner = pickPrimaryClaudeAgent(claudeCode, claudeDesktop);
   const sources = [claudeCode, claudeDesktop].filter(Boolean);
   const snapshots = mergeClaudeSnapshots(winner.snapshots ?? [], sources);
-  const primarySnapshot = mergeClaudeSnapshotTiming(
+  const primarySnapshot = mergeSnapshotResetTiming(
     winner.primarySnapshot,
     sources.flatMap((source) => source.snapshots ?? [])
   );
@@ -443,50 +445,6 @@ function pickPrimaryClaudeAgent(claudeCode, claudeDesktop) {
   }
 
   return claudeCode;
-}
-
-function mergeClaudeSnapshots(winnerSnapshots, sources) {
-  const sourceSnapshots = sources.flatMap((source) => source.snapshots ?? []);
-  const byWindow = new Map();
-
-  for (const snapshot of winnerSnapshots) {
-    byWindow.set(
-      snapshot.windowType,
-      mergeClaudeSnapshotTiming(snapshot, sourceSnapshots)
-    );
-  }
-
-  for (const snapshot of sourceSnapshots) {
-    if (byWindow.has(snapshot.windowType) || isStaleSnapshot(snapshot)) {
-      continue;
-    }
-
-    byWindow.set(snapshot.windowType, snapshot);
-  }
-
-  return Array.from(byWindow.values());
-}
-
-function mergeClaudeSnapshotTiming(snapshot, sourceSnapshots) {
-  if (!snapshot || snapshot.resetAt) {
-    return snapshot;
-  }
-
-  const timingSource = sourceSnapshots.find(
-    (candidate) =>
-      candidate.windowType === snapshot.windowType &&
-      candidate.resetAt &&
-      !isStaleSnapshot(candidate)
-  );
-
-  if (!timingSource) {
-    return snapshot;
-  }
-
-  return {
-    ...snapshot,
-    resetAt: timingSource.resetAt
-  };
 }
 
 function renderAgent(agent) {
@@ -1249,16 +1207,7 @@ function snapshotTimingDetail(snapshot, options = {}) {
     });
   }
 
-  if (snapshot?.expiresAt) {
-    return tx("{window}refresh {time}", "{window}{time}刷新", {
-      window: prefix,
-      time: formatResetDistance(snapshot.expiresAt)
-    });
-  }
-
-  return tx("{window}reset --", "{window}重置 --", {
-    window: prefix
-  });
+  return "";
 }
 
 function snapshotTimingTitle(snapshot) {
@@ -1269,7 +1218,7 @@ function snapshotTimingTitle(snapshot) {
   }
 
   if (snapshot?.expiresAt) {
-    return tx("Refresh local sample by {time}", "本地样本需刷新：{time}", {
+    return tx("Local sample freshness by {time}", "本地样本新鲜度：{time}", {
       time: formatTimestamp(snapshot.expiresAt, { long: true })
     });
   }
