@@ -19,6 +19,7 @@ const state = {
   generatedAt: undefined,
   isRefreshing: false,
   lastError: undefined,
+  onboardingPreferences: undefined,
   refreshRuns: [],
   setupStatus: undefined,
   trialReadiness: undefined
@@ -182,11 +183,13 @@ async function load(options = {}) {
   try {
     const [
       agentsPayload,
+      onboardingPreferences,
       refreshRunsPayload,
       setupPayload,
       trialReadinessPayload
     ] = await Promise.all([
       fetchJson("/api/agents"),
+      loadFirstRunOnboardingPreferences(),
       fetchJson("/api/refresh-runs"),
       fetchJson("/api/setup/claude-statusline"),
       fetchJson("/api/trial-readiness")
@@ -195,6 +198,7 @@ async function load(options = {}) {
     state.agents = agentsPayload.agents ?? [];
     state.generatedAt = agentsPayload.generatedAt;
     state.lastError = undefined;
+    state.onboardingPreferences = onboardingPreferences;
     state.refreshRuns = refreshRunsPayload.runs ?? [];
     state.setupStatus = setupPayload.status;
     state.trialReadiness = trialReadinessPayload.readiness;
@@ -217,7 +221,7 @@ async function load(options = {}) {
 
 function render() {
   applyStaticTranslations();
-  const agents = sortAgents(buildDisplayAgents(state.agents));
+  const agents = sortAgents(buildDisplayAgents(filterAgentsByOnboarding(state.agents)));
 
   if (agents.length === 0) {
     elements.grid.innerHTML = `<p class="mini-empty">${escapeHtml(
@@ -228,6 +232,148 @@ function render() {
   }
 
   renderFooter();
+}
+
+async function loadFirstRunOnboardingPreferences() {
+  try {
+    const preferences = window.aiqdDesktop?.getFirstRunOnboarding
+      ? await window.aiqdDesktop.getFirstRunOnboarding()
+      : JSON.parse(window.localStorage?.getItem("aiqd:first-run-onboarding:v1") ?? "null");
+
+    return normalizeOnboardingPreferences(preferences);
+  } catch {
+    return defaultOnboardingPreferences();
+  }
+}
+
+function defaultOnboardingPreferences() {
+  return {
+    agents: {
+      claude: true,
+      codex: true
+    },
+    claudeSources: {
+      cli: false,
+      desktop: true
+    },
+    claudeSource: "desktop",
+    completed: false
+  };
+}
+
+function normalizeOnboardingPreferences(preferences) {
+  const fallback = defaultOnboardingPreferences();
+  const value = preferences && typeof preferences === "object" ? preferences : {};
+  const agents = value.agents && typeof value.agents === "object" ? value.agents : {};
+  const claudeSources = normalizeClaudeSources(value, fallback.claudeSources);
+
+  return {
+    agents: {
+      claude: agents.claude !== false,
+      codex: agents.codex !== false
+    },
+    claudeSources,
+    claudeSource: claudeSources.desktop ? "desktop" : "cli",
+    completed: value.completed === true
+  };
+}
+
+function normalizeClaudeSources(value, fallback) {
+  const sources =
+    value?.claudeSources && typeof value.claudeSources === "object"
+      ? value.claudeSources
+      : undefined;
+  const legacySource =
+    value?.claudeSource === "cli" || value?.claudeSource === "desktop"
+      ? value.claudeSource
+      : undefined;
+
+  let desktop =
+    sources?.desktop === true ||
+    (sources?.desktop !== false && !sources && legacySource !== "cli") ||
+    (!sources && !legacySource && fallback.desktop === true);
+  let cli =
+    sources?.cli === true ||
+    (!sources && legacySource === "cli") ||
+    (!sources && !legacySource && fallback.cli === true);
+
+  if (!desktop && !cli) {
+    desktop = true;
+  }
+
+  return {
+    cli,
+    desktop
+  };
+}
+
+function filterAgentsByOnboarding(agents) {
+  return agents.filter((agent) => {
+    if (agent.agent === "codex") {
+      return shouldShowAgentFamily("codex");
+    }
+
+    if (agent.agent === "claude-code") {
+      return shouldShowClaudeCliWorkflow();
+    }
+
+    if (agent.agent === "claude-desktop") {
+      return shouldShowClaudeDesktopWorkflow();
+    }
+
+    if (agent.provider === "anthropic" || String(agent.agent).startsWith("claude")) {
+      return shouldShowAgentFamily("claude");
+    }
+
+    return true;
+  });
+}
+
+function shouldShowAgentFamily(family) {
+  const preferences = state.onboardingPreferences;
+
+  if (!preferences?.completed) {
+    return true;
+  }
+
+  if (family === "codex") {
+    return preferences.agents.codex !== false;
+  }
+
+  if (family === "claude") {
+    return preferences.agents.claude !== false;
+  }
+
+  return true;
+}
+
+function selectedClaudeSources() {
+  return normalizeOnboardingPreferences(state.onboardingPreferences).claudeSources;
+}
+
+function shouldShowClaudeDesktopWorkflow() {
+  if (!shouldShowAgentFamily("claude")) {
+    return false;
+  }
+
+  if (!state.onboardingPreferences?.completed) {
+    return true;
+  }
+
+  return selectedClaudeSources().desktop;
+}
+
+function shouldShowClaudeCliWorkflow() {
+  if (!shouldShowAgentFamily("claude")) {
+    return false;
+  }
+
+  if (!state.onboardingPreferences?.completed) {
+    return true;
+  }
+
+  const sources = selectedClaudeSources();
+  return sources.cli && !sources.desktop;
 }
 
 // Mirrors app.js: Claude Code CLI and Claude Desktop report the same
@@ -349,15 +495,7 @@ function renderAgent(agent) {
   const stalePrimary = isStaleSnapshot(primary);
   const guidance = primary ? undefined : emptyStateGuidance(agent);
   const detail = primary ? agentDetail(agent) : guidance.detail;
-  const label = primary
-    ? stalePrimary
-      ? tx("{window} needs refresh", "{window} 需刷新", {
-          window: windowLabel(primary.windowType)
-        })
-      : tx("{window} left", "{window} 剩余", {
-          window: windowLabel(primary.windowType)
-        })
-    : guidance.label;
+  const label = primary ? primaryLabel(primary) : guidance.label;
 
   return `
     <article class="mini-agent ${escapeHtml(status)}" title="${escapeHtml(detail)}">
@@ -531,8 +669,10 @@ function footerState() {
     };
   }
 
-  if (!state.trialReadiness && needsRealDataSetup(state.agents)) {
-    const setup = setupProgress(state.agents);
+  const visibleAgents = filterAgentsByOnboarding(state.agents);
+
+  if (!state.trialReadiness && needsRealDataSetup(visibleAgents)) {
+    const setup = setupProgress(visibleAgents);
 
     return {
       action: "settings",
@@ -552,7 +692,7 @@ function footerState() {
     };
   }
 
-  if (hasClaudeWaitingState(state.agents)) {
+  if (hasClaudeWaitingState(visibleAgents)) {
     return {
       action: state.setupStatus?.statusLineManagedByApp ? undefined : "settings",
       ariaLabel: tx("Open Settings for Claude Code setup", "打开设置配置 Claude Code"),
@@ -754,14 +894,17 @@ function needsRealDataSetup(agents) {
 }
 
 function needsStrictReadinessSetup() {
-  return state.trialReadiness && !state.trialReadiness.ok;
+  return Boolean(
+    state.trialReadiness &&
+      visibleReadinessChecks().some((check) => check.status === "fail")
+  );
 }
 
 function strictReadinessProgress() {
-  const checks = state.trialReadiness?.checks ?? [];
+  const checks = visibleReadinessChecks();
   const failedChecks = checks.filter((check) => check.status === "fail");
   const firstFailedCheck = failedChecks[0];
-  const total = checks.length || state.agents.length;
+  const total = checks.length || filterAgentsByOnboarding(state.agents).length;
   const ready = checks.filter((check) => check.status === "pass").length;
   const missingText =
     failedChecks.map(readinessDisplayName).filter(Boolean).join(", ") ||
@@ -784,6 +927,30 @@ function strictReadinessProgress() {
     ),
     total
   };
+}
+
+function visibleReadinessChecks() {
+  const checks = state.trialReadiness?.checks ?? [];
+
+  return checks.filter((check) => {
+    if (check.agent === "codex") {
+      return shouldShowAgentFamily("codex");
+    }
+
+    if (check.agent === "claude-code") {
+      return shouldShowClaudeCliWorkflow();
+    }
+
+    if (check.agent === "claude-desktop") {
+      return shouldShowClaudeDesktopWorkflow();
+    }
+
+    if (check.provider === "anthropic" || String(check.agent).startsWith("claude")) {
+      return shouldShowAgentFamily("claude");
+    }
+
+    return true;
+  });
 }
 
 function readinessCheckTarget(check) {
@@ -831,7 +998,7 @@ function setupProgress(agents) {
     agents.find((agent) => agent.agent === "claude-desktop")?.primarySnapshot
   );
   const setupAgents = sortAgents(agents).filter((agent) =>
-    ["codex", "claude-code"].includes(agent.agent)
+    ["codex", "claude-code", "claude-desktop"].includes(agent.agent)
   );
   const missing = setupAgents.filter((agent) =>
     agent.agent === "claude-code"
@@ -1031,19 +1198,11 @@ function meterValue(snapshot) {
 
 function agentDetail(agent) {
   const snapshots = prioritizeSnapshots(agent.snapshots ?? [], agent.primarySnapshot);
-  const timingParts = snapshots
-    .slice(0, agent.agent === "claude" ? 2 : 1)
-    .map((snapshot) => snapshotTimingDetail(snapshot, { includeWindow: true }))
-    .filter(Boolean);
   const observedAt = latestObservedAt(snapshots) ?? agent.primarySnapshot?.observedAt;
-  const shouldShowUpdate = agent.agent !== "claude" || timingParts.length < 2;
   const parts = [
-    ...timingParts,
-    shouldShowUpdate
-      ? tx("updated {time}", "更新于 {time}", {
-          time: formatRelative(observedAt)
-        })
-      : ""
+    tx("updated {time}", "更新于 {time}", {
+      time: formatRelative(observedAt)
+    })
   ].filter(Boolean);
 
   if (agent.primarySnapshot?.freshness?.status === "stale") {
@@ -1051,6 +1210,27 @@ function agentDetail(agent) {
   }
 
   return parts.join(" / ");
+}
+
+function primaryLabel(snapshot) {
+  const windowText = windowLabel(snapshot.windowType);
+  const quotaText = isStaleSnapshot(snapshot)
+    ? tx("{window} needs refresh", "{window} 需刷新", {
+        window: windowText
+      })
+    : tx("{window} left", "{window} 剩余", {
+        window: windowText
+      });
+  const timingText = snapshotTimingDetail(snapshot);
+
+  if (!timingText) {
+    return quotaText;
+  }
+
+  return tx("{quota} - {timing}", "{quota} · {timing}", {
+    quota: quotaText,
+    timing: timingText
+  });
 }
 
 function snapshotTimingDetail(snapshot, options = {}) {

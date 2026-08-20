@@ -30,6 +30,8 @@ Local Agent Scanner
 
 Candidate file scanning is deliberately narrow. Adapters look for files whose names indicate quota, status, statusline, limits data, or known Codex `rollout-*.jsonl` session logs. Ordinary prompt/response transcript text is not parsed; Codex session logs are used only for structured `rate_limits` fields backed by sanitized fixtures and privacy review.
 
+The local API exposes only windows listed in each adapter manifest. This keeps unsupported or unconfirmed buckets, such as Codex monthly rows inferred from local records, out of the dashboard, mini panel, exports, and reset timeline until the adapter declares them supported.
+
 Reset times are treated as current observations. The product should say "currently reported reset" rather than claiming a reset is guaranteed to happen at that time.
 
 Setup APIs are read-only unless exposed through an explicit CLI command or an explicit app-owned save action. The browser UI may show commands and paths, and the Codex fallback form may write AIQD's own snapshot file, but it should not silently edit external tool configuration.
@@ -44,7 +46,7 @@ An adapter may return no snapshots. That is a valid result when reliable quota d
 
 ## v0.1 Agents
 
-- Codex: weekly quota first
+- Codex: 5-hour and weekly quota windows only
 - Claude Code: 5-hour and weekly statusline quota first
 - Claude Desktop: 5-hour and weekly local plan usage history, an alternative to Claude Code so the CLI is not required
 

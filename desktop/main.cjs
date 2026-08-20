@@ -10,7 +10,7 @@ const {
   screen,
   shell
 } = require("electron");
-const { spawn } = require("node:child_process");
+const { spawn, spawnSync } = require("node:child_process");
 const {
   existsSync,
   mkdirSync,
@@ -23,6 +23,7 @@ const net = require("node:net");
 const { tmpdir } = require("node:os");
 const path = require("node:path");
 const {
+  buildDashboardClosePreferenceStatus,
   buildSmokeBackendEnv,
   buildLaunchAtStartupStatus,
   buildTrayMenuTemplate,
@@ -30,11 +31,15 @@ const {
   firstRunGuideTarget,
   formatStartupError,
   isBackgroundLaunch,
+  isDashboardClosePreferenceMode,
+  ignorePipeWriteError,
   launchAtStartupQueryOptions,
   launchAtStartupSetOptions,
+  normalizeDashboardClosePreferenceMode,
   parseLaunchAtStartupCliValue,
   resolveDesktopShortcuts,
   resolveWidgetBounds: resolveSavedWidgetBounds,
+  safeWriteProcessStream,
   shouldRefreshForClaudeStatusline,
   shouldShowPanelFromLaunch,
   shouldOpenDashboardFromLaunch,
@@ -66,6 +71,8 @@ const smokeUserDataDir = smokeLikeMode
   ? path.join(tmpdir(), `aiqd-desktop-smoke-${process.pid}`)
   : undefined;
 const trayStatusIntervalMs = 30_000;
+const windowsRunKey = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+const windowsRunValueName = "AI Agent Quota Dashboard";
 
 let backend;
 let backendFailure;
@@ -79,6 +86,7 @@ let desktopShortcuts = {};
 let panelWindow;
 let widgetWindow;
 let dashboardWindow;
+let dashboardClosePromptInFlight = false;
 let isQuitting = false;
 let isTrayRefreshing = false;
 let saveWidgetBoundsTimer;
@@ -87,6 +95,8 @@ let showDashboardWhenReady = false;
 
 app.setName("AI Agent Quota Dashboard");
 app.setAppUserModelId("com.isToniLiu.ai-agent-quota-dashboard");
+process.stdout.on("error", ignorePipeWriteError);
+process.stderr.on("error", ignorePipeWriteError);
 
 if (smokeUserDataDir) {
   app.commandLine.appendSwitch("disable-gpu");
@@ -177,11 +187,13 @@ async function startDesktopApp() {
     windowsHide: true
   });
 
-  backend.stdout.on("data", (chunk) => process.stdout.write(chunk));
+  backend.stdout.on("data", (chunk) => {
+    safeWriteProcessStream(process.stdout, chunk);
+  });
   backend.stderr.on("data", (chunk) => {
     const text = chunk.toString();
     backendStderrTail = `${backendStderrTail}${text}`.slice(-4000);
-    process.stderr.write(chunk);
+    safeWriteProcessStream(process.stderr, chunk);
   });
   backend.on("error", (error) => {
     backendFailure = `Backend process failed to start: ${error.message}`;
@@ -350,6 +362,22 @@ function registerIpc() {
 
   ipcMain.handle("launch-at-startup:set", (_event, enabled) =>
     setLaunchAtStartupEnabled(enabled === true)
+  );
+
+  ipcMain.handle("dashboard-close-preference:get", () =>
+    getDashboardClosePreferenceStatus()
+  );
+
+  ipcMain.handle("dashboard-close-preference:set", (_event, mode) =>
+    setDashboardClosePreferenceMode(mode)
+  );
+
+  ipcMain.handle("first-run-onboarding:get", () =>
+    getFirstRunOnboardingPreferences()
+  );
+
+  ipcMain.handle("first-run-onboarding:set", (_event, preferences) =>
+    setFirstRunOnboardingPreferences(preferences)
   );
 
   ipcMain.handle("toggle-widget", () => {
@@ -572,6 +600,9 @@ function openDashboardWindow(view, target) {
       title: "AI Agent Quota",
       webPreferences: secureWebPreferences()
     });
+    dashboardWindow.on("close", (event) => {
+      handleDashboardWindowClose(event);
+    });
     dashboardWindow.on("closed", () => {
       dashboardWindow = undefined;
     });
@@ -585,6 +616,84 @@ function openDashboardWindow(view, target) {
   dashboardWindow.show();
   dashboardWindow.focus();
   updateTrayStatus();
+}
+
+function handleDashboardWindowClose(event) {
+  if (isQuitting) {
+    return;
+  }
+
+  const { mode } = getDashboardClosePreferenceStatus();
+
+  if (mode === "tray") {
+    event.preventDefault();
+    dashboardWindow?.hide();
+    return;
+  }
+
+  if (mode === "quit") {
+    event.preventDefault();
+    isQuitting = true;
+    app.quit();
+    return;
+  }
+
+  event.preventDefault();
+  void showDashboardClosePrompt();
+}
+
+async function showDashboardClosePrompt() {
+  if (!dashboardWindow || dashboardClosePromptInFlight) {
+    dashboardWindow?.focus();
+    return;
+  }
+
+  dashboardClosePromptInFlight = true;
+
+  try {
+    const result = await dialog.showMessageBox(dashboardWindow, {
+      buttons: [
+        desktopText("Keep in tray", "留在托盘"),
+        desktopText("Quit AIQD", "退出 AIQD"),
+        desktopText("Cancel", "取消")
+      ],
+      cancelId: 2,
+      checkboxLabel: desktopText(
+        "Remember my choice and do not ask again",
+        "记住我的选择，以后不再询问"
+      ),
+      checkboxChecked: false,
+      defaultId: 0,
+      detail: desktopText(
+        "Keeping AIQD in the tray lets the local backend continue running for quick quota checks. You can quit later from the tray menu.",
+        "留在托盘会让本地后端继续运行，方便快速查看额度；之后仍然可以从托盘菜单退出。"
+      ),
+      message: desktopText(
+        "Close the main window or quit AIQD?",
+        "关闭主页面，还是退出 AIQD？"
+      ),
+      noLink: true,
+      title: desktopText("Close AIQD", "关闭 AIQD"),
+      type: "question"
+    });
+
+    if (result.checkboxChecked && result.response === 0) {
+      setDashboardClosePreferenceMode("tray");
+    } else if (result.checkboxChecked && result.response === 1) {
+      setDashboardClosePreferenceMode("quit");
+    }
+
+    if (result.response === 0) {
+      dashboardWindow?.hide();
+    } else if (result.response === 1) {
+      isQuitting = true;
+      app.quit();
+    } else {
+      dashboardWindow?.focus();
+    }
+  } finally {
+    dashboardClosePromptInFlight = false;
+  }
 }
 
 function dashboardUrl(view, target) {
@@ -603,7 +712,7 @@ async function openFirstRunGuide(options = {}) {
     }
 
     if (result.guideTarget) {
-      openDashboardWindow(result.guideTarget.view, result.guideTarget.target);
+      openDashboardWindow();
       return;
     }
 
@@ -622,10 +731,8 @@ async function openFirstRunGuide(options = {}) {
 async function runFirstRunGuideSmoke() {
   const result = await resolveFirstRunGuide();
   const state = readDesktopState();
-  const guidePath = result.guideTarget
-    ? dashboardPath(result.guideTarget.view, result.guideTarget.target)
-    : "mini-panel";
-  const expectedPath = "/?view=settings#codex-snapshot-content";
+  const guidePath = result.skipped ? "skipped" : "dashboard";
+  const expectedPath = "dashboard";
   const ok = !result.skipped && guidePath === expectedPath && Boolean(
     state.firstRunGuideShownAt
   );
@@ -697,6 +804,10 @@ function getLaunchAtStartupStatus() {
   return buildLaunchAtStartupStatus({
     isPackaged: true,
     platform: process.platform,
+    registryEntry:
+      process.platform === "win32"
+        ? readWindowsLaunchAtStartupEntry(process.execPath)
+        : undefined,
     settings
   });
 }
@@ -710,11 +821,162 @@ function setLaunchAtStartupEnabled(enabled) {
     );
   }
 
-  app.setLoginItemSettings(
-    launchAtStartupSetOptions(enabled, process.execPath, process.platform)
-  );
+  if (process.platform === "win32") {
+    setWindowsLaunchAtStartupEntry(enabled, process.execPath);
+  } else {
+    app.setLoginItemSettings(
+      launchAtStartupSetOptions(enabled, process.execPath, process.platform)
+    );
+  }
 
   return getLaunchAtStartupStatus();
+}
+
+function expectedWindowsStartupCommand(executablePath) {
+  return `"${executablePath}" --background`;
+}
+
+function readWindowsLaunchAtStartupEntry(executablePath) {
+  const result = spawnSync("reg", [
+    "query",
+    windowsRunKey,
+    "/v",
+    windowsRunValueName
+  ], {
+    encoding: "utf8",
+    windowsHide: true
+  });
+
+  if (result.status !== 0) {
+    return {
+      command: undefined,
+      exists: false,
+      matchesExpected: false
+    };
+  }
+
+  const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+  const line = output
+    .split(/\r?\n/)
+    .find((candidate) => candidate.includes(windowsRunValueName));
+  const command = line?.replace(/^.*REG_\w+\s+/i, "").trim();
+  const expected = expectedWindowsStartupCommand(executablePath);
+
+  return {
+    command,
+    exists: Boolean(command),
+    matchesExpected: normalizeWindowsRunCommand(command) === normalizeWindowsRunCommand(expected)
+  };
+}
+
+function setWindowsLaunchAtStartupEntry(enabled, executablePath) {
+  const args = enabled
+    ? [
+        "add",
+        windowsRunKey,
+        "/v",
+        windowsRunValueName,
+        "/t",
+        "REG_SZ",
+        "/d",
+        expectedWindowsStartupCommand(executablePath),
+        "/f"
+      ]
+    : ["delete", windowsRunKey, "/v", windowsRunValueName, "/f"];
+  const result = spawnSync("reg", args, {
+    encoding: "utf8",
+    windowsHide: true
+  });
+
+  if (result.status !== 0 && enabled) {
+    throw new Error(
+      `Could not update Windows startup entry: ${result.stderr || result.stdout}`
+    );
+  }
+
+  if (result.status !== 0 && !enabled) {
+    return;
+  }
+}
+
+function normalizeWindowsRunCommand(command) {
+  return String(command ?? "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function getDashboardClosePreferenceStatus() {
+  return buildDashboardClosePreferenceStatus(readDesktopState());
+}
+
+function setDashboardClosePreferenceMode(mode) {
+  if (!isDashboardClosePreferenceMode(mode)) {
+    throw new Error("Unsupported dashboard close preference mode.");
+  }
+
+  writeDesktopState({
+    ...readDesktopState(),
+    dashboardClosePreference: {
+      mode: normalizeDashboardClosePreferenceMode(mode)
+    }
+  });
+
+  return getDashboardClosePreferenceStatus();
+}
+
+function getFirstRunOnboardingPreferences() {
+  return normalizeFirstRunOnboardingPreferences(
+    readDesktopState().firstRunOnboarding
+  );
+}
+
+function setFirstRunOnboardingPreferences(input) {
+  const preferences = normalizeFirstRunOnboardingPreferences(input);
+
+  writeDesktopState({
+    ...readDesktopState(),
+    firstRunOnboarding: preferences
+  });
+
+  return getFirstRunOnboardingPreferences();
+}
+
+function normalizeFirstRunOnboardingPreferences(input) {
+  const value = input && typeof input === "object" ? input : {};
+  const agents = value.agents && typeof value.agents === "object" ? value.agents : {};
+  const codex = agents.codex !== false;
+  const claude = agents.claude !== false;
+  const rawClaudeSources =
+    value.claudeSources && typeof value.claudeSources === "object"
+      ? value.claudeSources
+      : undefined;
+  let claudeDesktop =
+    rawClaudeSources?.desktop === true ||
+    (!rawClaudeSources && value.claudeSource !== "cli");
+  let claudeCli =
+    rawClaudeSources?.cli === true ||
+    (!rawClaudeSources && value.claudeSource === "cli");
+
+  if (!claudeDesktop && !claudeCli) {
+    claudeDesktop = true;
+  }
+
+  const claudeSource = claudeDesktop ? "desktop" : "cli";
+
+  return {
+    agents: {
+      claude,
+      codex
+    },
+    claudeSources: {
+      cli: claudeCli,
+      desktop: claudeDesktop
+    },
+    claudeSource,
+    completed: value.completed === true
+  };
+}
+
+function desktopText(en, zh) {
+  return app.getLocale().toLowerCase().startsWith("zh") ? zh : en;
 }
 
 function createTrayIcon() {

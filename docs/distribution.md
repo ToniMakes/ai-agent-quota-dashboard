@@ -1,6 +1,6 @@
 # Distribution and Startup
 
-Last updated: 2026-08-14
+Last updated: 2026-08-21
 
 ## Current Release Shape
 
@@ -66,20 +66,31 @@ Launch at login is part of the packaged desktop story, not a hidden side effect 
 
 For packaged releases, startup control is provided in two places:
 
-- Installer option: `Start AIQD when I sign in`
-- App Settings toggle: `Launch at startup`
+- Installer option: `Start AIQD when I sign in (tray only)`
+- App Settings toggle: `Launch at startup` in Desktop Preferences
+- Dashboard topbar toggle: `Startup`
 
 The first packaged release defaults startup to off. AIQD runs a local backend and a tray shell, so startup behavior is explicit, reversible, and easy to understand.
 
 Implementation notes:
 
-- The Settings toggle uses Electron's packaged-app login item APIs: `app.setLoginItemSettings()` and `app.getLoginItemSettings()`.
+- The Windows Settings and topbar toggles read and write AIQD's current-user Run entry directly.
+- macOS can use Electron's packaged-app login item APIs: `app.setLoginItemSettings()` and `app.getLoginItemSettings()`.
 - Windows startup entries use the packaged executable with `--background`, so sign-in starts only the tray shell and local backend unless setup or recovery guidance needs attention.
 - Source mode does not create an official startup entry.
-- The NSIS installer checkbox calls the packaged app's short `--set-launch-at-login=1` mode, so Electron owns the login-item write.
+- The NSIS installer checkbox calls the packaged app's short `--set-launch-at-login=1` mode, so AIQD owns the login-item write.
 - The uninstaller removes AIQD-owned Windows Run and StartupApproved entries to avoid orphaned startup entries.
 
 The installed desktop shortcut should open the main dashboard window. The tray mini panel remains a quick-access surface from the system tray, not the primary result of double-clicking the app entry.
+
+## Main Window Close Behavior
+
+The main dashboard window's close button is explicit for first-time users:
+
+- Default behavior: ask whether to quit AIQD or keep the tray shell and local backend running.
+- The dialog can remember either choice and stop asking.
+- Settings can restore the prompt or set the default close action to tray or quit.
+- Tray Quit remains the direct way to fully exit AIQD.
 
 ## Expected Behavior
 
@@ -90,6 +101,7 @@ The installed desktop shortcut should open the main dashboard window. The tray m
 - Disabling the toggle should remove the OS startup entry created by AIQD.
 - Startup must not approve global shortcuts, automate other apps, change provider settings, or add extra data sources.
 - Backend startup failures should use the same recovery guidance as manual desktop launch.
+- Packaged GUI launches should tolerate disconnected stdout/stderr pipes so a desktop or Start menu launch never shows a JavaScript `EPIPE` crash while forwarding backend logs.
 
 ## Platform Notes
 
@@ -103,5 +115,8 @@ The installed desktop shortcut should open the main dashboard window. The tray m
 - Fresh install with the installer option off does not create a startup entry.
 - Fresh install with the installer option on starts AIQD after sign-in and shows only the desktop shell/tray behavior.
 - Settings can enable and disable startup after installation.
+- First main-window close asks whether to quit or keep AIQD in the tray.
+- Settings can restore the close prompt or choose tray/quit as the default close action.
+- Opening the packaged app from the desktop or Start menu does not crash if no console is attached or the inherited log pipe closes.
 - Uninstall or app removal does not leave an orphaned startup entry.
 - Startup launch preserves the same privacy boundary as manual launch: no cookies, no simulated login, no hidden APIs, and no prompt/response/source-code upload.

@@ -19,6 +19,7 @@ Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` h
 - [x] `npm run desktop:first-run-smoke` passes locally and uses isolated provider data paths
 - [x] `npm run package:win:dir` passes locally
 - [x] Packaged exe smoke passes: `& ".\release\win-unpacked\AI Agent Quota Dashboard.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process --smoke`
+- [x] Installed packaged exe hidden-window smoke passes from the desktop-entry target without a GUI `EPIPE` crash
 - [x] Packaged first-run smoke passes: `& ".\release\win-unpacked\AI Agent Quota Dashboard.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process --smoke-first-run-guide`
 - [x] `npm run package:win` produces `release/AI Agent Quota Dashboard-0.1.0-win-x64.exe`
 - [x] `npm run trial:preflight` gives source-specific next actions or reports ready
@@ -93,6 +94,10 @@ Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` h
 
 - [x] Installer startup option is explicit and defaults to off for the first packaged release
 - [x] Settings includes a reversible `Launch at startup` toggle
+- [x] Dashboard topbar exposes the same startup toggle prominently
+- [x] First-launch onboarding asks which agents the user uses and whether Claude data should come from Desktop or Claude Code CLI
+- [x] First main-window close asks whether to quit or keep AIQD in the tray
+- [x] Settings can restore or bypass the main-window close prompt
 - [ ] Settings includes automatic refresh interval presets and explains that actual observed times depend on provider data updates
 - [ ] Settings includes a safe `Restore default settings` action for AIQD-owned preferences only
 - [ ] Any destructive reset, local history deletion, or external Claude/Codex disconnect action is separate from restore defaults and requires explicit confirmation

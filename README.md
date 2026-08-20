@@ -5,7 +5,7 @@
 
 A local-first, quota-first dashboard for AI coding agents.
 
-Open the dashboard and see, within a few seconds, how much quota is left for Codex and Claude Code, when it resets, and how reliable the source is.
+Open the dashboard and see, within a few seconds, how much quota is left for Codex and Claude, when it resets, and how reliable the source is.
 
 Unlike general token or cost trackers, this project is quota-first. It focuses on remaining limits, reported reset times, and source confidence for local AI coding agents.
 
@@ -26,6 +26,7 @@ See [docs/status.md](docs/status.md) for the current project snapshot. The curre
 - Fixture-driven parsers for Claude Code statusline rate limits
 - A conservative Codex parser for explicit structured quota snapshots
 - Automatic Codex CLI `rate_limits` detection when supported structured local events are available
+- Codex display/export surfaces show only supported visible windows, currently 5-hour and weekly, and hide unconfirmed monthly buckets
 - Manual Codex snapshot command and Settings form for visible `/status` or Usage values
 - Settings view status for Codex CLI quota detection with a manual fallback
 - Settings real-data overview for first-run Codex and Claude Code setup
@@ -48,6 +49,7 @@ See [docs/status.md](docs/status.md) for the current project snapshot. The curre
 - One-time desktop first-run guide that uses strict trial readiness to open the exact setup or Doctor section
 - Desktop smoke coverage for the first-run guide deep-link and local state write
 - Desktop startup diagnostics with recovery guidance for backend failures
+- Packaged desktop launches tolerate disconnected GUI stdout/stderr pipes instead of surfacing `EPIPE` main-process errors
 - Desktop global shortcuts for AIQD mini panel, refresh, and widget actions
 - Local trial scripts for desktop launch, Doctor, and Claude statusline self-test
 - Windows NSIS installer build through `electron-builder`
@@ -118,9 +120,9 @@ Normal-user release target:
    The Windows x64 artifact is named `AI Agent Quota Dashboard-0.1.0-win-x64.exe`.
 2. Run the installer. The optional `Start AIQD when I sign in` checkbox defaults to off.
 3. Open the AIQD desktop shortcut.
-4. In Settings, click `Set up Codex`, `Set up Claude Code CLI`, or `Check Claude Desktop` to reveal only the setup details you need.
-5. For Claude, either source is enough: if you already use Claude Desktop, AIQD reads its local usage file automatically with nothing to install. If you prefer Claude Code CLI, use `Install Claude Code CLI` if it is missing, then `Connect Claude data`.
-6. Open Claude Code once, send one short message, then return to AIQD and check the dashboard. (Skip this if Claude Desktop already shows fresh data.)
+4. The first-launch guide asks which agents you use. If you choose Claude, pick either Claude Desktop or Claude Code CLI.
+5. Claude Desktop needs no setup: use Claude Desktop once, then refresh AIQD. If you choose Claude Code CLI, AIQD connects the local statusline receiver and then Claude Code needs to run once.
+6. Return to AIQD and check the dashboard.
 
 Developer source mode:
 
@@ -251,7 +253,7 @@ Then, from PowerShell:
 
 The packaged app starts its local backend through Electron's bundled Node runtime, so normal users do not need to install Node.js or npm.
 
-The installer includes an optional `Start AIQD when I sign in` checkbox. It is off by default; the same setting can be enabled or disabled later from Settings > Desktop Startup.
+The installer includes an optional `Start AIQD when I sign in` checkbox. It is off by default; the same setting can be enabled or disabled later from Settings > Desktop Preferences.
 
 The formal desktop preview should use a signed installer through SignPath Foundation open-source signing if approval is completed before release. Unsigned RC or preview artifacts may be used for testing and SignPath review, but must be labeled as unsigned. See [docs/code-signing.md](docs/code-signing.md).
 

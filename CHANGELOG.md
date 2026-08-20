@@ -16,6 +16,10 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Windows NSIS installer build through `electron-builder`
 - Packaged desktop runtime starts the local backend through Electron's bundled Node runtime, so users do not need Node.js
 - Opt-in launch-at-login for packaged desktop builds, with a default-off installer checkbox, Settings toggle, background tray startup, and uninstall cleanup
+- Prominent dashboard startup toggle for launch-at-login setup
+- Main-window close confirmation that can remember whether X keeps AIQD in the tray or exits, with Settings controls to restore the prompt
+- First-launch onboarding modal for selecting Codex and/or Claude, plus Claude Desktop vs Claude Code CLI source preference
+- Agent display and Claude source preferences now hide unselected sources across Dashboard, Settings, Doctor, and the mini panel; Claude Desktop takes priority when selected with Claude Code CLI
 - Collapsible first-run setup details controlled by the Codex and Claude setup buttons
 - Mini panel now hides duplicate primary quota rows and uses compact secondary-window bars, with Claude Code's 5-hour quota highlighted in yellow
 - Main dashboard quota windows were decluttered by moving primary-window used/reset details below the main meter and keeping extra windows, such as Claude Code's 5-hour quota, as separate progress rows
@@ -93,10 +97,17 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ### Changed
 
+- Settings now moves completed first-time setup and connection-status panels to the bottom so persistent desktop preferences stay first
+- Desktop startup and close-confirmation settings now render as compact preference rows instead of explanatory status blocks
+- First-run guidance now opens the dashboard and lets the modal handle setup choices instead of deep-linking into Settings
+- Claude stale-data recovery copy now points desktop users to Claude Desktop local usage history first, with Claude Code CLI kept optional
 - Mini panel quota cards now replace visible source labels with window-level reset or refresh timing; the merged Claude card shows both 5h and weekly timing when available
 
 ### Fixed
 
+- Codex monthly windows are hidden from dashboard, mini panel, exports, and reset timelines unless the Codex adapter explicitly supports them, matching the current official visible usage surfaces
+- Packaged desktop launches now tolerate disconnected stdout/stderr pipes, avoiding `EPIPE: broken pipe` main-process crashes when opened from Windows desktop or Start menu entries
+- Windows startup toggle now reads and writes AIQD's current-user Run entry directly, avoiding a saved startup entry being shown as off
 - Windows uninstall now removes Electron app data left under `%APPDATA%\AI Agent Quota` by earlier RC builds
 - Claude Code statusline reset times now also expire quota snapshots, so old 5-hour windows stop looking fresh after their reported reset
 - Claude Code statusline labels are clearer in dashboard and mini surfaces to avoid implying Claude desktop app usage-limit support

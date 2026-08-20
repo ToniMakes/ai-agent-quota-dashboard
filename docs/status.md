@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-08-15
+Last updated: 2026-08-21
 
 AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The core MVP is no longer just a scaffold: the local dashboard, desktop tray shell, real-data setup flow, and strict trial readiness checks are implemented and passing CI. The first public preview target is now installer-first for normal users, with source mode retained as a developer fallback.
 
@@ -9,6 +9,7 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The core MVP is no 
 - Local Node.js service bound to `127.0.0.1`
 - SQLite persistence for normalized quota snapshots, reset events, and refresh runs
 - Codex quota detection from local CLI `rate_limits` events, with a manual visible-status fallback
+- Codex display/export surfaces hide unsupported monthly buckets and expose only the adapter-supported 5-hour and weekly windows
 - Claude Code quota ingestion from official statusline `rate_limits`
 - Claude Desktop quota ingestion from local `plan-usage-history.json`, an alternative to Claude Code so the CLI is not required
 - Real-data readiness passes the `anthropic` provider group when either Claude Code or Claude Desktop is fresh
@@ -20,6 +21,7 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The core MVP is no 
 - Mini quota cards show window-level reset or refresh timing instead of exposing source labels in the compact surface; the merged Claude card can show both 5h and weekly timing
 - Windows NSIS installer build via `electron-builder`
 - Packaged desktop runtime starts the local backend through Electron's bundled Node runtime
+- Packaged desktop launches tolerate disconnected GUI stdout/stderr pipes instead of crashing with `EPIPE`
 - Opt-in packaged launch-at-login, with installer checkbox off by default and a reversible Settings toggle
 - Shared app icon assets for the tray, main window, and desktop shortcut
 - Collapsible first-run Settings details controlled by the Codex and Claude setup buttons
@@ -55,6 +57,7 @@ The current maintainer checkout has passed:
 - Browser/API smoke against demo mode for `/`, `/mini.html`, `/api/health`, `/api/agents`, `/api/trial-readiness`, and `/api/export?format=json`
 - Maintainer-profile installer trial: silent NSIS install exited `0`, desktop and Start menu shortcuts target the installed packaged executable, the desktop shortcut opens the installed app backend on `127.0.0.1:4317`, `/api/trial-readiness` reports `ok: true`, and browser smoke passes for the installed dashboard and mini panel
 - Maintainer-profile desktop and Start menu entries were refreshed to the latest installed packaged executable after the `v0.1.0-rc.3` build
+- Maintainer-profile desktop and Start menu entries were refreshed again on 2026-08-21 after the Codex monthly-window hiding and desktop `EPIPE` fix; a hidden-window installed-app smoke exited `0`
 - Clean-copy trial from `.tmp/fresh-trial-v0.1.0-rc.1`: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, `npm run trial:ready`, and browser/API smoke
 - GitHub Actions CI on `main`
 

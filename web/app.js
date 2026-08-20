@@ -15,6 +15,7 @@ const { tx, locale, sourceLabel, compactNumber, formatRelative } = createI18n(
 );
 
 const state = {
+  agentPreferencesSaveStatus: undefined,
   agents: [],
   claudeAutoSetupMode: undefined,
   claudeAutoSetupPending: false,
@@ -23,11 +24,20 @@ const state = {
   codexSnapshotFormDraft: undefined,
   codexSnapshotSaveStatus: undefined,
   codexSnapshotStatus: undefined,
+  dashboardClosePreferencePending: false,
+  dashboardClosePreferenceSaveStatus: undefined,
+  dashboardClosePreferenceStatus: undefined,
   desktopShortcutsStatus: undefined,
   doctorChecks: [],
   launchAtStartupPending: false,
+  launchAtStartupPendingValue: undefined,
   launchAtStartupSaveStatus: undefined,
   launchAtStartupStatus: undefined,
+  startupPreferenceExpanded: false,
+  onboardingDraft: undefined,
+  onboardingPreferences: undefined,
+  onboardingSaveStatus: undefined,
+  onboardingStep: "agents",
   pathsStatus: undefined,
   refreshRuns: [],
   refreshStatus: undefined,
@@ -40,7 +50,12 @@ const state = {
 
 const elements = {
   agentGrid: document.querySelector("#agent-grid"),
+  agentPreferencesContent: document.querySelector("#agent-preferences-content"),
+  advancedSettingsPanel: document.querySelector("#advanced-settings-panel"),
+  claudeConnectionPanel: document.querySelector("#claude-connection-panel"),
   codexSnapshotContent: document.querySelector("#codex-snapshot-content"),
+  codexConnectionPanel: document.querySelector("#codex-connection-panel"),
+  dashboardCloseContent: document.querySelector("#dashboard-close-content"),
   desktopShortcutsContent: document.querySelector("#desktop-shortcuts-content"),
   doctorChecklist: document.querySelector("#doctor-checklist"),
   doctorChecklistScore: document.querySelector("#doctor-checklist-score"),
@@ -48,16 +63,22 @@ const elements = {
   eventList: document.querySelector("#event-list"),
   languageToggle: document.querySelector("#language-toggle"),
   lastRefresh: document.querySelector("#last-refresh"),
+  onboardingRoot: document.querySelector("#first-run-onboarding-root"),
   pathsContent: document.querySelector("#paths-content"),
   realDataContent: document.querySelector("#real-data-content"),
+  realDataPanel: document.querySelector("#real-data-panel"),
   realDataScore: document.querySelector("#real-data-score"),
   refreshButton: document.querySelector("#refresh-button"),
   refreshStatus: document.querySelector("#refresh-status"),
   refreshRunList: document.querySelector("#refresh-run-list"),
   resetList: document.querySelector("#reset-list"),
   settingsContent: document.querySelector("#settings-content"),
+  settingsView: document.querySelector("#settings-view"),
   startupContent: document.querySelector("#startup-content"),
+  startupPanel: document.querySelector("#startup-panel"),
+  feedbackPanel: document.querySelector("#feedback-panel"),
   tabs: document.querySelectorAll(".tab"),
+  topbarStartupControl: document.querySelector("#topbar-startup-control"),
   views: document.querySelectorAll(".view")
 };
 
@@ -102,6 +123,52 @@ document.addEventListener("change", (event) => {
     target.matches("[data-launch-at-startup-toggle]")
   ) {
     void setLaunchAtStartup(target.checked);
+    return;
+  }
+
+  if (
+    target instanceof HTMLInputElement &&
+    target.matches("[data-dashboard-close-prompt-toggle]")
+  ) {
+    void setDashboardClosePreference(target.checked ? "ask" : "tray");
+    return;
+  }
+
+  if (
+    target instanceof HTMLInputElement &&
+    target.matches("[data-agent-preference-agent]")
+  ) {
+    void setAgentPreference(target.dataset.agentPreferenceAgent, target.checked);
+    return;
+  }
+
+  if (
+    target instanceof HTMLInputElement &&
+    target.matches("[data-agent-preference-claude-source]")
+  ) {
+    void setClaudeSourcePreference(
+      target.dataset.agentPreferenceClaudeSource,
+      target.checked
+    );
+    return;
+  }
+
+  if (
+    target instanceof HTMLInputElement &&
+    target.matches("[data-onboarding-agent]")
+  ) {
+    updateOnboardingAgent(target.dataset.onboardingAgent, target.checked);
+    return;
+  }
+
+  if (
+    target instanceof HTMLInputElement &&
+    target.matches("[data-onboarding-claude-source]")
+  ) {
+    updateOnboardingClaudeSource(
+      target.dataset.onboardingClaudeSource,
+      target.checked
+    );
     return;
   }
 
@@ -160,6 +227,53 @@ document.addEventListener("click", async (event) => {
 
   if (claudeCheckActionButton instanceof HTMLButtonElement) {
     await runClaudeStatuslineCheck();
+    return;
+  }
+
+  const preferenceDisclosureButton = target.closest("[data-preference-disclosure]");
+
+  if (preferenceDisclosureButton instanceof HTMLButtonElement) {
+    if (preferenceDisclosureButton.dataset.preferenceDisclosure === "startup") {
+      state.startupPreferenceExpanded = !state.startupPreferenceExpanded;
+      renderDesktopStartupSettings();
+    }
+
+    return;
+  }
+
+  const onboardingSourceButton = target.closest("[data-onboarding-claude-source]");
+
+  if (onboardingSourceButton instanceof HTMLButtonElement) {
+    updateOnboardingClaudeSource(onboardingSourceButton.dataset.onboardingClaudeSource);
+    return;
+  }
+
+  const onboardingNextButton = target.closest("[data-onboarding-next]");
+
+  if (onboardingNextButton instanceof HTMLButtonElement) {
+    advanceOnboarding();
+    return;
+  }
+
+  const onboardingBackButton = target.closest("[data-onboarding-back]");
+
+  if (onboardingBackButton instanceof HTMLButtonElement) {
+    state.onboardingStep = "agents";
+    renderFirstRunOnboarding();
+    return;
+  }
+
+  const onboardingFinishButton = target.closest("[data-onboarding-finish]");
+
+  if (onboardingFinishButton instanceof HTMLButtonElement) {
+    await finishFirstRunOnboarding();
+    return;
+  }
+
+  const onboardingLaterButton = target.closest("[data-onboarding-later]");
+
+  if (onboardingLaterButton instanceof HTMLButtonElement) {
+    await saveOnboardingDraft({ completed: true, runClaudeConnect: false });
     return;
   }
 
@@ -328,9 +442,11 @@ async function load() {
   const [
     agentsResponse,
     codexSnapshotResponse,
+    dashboardClosePreference,
     desktopShortcutsResponse,
     doctorResponse,
     eventsResponse,
+    onboardingPreferences,
     pathsResponse,
     refreshRunsResponse,
     setupResponse,
@@ -339,9 +455,11 @@ async function load() {
   ] = await Promise.all([
     fetch("/api/agents"),
     fetch("/api/setup/codex-snapshot"),
+    loadDashboardClosePreferenceStatus(),
     fetch("/api/setup/desktop-shortcuts"),
     fetch("/api/doctor"),
     fetch("/api/reset-events"),
+    loadFirstRunOnboardingPreferences(),
     fetch("/api/setup/local-paths"),
     fetch("/api/refresh-runs"),
     fetch("/api/setup/claude-statusline"),
@@ -360,8 +478,12 @@ async function load() {
 
   state.agents = agentsPayload.agents ?? [];
   state.codexSnapshotStatus = codexSnapshotPayload.status;
+  state.dashboardClosePreferenceStatus = dashboardClosePreference;
   state.desktopShortcutsStatus = desktopShortcutsPayload.status;
   state.doctorChecks = doctorPayload.checks ?? [];
+  state.onboardingPreferences = onboardingPreferences;
+  state.onboardingDraft ??= onboardingDraftFromPreferences(onboardingPreferences);
+  state.onboardingStep = onboardingPreferences.completed ? "agents" : state.onboardingStep;
   state.resetEvents = eventsPayload.events ?? [];
   state.pathsStatus = pathsPayload.status;
   state.refreshRuns = refreshRunsPayload.runs ?? [];
@@ -398,12 +520,455 @@ async function loadLaunchAtStartupStatus() {
   }
 }
 
+async function loadDashboardClosePreferenceStatus() {
+  if (!window.aiqdDesktop?.getDashboardClosePreference) {
+    return {
+      actionWhenNotAsking: "tray",
+      askBeforeClose: true,
+      mode: "ask",
+      reason: "desktop_bridge_unavailable",
+      supported: false
+    };
+  }
+
+  try {
+    return await window.aiqdDesktop.getDashboardClosePreference();
+  } catch (error) {
+    return {
+      actionWhenNotAsking: "tray",
+      askBeforeClose: true,
+      error: error instanceof Error ? error.message : String(error),
+      mode: "ask",
+      reason: "status_error",
+      supported: false
+    };
+  }
+}
+
+async function loadFirstRunOnboardingPreferences() {
+  if (window.aiqdDesktop?.getFirstRunOnboarding) {
+    try {
+      return normalizeOnboardingPreferences(
+        await window.aiqdDesktop.getFirstRunOnboarding()
+      );
+    } catch {
+      return defaultOnboardingPreferences();
+    }
+  }
+
+  try {
+    return normalizeOnboardingPreferences(
+      JSON.parse(window.localStorage?.getItem("aiqd:first-run-onboarding:v1") ?? "null")
+    );
+  } catch {
+    return defaultOnboardingPreferences();
+  }
+}
+
+async function saveFirstRunOnboardingPreferences(preferences) {
+  const normalized = normalizeOnboardingPreferences(preferences);
+
+  if (window.aiqdDesktop?.setFirstRunOnboarding) {
+    return normalizeOnboardingPreferences(
+      await window.aiqdDesktop.setFirstRunOnboarding(normalized)
+    );
+  }
+
+  window.localStorage?.setItem(
+    "aiqd:first-run-onboarding:v1",
+    JSON.stringify(normalized)
+  );
+  return normalized;
+}
+
+function defaultOnboardingPreferences() {
+  return {
+    agents: {
+      claude: true,
+      codex: true
+    },
+    claudeSources: {
+      cli: false,
+      desktop: true
+    },
+    claudeSource: "desktop",
+    completed: false
+  };
+}
+
+function onboardingDraftFromPreferences(preferences) {
+  const normalized = normalizeOnboardingPreferences(preferences);
+
+  return {
+    agents: {
+      claude: normalized.agents.claude,
+      codex: normalized.agents.codex
+    },
+    claudeSources: {
+      cli: normalized.claudeSources.cli,
+      desktop: normalized.claudeSources.desktop
+    },
+    claudeSource: normalized.claudeSource
+  };
+}
+
+function normalizeOnboardingPreferences(preferences) {
+  const fallback = defaultOnboardingPreferences();
+  const value = preferences && typeof preferences === "object" ? preferences : {};
+  const agents = value.agents && typeof value.agents === "object" ? value.agents : {};
+  const claudeSources = normalizeClaudeSources(value, fallback.claudeSources);
+  const claudeSource = claudeSources.desktop ? "desktop" : "cli";
+
+  return {
+    agents: {
+      claude: agents.claude !== false,
+      codex: agents.codex !== false
+    },
+    claudeSources,
+    claudeSource,
+    completed: value.completed === true
+  };
+}
+
+function normalizeClaudeSources(value, fallback) {
+  const sources =
+    value?.claudeSources && typeof value.claudeSources === "object"
+      ? value.claudeSources
+      : undefined;
+  const legacySource =
+    value?.claudeSource === "cli" || value?.claudeSource === "desktop"
+      ? value.claudeSource
+      : undefined;
+
+  let desktop =
+    sources?.desktop === true ||
+    (sources?.desktop !== false && !sources && legacySource !== "cli") ||
+    (!sources && !legacySource && fallback.desktop === true);
+  let cli =
+    sources?.cli === true ||
+    (!sources && legacySource === "cli") ||
+    (!sources && !legacySource && fallback.cli === true);
+
+  if (!desktop && !cli) {
+    desktop = true;
+  }
+
+  return {
+    cli,
+    desktop
+  };
+}
+
+function updateOnboardingAgent(agent, checked) {
+  state.onboardingDraft ??= onboardingDraftFromPreferences(
+    state.onboardingPreferences
+  );
+
+  if (agent === "codex" || agent === "claude") {
+    state.onboardingDraft.agents[agent] = checked;
+  }
+
+  renderFirstRunOnboarding();
+}
+
+function updateOnboardingClaudeSource(source, checked) {
+  state.onboardingDraft ??= onboardingDraftFromPreferences(
+    state.onboardingPreferences
+  );
+
+  if (source === "desktop" || source === "cli") {
+    state.onboardingDraft.claudeSources[source] = checked;
+
+    if (
+      !state.onboardingDraft.claudeSources.desktop &&
+      !state.onboardingDraft.claudeSources.cli
+    ) {
+      state.onboardingDraft.claudeSources[source] = true;
+      state.onboardingSaveStatus = {
+        kind: "warning",
+        message: tx(
+          "Choose at least one Claude source.",
+          "至少选择一个 Claude 数据来源。"
+        )
+      };
+    } else {
+      state.onboardingSaveStatus = undefined;
+    }
+
+    state.onboardingDraft.claudeSource = state.onboardingDraft.claudeSources
+      .desktop
+      ? "desktop"
+      : "cli";
+  }
+
+  renderFirstRunOnboarding();
+}
+
+function advanceOnboarding() {
+  const draft = normalizedOnboardingDraft();
+
+  if (!draft.agents.codex && !draft.agents.claude) {
+    state.onboardingSaveStatus = {
+      kind: "warning",
+      message: tx("Choose at least one agent.", "至少选择一个 agent。")
+    };
+    renderFirstRunOnboarding();
+    return;
+  }
+
+  state.onboardingSaveStatus = undefined;
+  if (draft.agents.claude) {
+    state.onboardingStep = "claude";
+    renderFirstRunOnboarding();
+    return;
+  }
+
+  void saveOnboardingDraft({ completed: true, runClaudeConnect: false });
+}
+
+async function finishFirstRunOnboarding() {
+  const draft = normalizedOnboardingDraft();
+  const runClaudeConnect =
+    draft.agents.claude &&
+    draft.claudeSources.cli &&
+    !draft.claudeSources.desktop;
+
+  await saveOnboardingDraft({ completed: true, runClaudeConnect });
+}
+
+async function saveOnboardingDraft(options = {}) {
+  const draft = normalizedOnboardingDraft();
+  const preferences = {
+    ...draft,
+    completed: options.completed === true
+  };
+
+  state.onboardingSaveStatus = {
+    kind: "pending",
+    message: tx("Saving setup choices...", "正在保存设置选择...")
+  };
+  renderFirstRunOnboarding();
+
+  try {
+    state.onboardingPreferences =
+      await saveFirstRunOnboardingPreferences(preferences);
+    state.onboardingDraft = onboardingDraftFromPreferences(
+      state.onboardingPreferences
+    );
+    state.onboardingSaveStatus = undefined;
+
+    if (options.runClaudeConnect) {
+      await runClaudeAutoSetup({ installIfMissing: false });
+    } else {
+      render();
+    }
+  } catch (error) {
+    state.onboardingSaveStatus = {
+      kind: "warning",
+      message: tx("Could not save setup choices.", "无法保存设置选择。"),
+      detail: error instanceof Error ? error.message : String(error)
+    };
+    renderFirstRunOnboarding();
+  }
+}
+
+function normalizedOnboardingDraft() {
+  const draft =
+    state.onboardingDraft ??
+    onboardingDraftFromPreferences(state.onboardingPreferences);
+  const claudeSources = normalizeClaudeSources(
+    draft,
+    defaultOnboardingPreferences().claudeSources
+  );
+
+  return {
+    agents: {
+      claude: draft.agents.claude !== false,
+      codex: draft.agents.codex !== false
+    },
+    claudeSources,
+    claudeSource: claudeSources.desktop ? "desktop" : "cli"
+  };
+}
+
+function renderFirstRunOnboarding() {
+  if (!elements.onboardingRoot) {
+    return;
+  }
+
+  const preferences =
+    state.onboardingPreferences ?? defaultOnboardingPreferences();
+
+  if (preferences.completed) {
+    elements.onboardingRoot.hidden = true;
+    elements.onboardingRoot.innerHTML = "";
+    return;
+  }
+
+  const draft = normalizedOnboardingDraft();
+  const step = state.onboardingStep === "claude" ? "claude" : "agents";
+  elements.onboardingRoot.hidden = false;
+  elements.onboardingRoot.innerHTML = `
+    <div class="modal-backdrop" aria-hidden="true"></div>
+    <section class="first-run-modal" role="dialog" aria-modal="true" aria-labelledby="first-run-title">
+      <div class="first-run-modal-header">
+        <div>
+          <p>${escapeHtml(tx("First launch", "首次打开"))}</p>
+          <h2 id="first-run-title">${escapeHtml(
+            step === "claude"
+              ? tx("How do you use Claude?", "你怎么使用 Claude？")
+              : tx("Which agents do you use?", "你使用哪些 Agent？")
+          )}</h2>
+          <p class="first-run-modal-lede">${escapeHtml(
+            step === "claude"
+              ? tx(
+                  "You can choose both. When Desktop is selected, AIQD uses it as the normal source.",
+                  "可以多选；勾选 Desktop 时，AIQD 会把它作为常规来源。"
+                )
+              : tx(
+                  "AIQD will only show the agents you choose. You can change this later in Settings.",
+                  "AIQD 只显示你选择的 Agent；以后可以在设置里改。"
+                )
+          )}</p>
+        </div>
+      </div>
+      ${
+        step === "claude"
+          ? renderOnboardingClaudeStep(draft)
+          : renderOnboardingAgentStep(draft)
+      }
+      ${renderOnboardingSaveStatus()}
+    </section>
+  `;
+}
+
+function renderOnboardingAgentStep(draft) {
+  const canContinue = draft.agents.codex || draft.agents.claude;
+
+  return `
+    <div class="first-run-modal-body">
+      <label class="onboarding-choice-row">
+        <input type="checkbox" data-onboarding-agent="codex" ${
+          draft.agents.codex ? "checked" : ""
+        } />
+        <span>
+          <strong>Codex</strong>
+          <small>${escapeHtml(
+            tx(
+              "Show Codex quota and local diagnostics.",
+              "显示 Codex 额度和本地诊断。"
+            )
+          )}</small>
+        </span>
+      </label>
+      <label class="onboarding-choice-row">
+        <input type="checkbox" data-onboarding-agent="claude" ${
+          draft.agents.claude ? "checked" : ""
+        } />
+        <span>
+          <strong>Claude</strong>
+          <small>${escapeHtml(
+            tx(
+              "Show Claude quota. Source selection is next.",
+              "显示 Claude 额度；下一步选择来源。"
+            )
+          )}</small>
+        </span>
+      </label>
+    </div>
+    <div class="first-run-modal-actions">
+      <button class="button" type="button" data-onboarding-later>${escapeHtml(
+        tx("Later", "稍后")
+      )}</button>
+      <button class="button primary-button" type="button" data-onboarding-next ${
+        canContinue ? "" : "disabled"
+      }>${escapeHtml(
+        draft.agents.claude ? tx("Continue", "继续") : tx("Finish", "完成")
+      )}</button>
+    </div>
+  `;
+}
+
+function renderOnboardingClaudeStep(draft) {
+  const sources = draft.claudeSources;
+  const canFinish = sources.desktop || sources.cli;
+
+  return `
+    <div class="first-run-modal-body">
+      <div class="onboarding-source-grid">
+        <label class="onboarding-source-card ${sources.desktop ? "selected" : ""}">
+          <input
+            type="checkbox"
+            data-onboarding-claude-source="desktop"
+            ${sources.desktop ? "checked" : ""}
+          />
+          <span class="onboarding-source-copy">
+            <strong>Claude Desktop</strong>
+            <small>${escapeHtml(
+              tx(
+                "Recommended. No setup: AIQD reads Claude Desktop's local usage file after you use it once.",
+                "推荐。无需设置：使用一次 Claude Desktop 后，AIQD 会读取它的本地用量文件。"
+              )
+            )}</small>
+          </span>
+        </label>
+        <label class="onboarding-source-card ${sources.cli ? "selected" : ""}">
+          <input
+            type="checkbox"
+            data-onboarding-claude-source="cli"
+            ${sources.cli ? "checked" : ""}
+          />
+          <span class="onboarding-source-copy">
+            <strong>Claude Code CLI</strong>
+            <small>${escapeHtml(
+              tx(
+                "Optional. Use this only if you want Claude Code's statusline snapshot path.",
+                "可选。只有你想使用 Claude Code 的状态栏快照通道时才需要。"
+              )
+            )}</small>
+          </span>
+        </label>
+      </div>
+    </div>
+    <div class="first-run-modal-actions">
+      <button class="button" type="button" data-onboarding-back>${escapeHtml(
+        tx("Back", "返回")
+      )}</button>
+      <button class="button primary-button" type="button" data-onboarding-finish ${
+        canFinish ? "" : "disabled"
+      }>${escapeHtml(
+        tx("Finish", "完成")
+      )}</button>
+    </div>
+  `;
+}
+
+function renderOnboardingSaveStatus() {
+  if (!state.onboardingSaveStatus) {
+    return "";
+  }
+
+  return `
+    <div class="first-run-modal-status ${escapeHtml(
+      state.onboardingSaveStatus.kind
+    )}">
+      <strong>${escapeHtml(state.onboardingSaveStatus.message)}</strong>
+      ${
+        state.onboardingSaveStatus.detail
+          ? `<span>${escapeHtml(state.onboardingSaveStatus.detail)}</span>`
+          : ""
+      }
+    </div>
+  `;
+}
+
 function render() {
   applyStaticTranslations();
   elements.lastRefresh.textContent = tx("Last refresh: {time}", "上次刷新：{time}", {
     time: formatRelative(state.generatedAt)
   });
   renderRefreshStatus();
+  renderTopbarStartupControl();
   renderAgents();
   renderResets();
   renderEvents();
@@ -413,10 +978,55 @@ function render() {
   renderRealDataOverview();
   renderCodexSnapshotSettings();
   renderSettings();
+  renderAgentPreferencesSettings();
   renderDesktopStartupSettings();
+  renderDashboardCloseSettings();
   renderPathSettings();
   renderDesktopShortcutsSettings();
+  renderFirstRunOnboarding();
+  arrangeSettingsPanels();
   scheduleStatuslineWatch();
+}
+
+function arrangeSettingsPanels() {
+  const container = elements.settingsView;
+
+  if (!container) {
+    return;
+  }
+
+  const setupPanels = [
+    elements.realDataPanel,
+    elements.codexConnectionPanel,
+    elements.claudeConnectionPanel
+  ].filter(Boolean);
+  const preferencePanels = [
+    elements.startupPanel,
+    elements.feedbackPanel,
+    elements.advancedSettingsPanel
+  ].filter(Boolean);
+  const setupComplete = state.trialReadiness?.ok === true;
+  const orderedPanels = setupComplete
+    ? [...preferencePanels, ...setupPanels]
+    : [...setupPanels, ...preferencePanels];
+
+  for (const panel of orderedPanels) {
+    container.appendChild(panel);
+    panel.classList.toggle("is-demoted", setupComplete && setupPanels.includes(panel));
+  }
+
+  elements.realDataPanel?.classList.toggle(
+    "is-hidden-by-onboarding",
+    state.onboardingPreferences?.completed === true
+  );
+  elements.codexConnectionPanel?.classList.toggle(
+    "is-hidden-by-onboarding",
+    !shouldShowAgentFamily("codex")
+  );
+  elements.claudeConnectionPanel?.classList.toggle(
+    "is-hidden-by-onboarding",
+    !shouldShowAgentFamily("claude")
+  );
 }
 
 async function runRefresh(successMessage) {
@@ -665,6 +1275,10 @@ function scheduleStatuslineWatch() {
 }
 
 function shouldWatchForClaudeStatusline() {
+  if (!shouldShowClaudeCliWorkflow()) {
+    return false;
+  }
+
   return (
     state.setupStatus?.readiness === "waiting_for_data" ||
     state.agents.some(
@@ -703,7 +1317,7 @@ async function pollClaudeStatusline() {
 }
 
 function renderAgents() {
-  const displayAgents = buildDisplayAgents(state.agents);
+  const displayAgents = buildDisplayAgents(filterAgentsByOnboarding(state.agents));
 
   if (displayAgents.length === 0) {
     elements.agentGrid.innerHTML = `<p class="empty">${escapeHtml(
@@ -713,6 +1327,101 @@ function renderAgents() {
   }
 
   elements.agentGrid.innerHTML = displayAgents.map(renderAgentCard).join("");
+}
+
+function filterAgentsByOnboarding(agents) {
+  return agents.filter((agent) => {
+    if (agent.agent === "codex") {
+      return shouldShowAgentFamily("codex");
+    }
+
+    if (agent.agent === "claude-code") {
+      return shouldShowClaudeCliWorkflow();
+    }
+
+    if (agent.agent === "claude-desktop") {
+      return shouldShowClaudeDesktopWorkflow();
+    }
+
+    if (agent.provider === "anthropic" || agent.agent.startsWith("claude")) {
+      return shouldShowAgentFamily("claude");
+    }
+
+    return true;
+  });
+}
+
+function shouldShowAgentFamily(family) {
+  const preferences = state.onboardingPreferences;
+
+  if (!preferences?.completed) {
+    return true;
+  }
+
+  if (family === "codex") {
+    return preferences.agents.codex !== false;
+  }
+
+  if (family === "claude") {
+    return preferences.agents.claude !== false;
+  }
+
+  return true;
+}
+
+function preferredClaudeSource() {
+  if (!state.onboardingPreferences?.completed) {
+    return undefined;
+  }
+
+  return state.onboardingPreferences.claudeSources.desktop ? "desktop" : "cli";
+}
+
+function selectedClaudeSources() {
+  return normalizeOnboardingPreferences(state.onboardingPreferences).claudeSources;
+}
+
+function shouldShowClaudeDesktopWorkflow() {
+  if (!shouldShowAgentFamily("claude")) {
+    return false;
+  }
+
+  if (!state.onboardingPreferences?.completed) {
+    return true;
+  }
+
+  return selectedClaudeSources().desktop;
+}
+
+function shouldShowClaudeCliWorkflow() {
+  if (!shouldShowAgentFamily("claude")) {
+    return false;
+  }
+
+  if (!state.onboardingPreferences?.completed) {
+    return true;
+  }
+
+  const sources = selectedClaudeSources();
+  return sources.cli && !sources.desktop;
+}
+
+function preferredClaudeDashboardSource() {
+  if (!state.onboardingPreferences?.completed) {
+    return undefined;
+  }
+
+  const sources = selectedClaudeSources();
+
+  if (sources.desktop) {
+    return "desktop";
+  }
+
+  if (sources.cli) {
+    return "cli";
+  }
+
+  return undefined;
 }
 
 // The dashboard shows one Claude card, not two: Claude Code CLI and Claude
@@ -742,6 +1451,16 @@ function buildDisplayAgents(agents) {
 }
 
 function pickPrimaryClaudeAgent(claudeCode, claudeDesktop) {
+  const preferredSource = preferredClaudeDashboardSource();
+
+  if (preferredSource === "desktop" && claudeDesktop) {
+    return claudeDesktop;
+  }
+
+  if (preferredSource === "cli" && claudeCode) {
+    return claudeCode;
+  }
+
   if (!claudeDesktop) {
     return claudeCode;
   }
@@ -851,7 +1570,13 @@ function renderStaleQuotaSummary(agent, snapshot) {
   const isClaudeCode = snapshot.source === "official_statusline";
   const isClaudeDesktop =
     agent.provider === "anthropic" && snapshot.source === "local_quota_snapshot";
-  const detail = isClaudeCode
+  const isMergedClaude = agent.agent === "claude" && agent.provider === "anthropic";
+  const detail = isClaudeCode && isMergedClaude
+    ? tx(
+        "This is not zero quota. AIQD only has an old Claude Code statusline snapshot; Claude Desktop local usage history can replace it after a fresh sample.",
+        "这不是额度用完。AIQD 只剩一条旧的 Claude Code 状态栏快照；Claude Desktop 记录新的用量样本后，本地用量文件可以替代它。"
+      )
+    : isClaudeCode
     ? tx(
         "This is not zero quota. AIQD only has an old Claude Code statusline snapshot.",
         "这不是额度用完。AIQD 只剩一条旧的 Claude Code 状态栏快照。"
@@ -865,7 +1590,12 @@ function renderStaleQuotaSummary(agent, snapshot) {
           "This is not zero quota. The last local quota snapshot is past its reported reset time.",
           "这不是额度用完。上一条本地额度快照已经超过它报告的重置时间。"
         );
-  const action = isClaudeCode
+  const action = isClaudeCode && isMergedClaude
+    ? tx(
+        "Open Claude Desktop and use it once so AIQD can read its local plan usage file, then refresh AIQD. Claude Code CLI is optional.",
+        "打开 Claude Desktop 并正常使用一次，让 AIQD 读取它的本地用量文件，然后刷新 AIQD。Claude Code CLI 只是可选来源。"
+      )
+    : isClaudeCode
     ? tx(
         "Open Claude Code CLI once so its statusline can send a fresh snapshot, then refresh AIQD.",
         "打开一次 Claude Code CLI，让状态栏发送新的快照，然后刷新 AIQD。"
@@ -1158,7 +1888,7 @@ function formatRemainingText(snapshot) {
 }
 
 function renderResets() {
-  const snapshots = state.agents
+  const snapshots = filterAgentsByOnboarding(state.agents)
     .flatMap((agent) =>
       (agent.snapshots ?? []).map((snapshot) => ({
         agent: agent.displayName,
@@ -1192,16 +1922,40 @@ function renderResets() {
 }
 
 function renderDoctor() {
-  if (state.doctorChecks.length === 0) {
+  const checks = filterDoctorChecksByOnboarding(state.doctorChecks);
+
+  if (checks.length === 0) {
     elements.doctorList.innerHTML = `<p class="empty">${escapeHtml(
       tx("No doctor checks yet.", "还没有诊断检查。")
     )}</p>`;
     return;
   }
 
-  elements.doctorList.innerHTML = groupDoctorChecks(state.doctorChecks)
+  elements.doctorList.innerHTML = groupDoctorChecks(checks)
     .map(renderDoctorGroup)
     .join("");
+}
+
+function filterDoctorChecksByOnboarding(checks) {
+  return checks.filter((check) => {
+    if (check.agent === "codex") {
+      return shouldShowAgentFamily("codex");
+    }
+
+    if (check.agent === "claude-code") {
+      return shouldShowClaudeCliWorkflow();
+    }
+
+    if (check.agent === "claude-desktop") {
+      return shouldShowClaudeDesktopWorkflow();
+    }
+
+    if (check.provider === "anthropic" || String(check.agent).startsWith("claude")) {
+      return shouldShowAgentFamily("claude");
+    }
+
+    return true;
+  });
 }
 
 function renderDoctorGroup(group) {
@@ -1298,13 +2052,25 @@ function renderDoctorChecklist() {
 }
 
 function buildDoctorChecklistItems() {
-  return [
-    buildDoctorCodexChecklistItem(),
-    buildDoctorClaudeChecklistItem(),
-    buildDoctorClaudeDesktopChecklistItem(),
-    buildDoctorRefreshChecklistItem(),
-    buildDoctorPathChecklistItem()
-  ];
+  const items = [];
+
+  if (shouldShowAgentFamily("codex")) {
+    items.push(buildDoctorCodexChecklistItem());
+  }
+
+  if (shouldShowAgentFamily("claude")) {
+    if (shouldShowClaudeCliWorkflow()) {
+      items.push(buildDoctorClaudeChecklistItem());
+    }
+
+    if (shouldShowClaudeDesktopWorkflow()) {
+      items.push(buildDoctorClaudeDesktopChecklistItem());
+    }
+  }
+
+  items.push(buildDoctorRefreshChecklistItem(), buildDoctorPathChecklistItem());
+
+  return items;
 }
 
 function buildDoctorCodexChecklistItem() {
@@ -1893,46 +2659,62 @@ function renderInitialSetupFlow(items, readiness) {
 }
 
 function renderSetupQuickChoices(activeTarget) {
+  const showCodex = shouldShowAgentFamily("codex");
+  const showClaudeCli = shouldShowClaudeCliWorkflow();
+  const showClaudeDesktop = shouldShowClaudeDesktopWorkflow();
+
   return `
     <div class="setup-choice-row" aria-label="${escapeHtml(
       tx("Choose a setup source", "选择要设置的数据来源")
     )}">
-      <button
-        class="copy-button setup-choice-button ${activeTarget === "codex" ? "is-active" : ""}"
-        type="button"
-        data-setup-detail-toggle="codex"
-        aria-expanded="${activeTarget === "codex" ? "true" : "false"}"
-      >
-        ${escapeHtml(
-          activeTarget === "codex"
-            ? tx("Hide Codex", "收起 Codex")
-            : tx("Set up Codex", "设置 Codex")
-        )}
-      </button>
-      <button
-        class="copy-button setup-choice-button ${activeTarget === "claude-code" ? "is-active" : ""}"
-        type="button"
-        data-setup-detail-toggle="claude-code"
-        aria-expanded="${activeTarget === "claude-code" ? "true" : "false"}"
-      >
-        ${escapeHtml(
-          activeTarget === "claude-code"
-            ? tx("Hide Claude Code CLI", "收起 Claude Code CLI")
-            : tx("Set up Claude Code CLI", "设置 Claude Code CLI")
-        )}
-      </button>
-      <button
-        class="copy-button setup-choice-button ${activeTarget === "claude-desktop" ? "is-active" : ""}"
-        type="button"
-        data-setup-detail-toggle="claude-desktop"
-        aria-expanded="${activeTarget === "claude-desktop" ? "true" : "false"}"
-      >
-        ${escapeHtml(
-          activeTarget === "claude-desktop"
-            ? tx("Hide Claude Desktop", "收起 Claude Desktop")
-            : tx("Check Claude Desktop", "检查 Claude Desktop")
-        )}
-      </button>
+      ${
+        showCodex
+          ? `<button
+              class="copy-button setup-choice-button ${activeTarget === "codex" ? "is-active" : ""}"
+              type="button"
+              data-setup-detail-toggle="codex"
+              aria-expanded="${activeTarget === "codex" ? "true" : "false"}"
+            >
+              ${escapeHtml(
+                activeTarget === "codex"
+                  ? tx("Hide Codex", "收起 Codex")
+                  : tx("Set up Codex", "设置 Codex")
+              )}
+            </button>`
+          : ""
+      }
+      ${
+        showClaudeCli
+          ? `<button
+              class="copy-button setup-choice-button ${activeTarget === "claude-code" ? "is-active" : ""}"
+              type="button"
+              data-setup-detail-toggle="claude-code"
+              aria-expanded="${activeTarget === "claude-code" ? "true" : "false"}"
+            >
+              ${escapeHtml(
+                activeTarget === "claude-code"
+                  ? tx("Hide Claude Code CLI", "收起 Claude Code CLI")
+                  : tx("Set up Claude Code CLI", "设置 Claude Code CLI")
+              )}
+            </button>`
+          : ""
+      }
+      ${
+        showClaudeDesktop
+          ? `<button
+              class="copy-button setup-choice-button ${activeTarget === "claude-desktop" ? "is-active" : ""}"
+              type="button"
+              data-setup-detail-toggle="claude-desktop"
+              aria-expanded="${activeTarget === "claude-desktop" ? "true" : "false"}"
+            >
+              ${escapeHtml(
+                activeTarget === "claude-desktop"
+                  ? tx("Hide Claude Desktop", "收起 Claude Desktop")
+                  : tx("Check Claude Desktop", "检查 Claude Desktop")
+              )}
+            </button>`
+          : ""
+      }
     </div>
   `;
 }
@@ -1968,8 +2750,18 @@ function buildInitialSetupModel(items, readiness) {
   // whether the CLI itself is connected.
   const claudeComplete = state.setupStatus?.readiness === "ready";
   const claudeDesktopComplete = claudeDesktop?.state === "pass";
-  const claudeSatisfied = claudeComplete || claudeDesktopComplete;
-  const claudeDesktopIsRequiredSlot = claudeDesktopComplete && !claudeComplete;
+  const showClaudeCli = shouldShowClaudeCliWorkflow();
+  const showClaudeDesktop = shouldShowClaudeDesktopWorkflow();
+  const codexRequired = shouldShowAgentFamily("codex");
+  const claudeRequired = shouldShowAgentFamily("claude");
+  const codexSatisfied = !codexRequired || codexComplete;
+  const claudeSatisfied =
+    !claudeRequired ||
+    (showClaudeCli && claudeComplete) ||
+    (showClaudeDesktop && claudeDesktopComplete);
+  const selectedSourcesSatisfied = codexSatisfied && claudeSatisfied;
+  const claudeDesktopIsRequiredSlot =
+    showClaudeDesktop && (!showClaudeCli || (claudeDesktopComplete && !claudeComplete));
   const claudeManaged = Boolean(state.setupStatus?.statusLineManagedByApp);
   const claudeWaiting = claudeManaged && !claudeComplete;
   const claudeCliAvailable = Boolean(state.setupStatus?.claudeCliAvailable);
@@ -2133,7 +2925,7 @@ function buildInitialSetupModel(items, readiness) {
               )
         }
       : undefined);
-  const readinessComplete = Boolean(readiness?.ok);
+  const readinessComplete = Boolean(readiness?.ok) || selectedSourcesSatisfied;
   const steps = [
     {
       actionLabel: codexComplete
@@ -2467,8 +3259,8 @@ function buildInitialSetupModel(items, readiness) {
       ),
       checklist: [
         tx(
-          "Make sure Codex shows done, and Claude shows done via either Claude Code CLI or Claude Desktop.",
-          "确认 Codex 显示完成，且 Claude 通过 Claude Code CLI 或 Claude Desktop 中的任意一个显示完成。"
+          "Make sure each selected quota source shows done.",
+          "确认每个已选择的额度来源都显示完成。"
         ),
         tx(
           "Run the check from this page.",
@@ -2481,8 +3273,8 @@ function buildInitialSetupModel(items, readiness) {
       ],
       complete: readinessComplete,
       detail: tx(
-        "Refresh once both sources are ready. This confirms the dashboard is using real, non-demo data.",
-        "两项数据都就绪后刷新检查，确认仪表盘使用的是真实、非 demo 数据。"
+        "Refresh once selected sources are ready. This confirms the dashboard is using real, non-demo data.",
+        "已选择的来源就绪后刷新检查，确认仪表盘使用的是真实、非 demo 数据。"
       ),
       id: "verify",
       number: "3",
@@ -2492,18 +3284,18 @@ function buildInitialSetupModel(items, readiness) {
       ),
       progressDetail: readinessComplete
         ? tx("Real-data check passed.", "真实数据检查已通过。")
-        : codexComplete && claudeSatisfied
+        : selectedSourcesSatisfied
           ? tx("Ready to run the final check.", "可以运行最后检查。")
           : tx(
-              "Locked until Codex is done and Claude is done via CLI or Desktop.",
-              "等 Codex 完成，且 Claude 通过 CLI 或 Desktop 完成后再进行。"
+              "Locked until selected quota sources are ready.",
+              "等已选择的额度来源就绪后再进行。"
             ),
       refreshAction: !readinessComplete,
       status: readinessComplete
         ? tx("Ready for trial", "可以开始试用")
-        : codexComplete && claudeSatisfied
+        : selectedSourcesSatisfied
           ? tx("Ready to verify", "可以验证")
-          : tx("Finish Codex and Claude first", "先完成 Codex 和 Claude"),
+          : tx("Finish selected sources first", "先完成已选择的来源"),
       target: "#real-data-content",
       title: tx("Verify dashboard", "验证仪表盘"),
       why: tx(
@@ -2512,12 +3304,27 @@ function buildInitialSetupModel(items, readiness) {
       )
     }
   ];
-  const requiredSteps = steps.filter((step) => !step.optional);
+  const visibleSteps = steps.filter((step) => {
+    if (step.id === "codex") {
+      return shouldShowAgentFamily("codex");
+    }
+
+    if (step.id === "claude-code") {
+      return shouldShowClaudeCliWorkflow();
+    }
+
+    if (step.id === "claude-desktop") {
+      return shouldShowClaudeDesktopWorkflow();
+    }
+
+    return true;
+  });
+  const requiredSteps = visibleSteps.filter((step) => !step.optional);
   const currentStep =
     requiredSteps.find((step) => !step.complete) ??
     requiredSteps[requiredSteps.length - 1];
 
-  for (const step of steps) {
+  for (const step of visibleSteps) {
     step.current = step === currentStep && !step.complete;
     step.state = step.complete ? "pass" : step.current ? "warn" : "info";
   }
@@ -2528,7 +3335,7 @@ function buildInitialSetupModel(items, readiness) {
     completedCount,
     currentStep,
     remainingCount: requiredSteps.length - completedCount,
-    steps,
+    steps: visibleSteps,
     totalCount: requiredSteps.length
   };
 }
@@ -3079,12 +3886,25 @@ function localizedReadinessCheck(check) {
 }
 
 function buildRealDataOverviewItems() {
-  return [
-    buildCodexOverviewItem(),
-    buildClaudeOverviewItem(),
-    buildClaudeDesktopOverviewItem(),
-    buildPathOverviewItem()
-  ];
+  const items = [];
+
+  if (shouldShowAgentFamily("codex")) {
+    items.push(buildCodexOverviewItem());
+  }
+
+  if (shouldShowAgentFamily("claude")) {
+    if (shouldShowClaudeCliWorkflow()) {
+      items.push(buildClaudeOverviewItem());
+    }
+
+    if (shouldShowClaudeDesktopWorkflow()) {
+      items.push(buildClaudeDesktopOverviewItem());
+    }
+  }
+
+  items.push(buildPathOverviewItem());
+
+  return items;
 }
 
 function findAgent(agentId) {
@@ -3219,9 +4039,9 @@ function buildClaudeOverviewItem() {
   const status = state.setupStatus;
   const cliReady = status?.readiness === "ready";
   const waiting = status?.readiness === "waiting_for_data";
-  const desktopReady = isFreshRealSnapshot(
-    findAgent("claude-desktop")?.primarySnapshot
-  );
+  const desktopReady =
+    shouldShowClaudeDesktopWorkflow() &&
+    isFreshRealSnapshot(findAgent("claude-desktop")?.primarySnapshot);
   const ready = cliReady || desktopReady;
   const detailParts = [];
 
@@ -3525,8 +4345,8 @@ function renderCodexSnapshotPostSaveActions(saveStatus) {
           allDone
             ? `<p>${escapeHtml(
                 tx(
-                  "Both quota sources are ready. Open the dashboard and refresh before relying on the numbers.",
-                  "两个额度来源都已就绪。打开仪表盘，并在依赖数字前刷新一次。"
+                  "Selected quota sources are ready. Open the dashboard and refresh before relying on the numbers.",
+                  "已选择的额度来源都已就绪。打开仪表盘，并在依赖数字前刷新一次。"
                 )
               )}</p>`
             : renderActionChecklist(step.checklist)
@@ -3897,6 +4717,8 @@ function codexSnapshotBadgeClass(readiness) {
 
 function renderSettings() {
   const status = state.setupStatus;
+  const showClaudeCli = shouldShowClaudeCliWorkflow();
+  const showClaudeDesktop = shouldShowClaudeDesktopWorkflow();
 
   if (!status) {
     elements.settingsContent.innerHTML = `<p class="empty">${escapeHtml(
@@ -3906,8 +4728,8 @@ function renderSettings() {
   }
 
   elements.settingsContent.innerHTML = `
-    ${renderClaudeConnectionSummary(status)}
-    ${renderClaudeStatuslineWaitingNotice(status)}
+    ${showClaudeCli ? renderClaudeConnectionSummary(status) : ""}
+    ${showClaudeCli ? renderClaudeStatuslineWaitingNotice(status) : ""}
 
     ${renderAdvancedDetails(
       tx("Claude Code technical details", "Claude Code 技术细节"),
@@ -3969,7 +4791,7 @@ function renderSettings() {
       `
     )}
 
-    ${renderClaudeDesktopSettings()}
+    ${showClaudeDesktop ? renderClaudeDesktopSettings() : ""}
   `;
 }
 
@@ -3981,15 +4803,18 @@ function renderClaudeDesktopSettings() {
   const pathCheck = checks.find((check) => check.id?.startsWith("claude-desktop:path:"));
   const snapshot = agent?.primarySnapshot;
   const ready = isFreshRealSnapshot(snapshot);
+  const desktopIsPrimary = !shouldShowClaudeCliWorkflow();
 
   return `
     <div class="setup-watch-notice">
       <div>
         <strong>${escapeHtml(
-          tx(
-            "Claude Desktop (optional, no CLI needed)",
-            "Claude Desktop（可选，不需要 CLI）"
-          )
+          desktopIsPrimary
+            ? "Claude Desktop"
+            : tx(
+                "Claude Desktop (optional alternative)",
+                "Claude Desktop（可选替代）"
+              )
         )}</strong>
         <div class="settings-detail">${escapeHtml(
           ready
@@ -4045,7 +4870,9 @@ function renderClaudeDesktopSettings() {
 function renderClaudeConnectionSummary(status) {
   const ready = status.readiness === "ready";
   const desktopCoversClaude =
-    !ready && isFreshRealSnapshot(findAgent("claude-desktop")?.primarySnapshot);
+    shouldShowClaudeDesktopWorkflow() &&
+    !ready &&
+    isFreshRealSnapshot(findAgent("claude-desktop")?.primarySnapshot);
 
   if (desktopCoversClaude) {
     return `
@@ -4183,6 +5010,10 @@ function claudeSetupActionForStatus(status) {
 }
 
 function renderClaudeStatuslineWaitingNotice(status) {
+  if (!shouldShowClaudeCliWorkflow()) {
+    return "";
+  }
+
   if (status.readiness !== "waiting_for_data") {
     return "";
   }
@@ -4417,6 +5248,238 @@ function formatLatestSnapshotStatus(status) {
   return parts.join("\n");
 }
 
+async function setAgentPreference(agent, checked) {
+  if (agent !== "codex" && agent !== "claude") {
+    return;
+  }
+
+  const current = normalizeOnboardingPreferences(state.onboardingPreferences);
+  const next = normalizeOnboardingPreferences({
+    ...current,
+    agents: {
+      ...current.agents,
+      [agent]: checked
+    },
+    completed: true
+  });
+
+  if (!next.agents.codex && !next.agents.claude) {
+    state.agentPreferencesSaveStatus = {
+      kind: "warning",
+      message: tx("Keep at least one agent visible.", "至少保留一个 Agent。")
+    };
+    renderAgentPreferencesSettings();
+    return;
+  }
+
+  await saveAgentPreferences(next);
+}
+
+async function setClaudeSourcePreference(source, checked) {
+  if (source !== "desktop" && source !== "cli") {
+    return;
+  }
+
+  const current = normalizeOnboardingPreferences(state.onboardingPreferences);
+  const claudeSources = {
+    ...current.claudeSources,
+    [source]: checked
+  };
+
+  if (!claudeSources.desktop && !claudeSources.cli) {
+    claudeSources[source] = true;
+    state.agentPreferencesSaveStatus = {
+      kind: "warning",
+      message: tx(
+        "Keep at least one Claude source selected.",
+        "至少保留一个 Claude 数据来源。"
+      )
+    };
+    renderAgentPreferencesSettings();
+    return;
+  }
+
+  await saveAgentPreferences(
+    normalizeOnboardingPreferences({
+      ...current,
+      agents: {
+        ...current.agents,
+        claude: true
+      },
+      claudeSources,
+      completed: true
+    })
+  );
+}
+
+async function saveAgentPreferences(preferences) {
+  state.agentPreferencesSaveStatus = {
+    kind: "pending",
+    message: tx("Saving preferences...", "正在保存偏好设置...")
+  };
+  renderAgentPreferencesSettings();
+
+  try {
+    state.onboardingPreferences = await saveFirstRunOnboardingPreferences({
+      ...preferences,
+      completed: true
+    });
+    state.onboardingDraft = onboardingDraftFromPreferences(
+      state.onboardingPreferences
+    );
+    state.agentPreferencesSaveStatus = {
+      kind: "healthy",
+      message: tx("Preferences saved.", "偏好设置已保存。")
+    };
+    render();
+  } catch (error) {
+    state.agentPreferencesSaveStatus = {
+      kind: "warning",
+      message: tx("Preferences could not be saved.", "无法保存偏好设置。"),
+      detail: error instanceof Error ? error.message : String(error)
+    };
+    renderAgentPreferencesSettings();
+  }
+}
+
+function renderAgentPreferencesSettings() {
+  if (!elements.agentPreferencesContent) {
+    return;
+  }
+
+  const preferences = normalizeOnboardingPreferences(state.onboardingPreferences);
+  const status = state.agentPreferencesSaveStatus;
+  const statusBadgeClass = status?.kind === "pending" ? "warning" : status?.kind;
+
+  elements.agentPreferencesContent.innerHTML = `
+    ${renderAgentPreferenceRow({
+      checked: preferences.agents.codex,
+      detail: tx(
+        "Show Codex quota cards, setup checks, and diagnostics.",
+        "显示 Codex 额度卡、设置检查和诊断项。"
+      ),
+      inputAttribute: 'data-agent-preference-agent="codex"',
+      label: "Codex"
+    })}
+    ${renderAgentPreferenceRow({
+      checked: preferences.agents.claude,
+      detail: tx(
+        "Show Claude quota cards, setup checks, and diagnostics.",
+        "显示 Claude 额度卡、设置检查和诊断项。"
+      ),
+      inputAttribute: 'data-agent-preference-agent="claude"',
+      label: "Claude"
+    })}
+    ${
+      preferences.agents.claude
+        ? `<div class="preference-subgroup">
+            <div class="preference-section-heading is-subtle">
+              <strong>${escapeHtml(tx("Claude sources", "Claude 来源"))}</strong>
+              <span>${escapeHtml(
+                preferences.claudeSources.desktop
+                  ? tx(
+                      "Claude Desktop is the normal source when selected.",
+                      "勾选 Claude Desktop 时，常规界面优先使用它。"
+                    )
+                  : tx(
+                      "Claude Code CLI is shown only when Desktop is not selected.",
+                      "只有未选择 Desktop 时才显示 Claude Code CLI 主流程。"
+                    )
+              )}</span>
+            </div>
+            ${renderAgentPreferenceRow({
+              checked: preferences.claudeSources.desktop,
+              detail: tx(
+                "Reads Claude Desktop's local usage history automatically.",
+                "自动读取 Claude Desktop 的本地用量历史文件。"
+              ),
+              inputAttribute: 'data-agent-preference-claude-source="desktop"',
+              label: "Claude Desktop"
+            })}
+            ${renderAgentPreferenceRow({
+              checked: preferences.claudeSources.cli,
+              detail: tx(
+                "Uses Claude Code statusline snapshots; normal UI hides it when Desktop is selected.",
+                "使用 Claude Code 状态栏快照；选中 Desktop 时常规界面会隐藏它。"
+              ),
+              inputAttribute: 'data-agent-preference-claude-source="cli"',
+              label: "Claude Code CLI"
+            })}
+          </div>`
+        : ""
+    }
+    ${renderPreferenceMessage(status, statusBadgeClass)}
+  `;
+}
+
+function renderAgentPreferenceRow({ checked, detail, inputAttribute, label }) {
+  return `
+    <label class="preference-row preference-row-compact">
+      <span class="preference-copy">
+        <strong>${escapeHtml(label)}</strong>
+        <span class="settings-detail">${escapeHtml(detail)}</span>
+      </span>
+      <span class="preference-control">
+        <span class="preference-state ${checked ? "healthy" : "stale"}">${escapeHtml(
+          checked ? tx("On", "开启") : tx("Off", "关闭")
+        )}</span>
+        <input type="checkbox" ${inputAttribute} ${checked ? "checked" : ""} />
+        <span class="toggle-switch" aria-hidden="true"></span>
+      </span>
+    </label>
+  `;
+}
+
+function renderStartupControls() {
+  renderTopbarStartupControl();
+  renderDesktopStartupSettings();
+  renderRealDataOverview();
+}
+
+function renderTopbarStartupControl() {
+  if (!elements.topbarStartupControl) {
+    return;
+  }
+
+  const status = state.launchAtStartupStatus;
+  const enabled = launchAtStartupDisplayEnabled(status);
+  const disabled = launchAtStartupToggleDisabled(status);
+  const title = status
+    ? launchAtStartupDetail(status)
+    : tx("Startup status is loading.", "正在读取开机启动状态。");
+
+  elements.topbarStartupControl.innerHTML = `
+    <label
+      class="topbar-startup-toggle ${enabled ? "is-on" : ""} ${
+        disabled ? "is-disabled" : ""
+      }"
+      title="${escapeHtml(title)}"
+    >
+      <span class="topbar-startup-label">${escapeHtml(tx("Startup", "开机启动"))}</span>
+      <input
+        type="checkbox"
+        data-launch-at-startup-toggle
+        aria-label="${escapeHtml(tx("Launch AIQD at startup", "开机启动 AIQD"))}"
+        ${enabled ? "checked" : ""}
+        ${disabled ? "disabled" : ""}
+      />
+      <span class="topbar-startup-switch" aria-hidden="true"></span>
+    </label>
+  `;
+}
+
+function launchAtStartupDisplayEnabled(status) {
+  if (typeof state.launchAtStartupPendingValue === "boolean") {
+    return state.launchAtStartupPendingValue;
+  }
+
+  return status?.enabled === true;
+}
+
+function launchAtStartupToggleDisabled(status) {
+  return status?.canConfigure !== true || state.launchAtStartupPending;
+}
+
 async function setLaunchAtStartup(enabled) {
   if (state.launchAtStartupPending) {
     return;
@@ -4430,18 +5493,19 @@ async function setLaunchAtStartup(enabled) {
         "请从打包后的桌面应用打开 Settings 后再修改启动项。"
       )
     };
-    renderDesktopStartupSettings();
+    renderStartupControls();
     return;
   }
 
   state.launchAtStartupPending = true;
+  state.launchAtStartupPendingValue = enabled;
   state.launchAtStartupSaveStatus = {
     kind: "pending",
     message: enabled
       ? tx("Enabling startup...", "正在开启开机启动...")
       : tx("Disabling startup...", "正在关闭开机启动...")
   };
-  renderDesktopStartupSettings();
+  renderStartupControls();
 
   try {
     state.launchAtStartupStatus = await window.aiqdDesktop.setLaunchAtStartup(
@@ -4462,7 +5526,8 @@ async function setLaunchAtStartup(enabled) {
     };
   } finally {
     state.launchAtStartupPending = false;
-    renderDesktopStartupSettings();
+    state.launchAtStartupPendingValue = undefined;
+    renderStartupControls();
   }
 }
 
@@ -4480,81 +5545,146 @@ function renderDesktopStartupSettings() {
     return;
   }
 
-  const canConfigure = status.canConfigure === true;
-  const enabled = status.enabled === true;
-  const pending = state.launchAtStartupPending;
-  const disabled = !canConfigure || pending;
+  const enabled = launchAtStartupDisplayEnabled(status);
+  const disabled = launchAtStartupToggleDisabled(status);
   const statusMessage = state.launchAtStartupSaveStatus;
   const statusMessageBadgeClass =
     statusMessage?.kind === "pending" ? "warning" : statusMessage?.kind;
+  const detailsExpanded =
+    state.startupPreferenceExpanded ||
+    status.hasDifferentEntry ||
+    status.reason === "status_error";
 
   elements.startupContent.innerHTML = `
-    <div class="setup-watch-notice">
-      <div>
-        <strong>${escapeHtml(tx("Launch at startup", "开机启动"))}</strong>
-        <div class="settings-detail">${escapeHtml(
-          launchAtStartupDetail(status)
-        )}</div>
-      </div>
-      <span class="badge ${escapeHtml(launchAtStartupBadgeClass(status))}">${escapeHtml(
-        launchAtStartupStatusLabel(status)
-      )}</span>
-    </div>
-    <label class="toggle-row ${disabled ? "is-disabled" : ""}">
-      <input
-        type="checkbox"
-        data-launch-at-startup-toggle
-        ${enabled ? "checked" : ""}
-        ${disabled ? "disabled" : ""}
-      />
-      <span class="toggle-switch" aria-hidden="true"></span>
-      <span>
-        <strong>${escapeHtml(tx("Launch at startup", "开机启动"))}</strong>
+    <div class="preference-row ${disabled ? "is-disabled" : ""}">
+      <button
+        class="preference-copy preference-disclosure"
+        type="button"
+        data-preference-disclosure="startup"
+        aria-expanded="${detailsExpanded ? "true" : "false"}"
+        aria-controls="startup-preference-details"
+      >
+        <span class="preference-copy-heading">
+          <strong>${escapeHtml(tx("Launch at startup", "开机启动"))}</strong>
+          <span class="preference-disclosure-indicator" aria-hidden="true"></span>
+        </span>
         <span class="settings-detail">${escapeHtml(
-          tx(
-            "Starts only the tray shell and local backend unless setup or recovery needs attention.",
-            "登录时只启动托盘 shell 和本地 backend；只有需要设置或恢复时才打开引导窗口。"
-          )
+          launchAtStartupPreferenceDetail(status)
         )}</span>
-      </span>
-    </label>
+      </button>
+      <label class="preference-control preference-switch-control ${
+        disabled ? "is-disabled" : ""
+      }">
+        <span class="preference-state ${escapeHtml(launchAtStartupBadgeClass(status))}">${escapeHtml(
+          launchAtStartupStatusLabel(status)
+        )}</span>
+        <input
+          type="checkbox"
+          data-launch-at-startup-toggle
+          aria-label="${escapeHtml(tx("Launch AIQD at startup", "开机启动 AIQD"))}"
+          ${enabled ? "checked" : ""}
+          ${disabled ? "disabled" : ""}
+        />
+        <span class="toggle-switch" aria-hidden="true"></span>
+      </label>
+    </div>
+    ${detailsExpanded ? renderStartupPreferenceDetails(status) : ""}
     ${
       status.hasDifferentEntry
-        ? `<div class="setup-watch-notice">
-            <div>
-              <strong>${escapeHtml(tx("Different startup entry detected", "检测到不同的启动项"))}</strong>
-              <div class="settings-detail">${escapeHtml(
-                tx(
-                  "Windows reports this executable can launch at sign-in with different arguments. The AIQD-managed background entry is still off.",
-                  "Windows 显示这个程序会用不同参数在登录时启动；AIQD 管理的后台启动项仍处于关闭状态。"
-                )
-              )}</div>
-            </div>
-            <span class="badge warning">${escapeHtml(tx("review", "检查"))}</span>
-          </div>`
+        ? renderPreferenceMessage({
+            kind: "warning",
+            message: tx("Different startup entry detected.", "检测到另一个启动项。"),
+            detail: tx(
+              "AIQD's own startup switch is still off.",
+              "AIQD 自己管理的开关仍是关闭。"
+            )
+          })
         : ""
     }
     ${
-      statusMessage
-        ? `<div class="setup-watch-notice">
-            <div>
-              <strong>${escapeHtml(statusMessage.message)}</strong>
-              ${
-                statusMessage.detail
-                  ? `<div class="settings-detail">${escapeHtml(statusMessage.detail)}</div>`
-                  : ""
-              }
-            </div>
-            <span class="badge ${escapeHtml(statusMessageBadgeClass)}">${escapeHtml(
-              statusMessage.kind === "pending"
-                ? tx("working", "处理中")
-                : statusMessage.kind === "healthy"
-                  ? tx("saved", "已保存")
-                  : tx("check", "检查")
-            )}</span>
-          </div>`
+      detailsExpanded || statusMessage?.kind !== "healthy"
+        ? renderPreferenceMessage(statusMessage, statusMessageBadgeClass)
         : ""
     }
+  `;
+}
+
+function renderStartupPreferenceDetails(status) {
+  const notes = [launchAtStartupDetail(status)];
+
+  if (status.canConfigure === true) {
+    notes.push(
+      status.enabled
+        ? tx(
+            "AIQD starts only the tray and local service; open the main window from the tray when needed.",
+            "AIQD 只启动托盘和本地服务；需要主窗口时从托盘打开。"
+          )
+        : tx(
+            "While this is off, AIQD will not add a sign-in startup entry.",
+            "关闭时，AIQD 不会添加登录启动项。"
+          )
+    );
+  }
+
+  return `
+    <div id="startup-preference-details" class="preference-detail-panel">
+      ${notes.map((note) => `<p>${escapeHtml(note)}</p>`).join("")}
+    </div>
+  `;
+}
+
+function launchAtStartupPreferenceDetail(status) {
+  if (status.reason === "desktop_bridge_unavailable") {
+    return tx("Open AIQD from the desktop app to change this.", "请从桌面应用打开后修改。");
+  }
+
+  if (status.reason === "packaged_app_required") {
+    return tx("Available in the installed desktop app.", "安装后的桌面版可用。");
+  }
+
+  if (status.reason === "unsupported_platform") {
+    return tx("Not available on this platform.", "当前平台不可用。");
+  }
+
+  if (status.reason === "requires_approval") {
+    return tx("The system may still ask for approval.", "系统可能还需要确认。");
+  }
+
+  if (status.hasDifferentEntry) {
+    return tx("Another startup entry exists for this app.", "这个应用还有另一个启动项。");
+  }
+
+  return status.enabled
+    ? tx("Start in the tray after sign-in.", "登录后自动在托盘运行。")
+    : tx("Do not start automatically.", "不自动启动。");
+}
+
+function renderPreferenceMessage(status, badgeClass) {
+  if (!status) {
+    return "";
+  }
+
+  const kind =
+    badgeClass ?? (status.kind === "pending" ? "warning" : status.kind ?? "stale");
+  const label =
+    status.kind === "pending"
+      ? tx("working", "处理中")
+      : status.kind === "healthy"
+        ? tx("saved", "已保存")
+        : tx("check", "检查");
+
+  return `
+    <div class="preference-message ${escapeHtml(kind)}">
+      <span>
+        <strong>${escapeHtml(status.message)}</strong>
+        ${
+          status.detail
+            ? `<small>${escapeHtml(status.detail)}</small>`
+            : ""
+        }
+      </span>
+      <span class="badge ${escapeHtml(kind)}">${escapeHtml(label)}</span>
+    </div>
   `;
 }
 
@@ -4641,6 +5771,134 @@ function launchAtStartupDetail(status) {
     "AIQD will not add a startup entry unless you enable it here or in the installer.",
     "除非你在这里或安装器里开启，否则 AIQD 不会添加开机启动项。"
   );
+}
+
+async function setDashboardClosePreference(mode) {
+  if (state.dashboardClosePreferencePending) {
+    return;
+  }
+
+  if (!window.aiqdDesktop?.setDashboardClosePreference) {
+    state.dashboardClosePreferenceSaveStatus = {
+      kind: "warning",
+      message: tx(
+        "Open Settings from the desktop app to change close behavior.",
+        "请从桌面应用打开设置后再修改关闭行为。"
+      )
+    };
+    renderDashboardCloseSettings();
+    return;
+  }
+
+  state.dashboardClosePreferencePending = true;
+  state.dashboardClosePreferenceSaveStatus = {
+    kind: "pending",
+    message: tx("Saving close behavior...", "正在保存关闭行为...")
+  };
+  renderDashboardCloseSettings();
+
+  try {
+    state.dashboardClosePreferenceStatus =
+      await window.aiqdDesktop.setDashboardClosePreference(mode);
+    state.dashboardClosePreferenceSaveStatus = {
+      kind: "healthy",
+      message: tx("Close behavior saved.", "关闭行为已保存。")
+    };
+  } catch (error) {
+    state.dashboardClosePreferenceStatus =
+      await loadDashboardClosePreferenceStatus();
+    state.dashboardClosePreferenceSaveStatus = {
+      kind: "warning",
+      message: tx("Close behavior could not be changed.", "无法修改关闭行为。"),
+      detail: error instanceof Error ? error.message : String(error)
+    };
+  } finally {
+    state.dashboardClosePreferencePending = false;
+    renderDashboardCloseSettings();
+  }
+}
+
+function renderDashboardCloseSettings() {
+  if (!elements.dashboardCloseContent) {
+    return;
+  }
+
+  const status = state.dashboardClosePreferenceStatus;
+
+  if (!status) {
+    elements.dashboardCloseContent.innerHTML = `<p class="empty">${escapeHtml(
+      tx("Close behavior unavailable.", "关闭行为状态不可用。")
+    )}</p>`;
+    return;
+  }
+
+  const supported = status.supported !== false;
+  const mode = status.mode ?? "ask";
+  const asksBeforeClose = mode === "ask";
+  const pending = state.dashboardClosePreferencePending;
+  const disabled = !supported || pending;
+  const saveStatus = state.dashboardClosePreferenceSaveStatus;
+  const saveBadgeClass =
+    saveStatus?.kind === "pending" ? "warning" : saveStatus?.kind;
+
+  elements.dashboardCloseContent.innerHTML = `
+    <div class="preference-row ${disabled ? "is-disabled" : ""}">
+      <span class="preference-copy">
+        <strong>${escapeHtml(tx("Ask before closing", "关闭前询问"))}</strong>
+        <span class="settings-detail">${escapeHtml(
+          dashboardClosePreferenceDetail(mode, status)
+        )}</span>
+      </span>
+      <label class="preference-control preference-switch-control ${
+        disabled ? "is-disabled" : ""
+      }">
+        <span class="preference-state ${escapeHtml(dashboardCloseBadgeClass(mode, status))}">${escapeHtml(
+          asksBeforeClose ? tx("On", "开启") : tx("Off", "关闭")
+        )}</span>
+        <input
+          type="checkbox"
+          data-dashboard-close-prompt-toggle
+          aria-label="${escapeHtml(tx("Ask before closing the main window", "关闭主窗口前询问"))}"
+          ${asksBeforeClose ? "checked" : ""}
+          ${disabled ? "disabled" : ""}
+        />
+        <span class="toggle-switch" aria-hidden="true"></span>
+      </label>
+    </div>
+    ${renderPreferenceMessage(saveStatus, saveBadgeClass)}
+  `;
+}
+
+function dashboardClosePreferenceDetail(mode, status) {
+  if (status.reason === "desktop_bridge_unavailable") {
+    return tx("Open AIQD from the desktop app to change this.", "请从桌面应用打开后修改。");
+  }
+
+  if (status.reason === "status_error") {
+    return tx("Could not read the current setting.", "无法读取当前设置。");
+  }
+
+  if (mode === "quit") {
+    return tx("Off: X quits AIQD directly.", "关闭：点击 X 会直接退出 AIQD。");
+  }
+
+  if (mode === "tray") {
+    return tx("Off: X keeps AIQD in the tray.", "关闭：点击 X 会留在托盘。");
+  }
+
+  return tx("On: X opens a small choice dialog.", "开启：点击 X 时弹出选择框。");
+}
+
+function dashboardCloseBadgeClass(mode, status) {
+  if (status.supported === false) {
+    return "stale";
+  }
+
+  if (mode === "ask") {
+    return "healthy";
+  }
+
+  return mode === "quit" ? "warning" : "stale";
 }
 
 function renderPathSettings() {

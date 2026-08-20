@@ -25,7 +25,7 @@ npm run desktop:local
 
 On Windows PowerShell, if `npm` is blocked by the local execution policy, use `npm.cmd` for the same commands.
 
-Launch-at-login is not a hidden side effect. The installer checkbox is off by default, and the same startup entry can be enabled or disabled later from Settings > Desktop Startup.
+Launch-at-login is not a hidden side effect. The installer checkbox is off by default, and the same startup entry can be enabled or disabled later from Settings > Desktop Preferences.
 
 Signature status before publishing: this formal release should use a SignPath Foundation signed installer if approval is complete. If this release is published unsigned, this section must be edited to say so prominently before upload.
 
@@ -39,11 +39,12 @@ Code signing policy: [docs/code-signing.md](https://github.com/isToniLiu/ai-agen
 - Manual Codex visible-status fallback when automatic local data is unavailable
 - Claude Code official statusline `rate_limits` ingestion through an opt-in local sink
 - Claude Desktop local `plan-usage-history.json` ingestion, an alternative Claude source that needs no CLI install and is treated as equal to Claude Code statusline
-- First-run Settings details stay collapsed until the user clicks `Set up Codex`, `Set up Claude Code CLI`, or `Check Claude Desktop`
+- First-launch onboarding modal asks which agents the user uses, then asks Claude users to choose Desktop or Claude Code CLI
 - Beginner Claude Code setup with separate `Install Claude Code CLI` and `Connect Claude data` actions
 - Internal Claude statusline commands hidden behind technical details during normal setup
 - Dashboard, Doctor, Settings, reset timeline, refresh history, and JSON/CSV export
 - Dashboard quota cards keep the primary quota in the hero meter and show only extra windows as separate progress rows
+- Codex monthly rows are hidden unless the Codex adapter explicitly supports them, so the UI follows the official visible usage windows rather than third-party monthly guesses
 - Electron desktop shell with tray mini panel, always-on-top widget, and AIQD-only shortcuts
 - Mini panel hides duplicate primary quota rows and shows compact secondary-window bars, including a yellow Claude Code 5-hour bar
 - Windows NSIS installer generated with `electron-builder`
@@ -55,6 +56,7 @@ Code signing policy: [docs/code-signing.md](https://github.com/isToniLiu/ai-agen
 - Strict real-data readiness shared by CLI, Settings, tray, and mini surfaces
 - English-by-default UI with Chinese/English language switching for the main dashboard and mini surfaces
 - Source confidence, freshness, and reported-reset labels
+- Packaged Windows launches tolerate disconnected GUI log pipes instead of surfacing a JavaScript `EPIPE` main-process error
 - Privacy-safe public dashboard APIs and export output
 
 ## Real-data Trial
@@ -74,15 +76,14 @@ Codex support is automatic when supported local `rate_limits` events are availab
 node dist/index.js codex snapshot --remaining-percent 72 --reset-at 2026-08-16T03:00:00Z
 ```
 
-Claude Desktop support needs no setup: if `%APPDATA%\Claude\plan-usage-history.json` exists with a recent sample, AIQD reads it automatically. Click `Check Claude Desktop` in Settings to confirm.
+Claude Desktop support needs no setup: if `%APPDATA%\Claude\plan-usage-history.json` exists with a recent sample, AIQD reads it automatically after the user chooses Claude Desktop in the first-launch guide.
 
-Claude Code CLI support is optional and configured from Settings:
+Claude Code CLI support is optional:
 
-1. Click `Set up Claude Code CLI` to expand the Claude Code setup details.
-2. If Claude Code CLI is missing, click `Install Claude Code CLI`.
-3. Click `Connect Claude data` if AIQD still needs to write the local capture setting.
-4. Open Claude Code once, finish Claude's own login/trust prompts, send one short message, and wait for the reply.
-5. Return to AIQD and check again.
+1. Choose Claude Code CLI in the first-launch guide.
+2. AIQD writes the local statusline receiver when it can do so safely.
+3. Open Claude Code once, finish Claude's own login/trust prompts, send one short message, and wait for the reply.
+4. Return to AIQD and check again.
 
 The ordinary setup flow should not require users to copy `node dist...` or internal statusline commands. Those remain under advanced details for troubleshooting and source-mode development.
 

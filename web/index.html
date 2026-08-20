@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AI Agent Quota</title>
-    <link rel="stylesheet" href="/styles.css?v=20260813-stale-refresh-copy" />
+    <link rel="stylesheet" href="/styles.css?v=20260815-agent-heading-cleanup" />
   </head>
   <body>
     <main class="shell">
@@ -23,6 +23,7 @@
           >See remaining quota, reset time, and local source readiness at a glance.</p>
         </div>
         <div class="topbar-actions">
+          <div id="topbar-startup-control" class="topbar-startup-control"></div>
           <button
             id="language-toggle"
             class="button language-toggle"
@@ -135,7 +136,7 @@
       </section>
 
       <section id="settings-view" class="view">
-        <div class="panel">
+        <div id="real-data-panel" class="panel settings-setup-panel">
           <div class="panel-header">
             <div>
               <h2 data-i18n-en="Connect Real Quota" data-i18n-zh="首次接入真实额度">Connect Real Quota</h2>
@@ -149,32 +150,28 @@
           </div>
           <div id="real-data-content" class="settings-content"></div>
         </div>
-        <div class="panel">
+        <div id="codex-connection-panel" class="panel settings-connection-panel">
           <div class="panel-header">
             <h2 data-i18n-en="Codex Connection" data-i18n-zh="Codex 连接状态">Codex Connection</h2>
           </div>
           <div id="codex-snapshot-content" class="settings-content"></div>
         </div>
-        <div class="panel">
+        <div id="claude-connection-panel" class="panel settings-connection-panel">
           <div class="panel-header">
             <h2 data-i18n-en="Claude Connection" data-i18n-zh="Claude 连接状态">Claude Connection</h2>
           </div>
           <div id="settings-content" class="settings-content"></div>
         </div>
-        <div class="panel">
+        <div id="startup-panel" class="panel settings-preference-panel desktop-preferences-panel">
           <div class="panel-header">
             <div>
-              <h2 data-i18n-en="Desktop Startup" data-i18n-zh="桌面启动">Desktop Startup</h2>
-              <p
-                class="panel-note"
-                data-i18n-en="Control whether the packaged desktop app starts when you sign in."
-                data-i18n-zh="控制打包后的桌面应用是否在登录系统时启动。"
-              >Control whether the packaged desktop app starts when you sign in.</p>
+              <h2 data-i18n-en="Desktop Preferences" data-i18n-zh="桌面偏好">Desktop Preferences</h2>
             </div>
           </div>
-          <div id="startup-content" class="settings-content"></div>
+          <div id="agent-preferences-content" class="settings-content desktop-preference-content"></div>
+          <div id="startup-content" class="settings-content desktop-preference-content"></div>
         </div>
-        <div class="panel">
+        <div id="feedback-panel" class="panel settings-preference-panel">
           <div class="panel-header">
             <div>
               <h2 data-i18n-en="Feedback" data-i18n-zh="反馈">Feedback</h2>
@@ -196,16 +193,16 @@
             >Send Feedback</a>
           </div>
         </div>
-        <details class="panel advanced-settings-panel">
+        <details id="advanced-settings-panel" class="panel advanced-settings-panel">
           <summary>
             <span
               data-i18n-en="Advanced settings"
               data-i18n-zh="高级设置"
             >Advanced settings</span>
             <small
-              data-i18n-en="Paths, shortcuts, and export. Usually not needed for first setup."
-              data-i18n-zh="路径、快捷键和导出；首次设置通常不用看。"
-            >Paths, shortcuts, and export. Usually not needed for first setup.</small>
+              data-i18n-en="Close behavior, paths, shortcuts, and export. Usually not needed for first setup."
+              data-i18n-zh="关闭行为、路径、快捷键和导出；首次设置通常不用看。"
+            >Close behavior, paths, shortcuts, and export. Usually not needed for first setup.</small>
           </summary>
           <div class="advanced-settings-body">
             <section class="advanced-settings-section">
@@ -215,6 +212,10 @@
             <section class="advanced-settings-section">
               <h2 data-i18n-en="Desktop Shortcuts" data-i18n-zh="桌面快捷键">Desktop Shortcuts</h2>
               <div id="desktop-shortcuts-content" class="settings-content"></div>
+            </section>
+            <section class="advanced-settings-section">
+              <h2 data-i18n-en="Close Behavior" data-i18n-zh="关闭行为">Close Behavior</h2>
+              <div id="dashboard-close-content" class="settings-content"></div>
             </section>
             <section class="advanced-settings-section">
               <h2 data-i18n-en="Data Export" data-i18n-zh="数据导出">Data Export</h2>
@@ -240,6 +241,8 @@
       </section>
     </main>
 
-    <script src="/app.js?v=20260813-stale-refresh-copy" type="module"></script>
+    <div id="first-run-onboarding-root" class="modal-root" hidden></div>
+
+    <script src="/app.js?v=20260815-agent-heading-cleanup" type="module"></script>
   </body>
 </html>

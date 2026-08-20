@@ -19,6 +19,16 @@ const manifest: AgentManifest = {
   supportedWindows: ["session_5h", "weekly"]
 };
 
+const codexManifest: AgentManifest = {
+  provider: "openai",
+  agent: "codex",
+  displayName: "Codex",
+  shortName: "Codex",
+  description: "OpenAI Codex local session and quota snapshots.",
+  defaultDataPaths: [],
+  supportedWindows: ["session_5h", "weekly"]
+};
+
 const demoSnapshot: QuotaSnapshot = {
   provider: "anthropic",
   agent: "claude-code",
@@ -30,6 +40,34 @@ const demoSnapshot: QuotaSnapshot = {
   observedAt: "2026-08-10T01:00:00.000Z",
   source: "demo",
   confidence: "medium",
+  stale: false
+};
+
+const weeklyCodexSnapshot: QuotaSnapshot = {
+  provider: "openai",
+  agent: "codex",
+  windowType: "weekly",
+  unit: "percent",
+  usedPercent: 5,
+  remainingPercent: 95,
+  resetAt: "2026-08-28T00:23:00.000Z",
+  observedAt: "2026-08-21T00:23:00.000Z",
+  source: "official_cli",
+  confidence: "official",
+  stale: false
+};
+
+const monthlyCodexSnapshot: QuotaSnapshot = {
+  provider: "openai",
+  agent: "codex",
+  windowType: "monthly",
+  unit: "percent",
+  usedPercent: 0,
+  remainingPercent: 100,
+  resetAt: "2026-09-18T00:23:00.000Z",
+  observedAt: "2026-08-21T00:23:00.000Z",
+  source: "official_cli",
+  confidence: "official",
   stale: false
 };
 
@@ -67,6 +105,48 @@ describe("AgentQuotaService demo snapshots", () => {
   });
 });
 
+describe("AgentQuotaService supported windows", () => {
+  it("hides snapshots outside the adapter supported windows", async () => {
+    await withStore(async (store) => {
+      store.saveQuotaSnapshots([weeklyCodexSnapshot, monthlyCodexSnapshot]);
+
+      const service = new AgentQuotaService(
+        createRegistry(codexManifest),
+        store
+      );
+      const snapshots = service.listQuotaSnapshots();
+      const agents = service.listAgents();
+
+      assert.deepEqual(
+        snapshots.map((snapshot) => snapshot.windowType),
+        ["weekly"]
+      );
+      assert.equal(agents[0]?.primarySnapshot?.windowType, "weekly");
+      assert.equal(agents[0]?.snapshots.length, 1);
+    });
+  });
+
+  it("hides reset events outside the adapter supported windows", async () => {
+    await withStore(async (store) => {
+      store.saveQuotaSnapshots([monthlyCodexSnapshot]);
+      store.saveQuotaSnapshots([
+        {
+          ...monthlyCodexSnapshot,
+          resetAt: "2026-09-19T00:23:00.000Z",
+          observedAt: "2026-08-22T00:23:00.000Z"
+        }
+      ]);
+
+      const service = new AgentQuotaService(
+        createRegistry(codexManifest),
+        store
+      );
+
+      assert.deepEqual(service.listResetEvents(), []);
+    });
+  });
+});
+
 async function withStore(
   callback: (store: SqliteStore) => Promise<void>
 ): Promise<void> {
@@ -81,9 +161,11 @@ async function withStore(
   }
 }
 
-function createRegistry(): AdapterRegistry {
+function createRegistry(
+  adapterManifest: AgentManifest = manifest
+): AdapterRegistry {
   const adapter: AgentAdapter = {
-    manifest,
+    manifest: adapterManifest,
     async scan() {
       return {
         snapshots: [],

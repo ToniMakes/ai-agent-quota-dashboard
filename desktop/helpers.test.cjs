@@ -2,6 +2,7 @@ const assert = require("node:assert/strict");
 const path = require("node:path");
 const { describe, it } = require("node:test");
 const {
+  buildDashboardClosePreferenceStatus,
   buildSmokeBackendEnv,
   buildLaunchAtStartupStatus,
   buildTrayMenuTemplate,
@@ -11,14 +12,19 @@ const {
   formatStartupError,
   firstRunGuideTarget,
   hasClaudeWaitingState,
+  ignorePipeWriteError,
+  isIgnorablePipeWriteError,
+  isDashboardClosePreferenceMode,
   isBackgroundLaunch,
   isSavedWidgetBounds,
   launchAtStartupArgsForPlatform,
   launchAtStartupQueryOptions,
   launchAtStartupSetOptions,
+  normalizeDashboardClosePreferenceMode,
   parseLaunchAtStartupCliValue,
   resolveDesktopShortcuts,
   resolveWidgetBounds,
+  safeWriteProcessStream,
   shouldShowPanelFromLaunch,
   shouldOpenDashboardFromLaunch,
   shouldRefreshForClaudeStatusline,
@@ -219,6 +225,36 @@ describe("desktop helpers", () => {
       buildLaunchAtStartupStatus({
         isPackaged: true,
         platform: "win32",
+        registryEntry: {
+          exists: true,
+          matchesExpected: true
+        },
+        settings: {
+          executableWillLaunchAtLogin: false,
+          openAtLogin: false
+        }
+      }).reason,
+      "enabled"
+    );
+    assert.equal(
+      buildLaunchAtStartupStatus({
+        isPackaged: true,
+        platform: "win32",
+        registryEntry: {
+          exists: true,
+          matchesExpected: false
+        },
+        settings: {
+          executableWillLaunchAtLogin: false,
+          openAtLogin: false
+        }
+      }).reason,
+      "different_entry_detected"
+    );
+    assert.equal(
+      buildLaunchAtStartupStatus({
+        isPackaged: true,
+        platform: "win32",
         settings: {
           executableWillLaunchAtLogin: true,
           openAtLogin: false
@@ -256,6 +292,53 @@ describe("desktop helpers", () => {
     assert.throws(
       () => parseLaunchAtStartupCliValue(["AIQD.exe", "--set-launch-at-login=maybe"]),
       /must be true or false/
+    );
+  });
+
+  it("normalizes dashboard close preferences", () => {
+    assert.equal(normalizeDashboardClosePreferenceMode(undefined), "ask");
+    assert.equal(
+      normalizeDashboardClosePreferenceMode({ mode: "tray" }),
+      "tray"
+    );
+    assert.equal(
+      normalizeDashboardClosePreferenceMode({ mode: "quit" }),
+      "quit"
+    );
+    assert.equal(normalizeDashboardClosePreferenceMode("quit"), "quit");
+    assert.equal(normalizeDashboardClosePreferenceMode({ mode: "bad" }), "ask");
+    assert.equal(isDashboardClosePreferenceMode("tray"), true);
+    assert.equal(isDashboardClosePreferenceMode("bad"), false);
+  });
+
+  it("builds dashboard close preference status", () => {
+    assert.deepEqual(buildDashboardClosePreferenceStatus({}), {
+      actionWhenNotAsking: "tray",
+      askBeforeClose: true,
+      mode: "ask",
+      supported: true
+    });
+    assert.deepEqual(
+      buildDashboardClosePreferenceStatus({
+        dashboardClosePreference: { mode: "tray" }
+      }),
+      {
+        actionWhenNotAsking: "tray",
+        askBeforeClose: false,
+        mode: "tray",
+        supported: true
+      }
+    );
+    assert.deepEqual(
+      buildDashboardClosePreferenceStatus({
+        dashboardClosePreference: { mode: "quit" }
+      }),
+      {
+        actionWhenNotAsking: "quit",
+        askBeforeClose: false,
+        mode: "quit",
+        supported: true
+      }
     );
   });
 
@@ -401,6 +484,49 @@ describe("desktop helpers", () => {
     assert.match(message, /Backend: exited with code 1/);
     assert.match(message, /Backend stderr/);
     assert.match(message, /bad things happened/);
+  });
+
+  it("ignores broken stdout pipes while forwarding backend logs", () => {
+    const error = new Error("broken pipe");
+    error.code = "EPIPE";
+
+    assert.equal(isIgnorablePipeWriteError(error), true);
+    assert.doesNotThrow(() => ignorePipeWriteError(error));
+    assert.equal(
+      safeWriteProcessStream(
+        {
+          destroyed: false,
+          writableEnded: false,
+          write() {
+            throw error;
+          }
+        },
+        "log"
+      ),
+      false
+    );
+  });
+
+  it("does not hide unexpected stream write failures", () => {
+    const error = new Error("disk full");
+    error.code = "ENOSPC";
+
+    assert.equal(isIgnorablePipeWriteError(error), false);
+    assert.throws(() => ignorePipeWriteError(error), /disk full/);
+    assert.throws(
+      () =>
+        safeWriteProcessStream(
+          {
+            destroyed: false,
+            writableEnded: false,
+            write() {
+              throw error;
+            }
+          },
+          "log"
+        ),
+      /disk full/
+    );
   });
 
   it("summarizes compact agent status for tray text", () => {

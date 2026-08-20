@@ -128,6 +128,10 @@ function extractCodexRateLimitCandidates(
   const limitName = readString(rateLimits, ["limit_name", "limitName"]);
   const planType = readString(rateLimits, ["plan_type", "planType"]);
 
+  if (!isGlobalCodexRateLimit(limitId)) {
+    return [];
+  }
+
   return [
     ["primary", readRecord(rateLimits, ["primary"])],
     ["secondary", readRecord(rateLimits, ["secondary"])]
@@ -157,6 +161,12 @@ function extractCodexRateLimitCandidates(
       }
     ];
   });
+}
+
+function isGlobalCodexRateLimit(limitId: string | undefined): boolean {
+  const normalized = limitId?.trim().toLowerCase();
+
+  return !normalized || normalized === "codex";
 }
 
 function codexRateLimitWindowType(

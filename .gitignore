@@ -5,6 +5,8 @@ release/
 .env.*
 !.env.example
 .tmp/
+.claude/
+CODEX_HANDOFF.md
 *.db
 *.db-shm
 *.db-wal

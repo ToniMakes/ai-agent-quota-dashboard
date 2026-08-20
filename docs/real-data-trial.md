@@ -45,7 +45,7 @@ Expected:
 2. Leave `Start AIQD when I sign in` unchecked.
 3. Launch AIQD from the desktop or Start menu entry.
 4. Confirm the main dashboard window opens, not only the mini panel.
-5. Open Settings > Desktop Startup.
+5. Open Settings > Desktop Preferences.
 
 Expected:
 
@@ -62,7 +62,7 @@ Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -ErrorAct
 
 ### Settings Startup Toggle
 
-1. In Settings > Desktop Startup, turn `Launch at startup` on.
+1. In Settings > Desktop Preferences, turn `Launch at startup` on.
 2. Confirm the setting changes to on.
 3. Turn it off again.
 4. Confirm the setting changes to off.
@@ -79,7 +79,7 @@ Run this as a second pass after uninstalling AIQD, or from a clean VM snapshot:
 
 1. Install AIQD again.
 2. Check `Start AIQD when I sign in`.
-3. Open Settings > Desktop Startup.
+3. Open Settings > Desktop Preferences.
 
 Expected:
 

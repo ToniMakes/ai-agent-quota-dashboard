@@ -98,6 +98,52 @@ describe("parseCodexQuotaSnapshots", () => {
     assert.equal(snapshots[0]?.source, "official_cli");
   });
 
+  it("ignores model-specific Codex rate limit buckets", () => {
+    const snapshots = parseCodexQuotaSnapshots(
+      [
+        JSON.stringify({
+          timestamp: "2026-08-15T13:58:44.642Z",
+          type: "event_msg",
+          payload: {
+            type: "token_count",
+            rate_limits: {
+              limit_id: "codex_bengalfox",
+              limit_name: "GPT-5.3-Codex-Spark",
+              plan_type: "prolite",
+              primary: {
+                used_percent: 0,
+                window_minutes: 10080,
+                resets_at: 1787407116
+              }
+            }
+          }
+        }),
+        JSON.stringify({
+          timestamp: "2026-08-15T13:59:58.752Z",
+          type: "event_msg",
+          payload: {
+            type: "token_count",
+            rate_limits: {
+              limit_id: "codex",
+              limit_name: null,
+              plan_type: "prolite",
+              primary: {
+                used_percent: 80,
+                window_minutes: 10080,
+                resets_at: 1787228055
+              }
+            }
+          }
+        })
+      ].join("\n"),
+      { observedAt }
+    );
+
+    assert.equal(snapshots.length, 1);
+    assert.equal(snapshots[0]?.remainingPercent, 20);
+    assert.equal(snapshots[0]?.resetAt, "2026-08-20T12:14:15.000Z");
+  });
+
   it("ignores unrelated JSON documents", () => {
     const snapshots = parseCodexQuotaSnapshots(
       JSON.stringify({ type: "message", text: "hello" }),
