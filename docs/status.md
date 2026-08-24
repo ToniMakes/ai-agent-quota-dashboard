@@ -75,8 +75,8 @@ The first public preview distribution shape is installer-first desktop preview. 
 
 The unsigned `v0.1.0-rc.1` GitHub Pre-release has been created for clean-machine testing and SignPath Foundation review. A copy-paste application draft is available in [docs/signpath-application.md](signpath-application.md).
 
-- Release page: https://github.com/isToniLiu/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.1
-- Workflow run: https://github.com/isToniLiu/ai-agent-quota-dashboard/actions/runs/31796488211
+- Release page: https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.1
+- Workflow run: https://github.com/ToniMakes/ai-agent-quota-dashboard/actions/runs/31796488211
 - Asset SHA256: `D938A30F4289EE676FD181AC804B5DE0F372EEF502706FFE43142B85F26A0F72`
 - SignPath Foundation OSS application: submitted, awaiting review
 
@@ -84,24 +84,24 @@ The latest installed-app trial used the maintainer's existing Windows profile an
 
 The clean Windows VM first-run protocol is now spelled out in [docs/real-data-trial.md](real-data-trial.md), including startup checkbox off/on passes, Settings startup toggle checks, uninstall cleanup, and fresh Codex, Claude Desktop, and Claude Code readiness. It still needs to be executed on an actual clean Windows profile or VM.
 
-Clean Windows VM trial tracking issue: https://github.com/isToniLiu/ai-agent-quota-dashboard/issues/1
+Clean Windows VM trial tracking issue: https://github.com/ToniMakes/ai-agent-quota-dashboard/issues/1
 
 Friend clean-Windows testing of `v0.1.0-rc.1` found leftover Electron app data at `%APPDATA%\AI Agent Quota` after uninstall. `v0.1.0-rc.2` was published to retest that uninstall cleanup:
 
-- Release page: https://github.com/isToniLiu/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.2
-- Workflow run: https://github.com/isToniLiu/ai-agent-quota-dashboard/actions/runs/31805252401
+- Release page: https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.2
+- Workflow run: https://github.com/ToniMakes/ai-agent-quota-dashboard/actions/runs/31805252401
 - Asset SHA256: `3F0BC6183A7A435E3181A006CEEF9BC21DF35AF1D607F639496AD014527C545B`
 
 The fix uses the full product name for Electron app data, enables NSIS app-data cleanup, and explicitly removes the old RC1 short-name app data directory during uninstall. This still needs a clean Windows uninstall retest against `v0.1.0-rc.2`.
 
 `v0.1.0-rc.3` was prepared to retest the tray mini panel timing copy after tester feedback that source labels were less useful in the compact surface:
 
-- Release page: https://github.com/isToniLiu/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.3
+- Release page: https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.3
 - Asset SHA256: `1F8D300E6A30E54426A1751770EF77278C53D334C94BAB0F468B2A2F2C12BEAF`
 
 `v0.1.0-rc.4` replaces `v0.1.0-rc.3` for mini timing retest after feedback that the `expires` / `过期` wording was unclear and that Claude should expose both 5h and weekly timing:
 
-- Release page: https://github.com/isToniLiu/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.4
+- Release page: https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.4
 - Asset SHA256: `4FEE3E936DAD393C885257A0F8E5AEB58116F125045047935BDB9439FF40C347`
 
 The mini panel now shows `reset` / `重置` only for real reset timestamps, uses `refresh` / `刷新` for local freshness deadlines, and shows both 5h and weekly timing on the merged Claude card. The clean Windows uninstall retest remains relevant and should now use the latest RC installer.

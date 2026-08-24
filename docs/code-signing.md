@@ -27,15 +27,15 @@ Release signing must use artifacts built from this repository by GitHub Actions.
 Release candidates and signed release artifacts are built through GitHub Actions from the public source repository:
 
 ```text
-https://github.com/isToniLiu/ai-agent-quota-dashboard
+https://github.com/ToniMakes/ai-agent-quota-dashboard
 ```
 
 The Windows package workflow builds the app, runs the local test gate, uploads the unsigned installer as a GitHub Actions artifact, and can submit that artifact to SignPath after the project is approved and the required SignPath secrets/variables are configured.
 
 ## Roles
 
-- Committer and reviewer: [Toni Liu](https://github.com/isToniLiu), repository maintainer
-- Signing approver: [Toni Liu](https://github.com/isToniLiu), repository maintainer
+- Committer and reviewer: [Toni Liu](https://github.com/ToniMakes), repository maintainer
+- Signing approver: [Toni Liu](https://github.com/ToniMakes), repository maintainer
 
 All maintainers with source repository or SignPath access must use multi-factor authentication.
 
@@ -46,7 +46,7 @@ Signed Windows artifacts should enforce these metadata values:
 - Product name: `AI Agent Quota Dashboard`
 - Product version: the version in `package.json`
 - Package type: Windows x64 NSIS installer
-- Repository origin: `https://github.com/isToniLiu/ai-agent-quota-dashboard`
+- Repository origin: `https://github.com/ToniMakes/ai-agent-quota-dashboard`
 
 ## Privacy
 
