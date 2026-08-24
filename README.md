@@ -13,9 +13,9 @@ AIQD only reads local files written by desktop apps or CLIs (Codex CLI, Claude C
 
 ## Status
 
-This repository is preparing the v0.1 desktop preview. The first public preview should be installer-first for normal users: install the app, open the desktop shortcut, then finish setup from Settings. Source mode remains available as a developer fallback before and after the packaged release.
+This repository publishes the v0.1 desktop preview as an installer-first build for normal users: install the app, open the desktop shortcut, then finish setup from Settings. Source mode remains available as a developer fallback before and after the packaged release.
 
-Claude Code CLI is no longer required for Claude coverage: AIQD reads Claude quota from either the Claude Code statusline or Claude Desktop's local `plan-usage-history.json`, and treats them as alternatives, so desktop-only Claude users are already covered. Remaining release gates: SignPath Foundation signing prep, a true clean Windows user/VM trial from the installer, and a final CI/release pass before broad public release.
+Claude Code CLI is no longer required for Claude coverage: AIQD reads Claude quota from either the Claude Code statusline or Claude Desktop's local `plan-usage-history.json`, and treats them as alternatives, so desktop-only Claude users are already covered. The v0.1.0 desktop preview is published with an unsigned Windows installer while SignPath Foundation open-source signing remains pending.
 
 See [docs/status.md](docs/status.md) for the current project snapshot. The current app includes:
 
@@ -255,7 +255,7 @@ The packaged app starts its local backend through Electron's bundled Node runtim
 
 The installer includes an optional `Start AIQD when I sign in` checkbox. It is off by default; the same setting can be enabled or disabled later from Settings > Desktop Preferences.
 
-The formal desktop preview should use a signed installer through SignPath Foundation open-source signing if approval is completed before release. Unsigned RC or preview artifacts may be used for testing and SignPath review, but must be labeled as unsigned. See [docs/code-signing.md](docs/code-signing.md).
+The v0.1.0 desktop preview installer is unsigned because SignPath Foundation approval is still pending. Windows may show an unknown-publisher or SmartScreen warning. Verify the SHA256 listed on the GitHub Release before running the installer. See [docs/code-signing.md](docs/code-signing.md).
 
 ### Code Signing Policy
 

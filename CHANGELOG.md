@@ -6,6 +6,12 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [0.1.0] - 2026-08-25
+
+First installer-first desktop preview. This release is published with an unsigned Windows x64 NSIS installer while SignPath Foundation open-source signing review is pending. The GitHub Release notes must label the artifact as unsigned and include the final SHA256.
+
 ### Added
 
 - SignPath Foundation code signing policy and a manual Windows package workflow that can upload unsigned RC artifacts or submit approved release artifacts for signing
@@ -133,7 +139,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Public bug-report guidance prefers reviewed `doctor --json` output over local-path-bearing text logs
 - CLI exports reuse the same account/source-reference exclusions as dashboard exports
 
-## [0.1.0] - 2026-08-09
+## Pre-release Scaffold - 2026-08-09
 
 Initial public scaffold.
 

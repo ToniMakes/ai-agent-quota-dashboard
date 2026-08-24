@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-08-21
+Last updated: 2026-08-25
 
 AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The core MVP is no longer just a scaffold: the local dashboard, desktop tray shell, real-data setup flow, and strict trial readiness checks are implemented and passing CI. The first public preview target is now installer-first for normal users, with source mode retained as a developer fallback.
 
@@ -34,7 +34,7 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The core MVP is no 
 
 AIQD only uses official or local user-visible quota sources. It does not read browser cookies, simulate login, call hidden APIs, upload prompts/responses/source code, or automate account switching. If a reliable source is unavailable, the UI should say `unavailable` or use an explicitly labeled manual fallback.
 
-The preferred Windows signing path is SignPath Foundation open-source signing. The repository now has a code signing policy, and the formal desktop preview should use a signed installer if SignPath approval is complete before release.
+The preferred Windows signing path remains SignPath Foundation open-source signing. SignPath review is still pending, so the maintainer explicitly approved publishing v0.1.0 as an unsigned desktop preview on 2026-08-25 with prominent warning copy and a SHA256 in the GitHub Release.
 
 ## Latest Local Verification
 
@@ -71,7 +71,7 @@ The beginner real-data trial docs now call out expected command results, Windows
 
 Demo release screenshots have been refreshed for the dashboard, Doctor, Settings setup flow with Claude Desktop, mini panel, and widget surfaces under `docs/assets/screenshots`.
 
-The first public preview distribution shape is installer-first desktop preview. A local Windows x64 NSIS artifact has been generated at `release/AI Agent Quota Dashboard-0.1.0-win-x64.exe`; `release/` is ignored and the artifact should be uploaded to a GitHub Release rather than committed. The current local artifact is unsigned and is suitable as an RC/testing artifact, not the preferred formal release artifact. `docs/release-notes-v0.1.0.md` is the draft GitHub Release text.
+The first public preview distribution shape is installer-first desktop preview. The Windows x64 NSIS artifact is generated at `release/AI Agent Quota Dashboard-0.1.0-win-x64.exe`; `release/` is ignored and the artifact should be uploaded to a GitHub Release rather than committed. The v0.1.0 artifact is intentionally unsigned while SignPath review is pending. `docs/release-notes-v0.1.0.md` is the GitHub Release text.
 
 The unsigned `v0.1.0-rc.1` GitHub Pre-release has been created for clean-machine testing and SignPath Foundation review. A copy-paste application draft is available in [docs/signpath-application.md](signpath-application.md).
 
@@ -106,6 +106,8 @@ The fix uses the full product name for Electron app data, enables NSIS app-data 
 
 The mini panel now shows `reset` / `重置` only for real reset timestamps, uses `refresh` / `刷新` for local freshness deadlines, and shows both 5h and weekly timing on the merged Claude card. The clean Windows uninstall retest remains relevant and should now use the latest RC installer.
 
+`v0.1.0` is approved for an unsigned desktop preview because SignPath Foundation review is still pending after the application submitted on 2026-08-14. The final local installer artifact built on 2026-08-25 is unsigned (`Get-AuthenticodeSignature` reports `NotSigned`) and has SHA256 `7DDE28E8FE424268C752480889DBBEABFD5578D9D20D5EE77DAE117ADE867F6D`.
+
 ## Current Product State
 
 The app is suitable for local real-data dogfooding by the maintainer and technically curious early testers. For the first public preview, normal users should install a packaged desktop build and finish setup from Settings. Source checkout remains the developer fallback path.
@@ -118,6 +120,5 @@ Claude Desktop-only coverage was the highest product priority before broad publi
 
 ## Next Focus
 
-1. Retest mini panel 5h/weekly timing copy and uninstall cleanup from the `v0.1.0-rc.4` installer on the clean Windows machine while SignPath review is pending.
-2. After SignPath approval, configure GitHub secrets/variables and rerun the Windows package workflow with signing enabled.
-3. Run a final checklist/CI pass immediately before tagging `v0.1.0`.
+1. Run final local release checks, package the unsigned v0.1.0 installer, compute SHA256, and publish the GitHub Release.
+2. After SignPath approval, configure GitHub secrets/variables and rerun the Windows package workflow with signing enabled for a follow-up signed release.

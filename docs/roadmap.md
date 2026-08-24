@@ -1,6 +1,6 @@
 # Roadmap
 
-Last updated: 2026-08-14
+Last updated: 2026-08-25
 
 ## Current Milestone: v0.1 Desktop Preview
 
@@ -38,10 +38,9 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 ### Remaining Before First Public Preview
 
 - True clean Windows user or VM real-data trial from installer to Codex, Claude Desktop, and Claude Code readiness
-- SignPath Foundation application, CI signing configuration, and final signed-installer verification, or an explicit maintainer decision to ship the formal preview unsigned
-- Developer fallback trial from clone to Codex + Claude Code readiness
+- SignPath Foundation approval, CI signing configuration, and final signed-installer verification for a later signed follow-up release
 - Beginner onboarding copy pass for Windows, macOS, and Linux
-- Create the GitHub Release and upload the installer artifact after final verification
+- Create the GitHub Release and upload the unsigned installer artifact after final verification
 
 ### First Preview Work Plan
 
@@ -52,7 +51,7 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 5. Developer fallback: verify a clean clone still works for technical testers.
 6. Onboarding pass: tighten Settings and README instructions around the next action, expected result, and recovery path for each platform.
 7. Release assets: capture dashboard, tray mini panel, widget, and setup-flow screenshots or short GIFs.
-8. Release finish: submit/complete SignPath signing if available, update `CHANGELOG.md`, complete `docs/release-checklist.md`, verify CI on `main`, tag the preview, and create the GitHub Release.
+8. Release finish: publish v0.1.0 as an explicitly unsigned desktop preview, update `CHANGELOG.md`, complete `docs/release-checklist.md`, verify CI on `main`, tag the preview, and create the GitHub Release.
 
 ## v0.2
 
