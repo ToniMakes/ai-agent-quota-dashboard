@@ -1,6 +1,6 @@
 # AI Agent Quota Dashboard
 
-[![CI](https://github.com/isToniLiu/ai-agent-quota-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/isToniLiu/ai-agent-quota-dashboard/actions/workflows/ci.yml)
+[![CI](https://github.com/ToniMakes/ai-agent-quota-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/ToniMakes/ai-agent-quota-dashboard/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 A local-first, quota-first dashboard for AI coding agents.

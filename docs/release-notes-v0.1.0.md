@@ -17,7 +17,7 @@ GitHub may display or download the same asset with dots in the filename as `AI.A
 Developer fallback from source:
 
 ```bash
-git clone https://github.com/isToniLiu/ai-agent-quota-dashboard.git
+git clone https://github.com/ToniMakes/ai-agent-quota-dashboard.git
 cd ai-agent-quota-dashboard
 npm install
 npm test
@@ -37,7 +37,7 @@ SHA256:
 7DDE28E8FE424268C752480889DBBEABFD5578D9D20D5EE77DAE117ADE867F6D
 ```
 
-Code signing policy: [docs/code-signing.md](https://github.com/isToniLiu/ai-agent-quota-dashboard/blob/main/docs/code-signing.md).
+Code signing policy: [docs/code-signing.md](https://github.com/ToniMakes/ai-agent-quota-dashboard/blob/main/docs/code-signing.md).
 
 ## Highlights
 

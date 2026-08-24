@@ -84,7 +84,7 @@ Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` h
 - [x] Installed dashboard browser smoke shows Codex and Claude Code quota cards
 - [x] Installed mini panel browser smoke shows compact secondary-window rows
 - [x] True clean Windows user or VM trial protocol is documented in `docs/real-data-trial.md`
-- [x] True clean Windows user or VM trial tracking issue created: https://github.com/isToniLiu/ai-agent-quota-dashboard/issues/1
+- [x] True clean Windows user or VM trial tracking issue created: https://github.com/ToniMakes/ai-agent-quota-dashboard/issues/1
 - [x] `v0.1.0-rc.2` published for uninstall cleanup retest after RC1 left `%APPDATA%\AI Agent Quota`
 - [x] `v0.1.0-rc.3` prepared for mini panel timing-copy retest
 - [x] `v0.1.0-rc.4` prepared for Claude 5h/weekly mini timing retest
