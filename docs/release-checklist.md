@@ -13,7 +13,7 @@ Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` h
 ## Required
 
 - [x] `docs/code-signing.md` is current and linked from the README/docs index
-- [ ] For the formal Windows release: the installer is signed, or maintainers have explicitly approved an unsigned formal preview with prominent warnings
+- [x] For the formal Windows release: the installer is signed, or maintainers have explicitly approved an unsigned formal preview with prominent warnings
 - [x] `npm test` passes locally
 - [x] `npm run desktop:smoke` passes locally
 - [x] `npm run desktop:first-run-smoke` passes locally and uses isolated provider data paths
@@ -30,7 +30,7 @@ Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` h
 - [x] Claude Desktop local plan usage adapter is implemented, tested, and clearly labeled for desktop-only users, as an alternative to Claude Code CLI
 - [x] Claude setup offers an explicit install action when Claude Code CLI is missing and a separate connect action for local quota capture
 - [x] CI is green on `main`
-- [ ] `CHANGELOG.md` has a release entry
+- [x] `CHANGELOG.md` has a release entry
 - [x] README describes current capabilities accurately
 - [x] README explains the installer path for normal users and labels source mode as a developer fallback
 - [x] Release notes say whether the Windows installer is signed or unsigned
@@ -71,7 +71,7 @@ Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` h
 - [x] `.github/workflows/package-windows.yml` produces the unsigned installer artifact
 - [ ] `.github/workflows/package-windows.yml` submits the artifact to SignPath and downloads the signed installer
 - [ ] `Get-AuthenticodeSignature` reports `Valid` for the final installer
-- [ ] GitHub Release uploads the signed installer for the formal release, or explicitly documents an approved unsigned fallback
+- [x] GitHub Release uploads the signed installer for the formal release, or explicitly documents an approved unsigned fallback
 
 ## Maintainer Installed-App Trial
 

@@ -27,7 +27,13 @@ On Windows PowerShell, if `npm` is blocked by the local execution policy, use `n
 
 Launch-at-login is not a hidden side effect. The installer checkbox is off by default, and the same startup entry can be enabled or disabled later from Settings > Desktop Preferences.
 
-Signature status before publishing: this formal release should use a SignPath Foundation signed installer if approval is complete. If this release is published unsigned, this section must be edited to say so prominently before upload.
+Signature status: **unsigned Windows installer**. SignPath Foundation open-source signing is still pending as of 2026-08-25, and the maintainer has explicitly approved publishing v0.1.0 as an unsigned desktop preview instead of blocking the release. Windows may show an unknown-publisher or SmartScreen warning.
+
+SHA256:
+
+```text
+7DDE28E8FE424268C752480889DBBEABFD5578D9D20D5EE77DAE117ADE867F6D
+```
 
 Code signing policy: [docs/code-signing.md](https://github.com/isToniLiu/ai-agent-quota-dashboard/blob/main/docs/code-signing.md).
 
@@ -108,7 +114,7 @@ CI runs tests on Windows and Ubuntu with Node 24.
 
 ## Known Limits
 
-- Unsigned RC/pre-release artifacts may be used for SignPath review; the formal release should upload the signed installer if SignPath approval is complete
+- The v0.1.0 Windows installer is unsigned while SignPath Foundation review is pending; users should verify the SHA256 before running it
 - No system notification support yet
 - No update channel yet
 - Launch-at-login is Windows-first for this preview; macOS/Linux distribution polish remains later work

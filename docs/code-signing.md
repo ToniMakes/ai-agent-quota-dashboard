@@ -1,6 +1,6 @@
 # Code Signing Policy
 
-Last updated: 2026-08-14
+Last updated: 2026-08-25
 
 AI Agent Quota Dashboard uses an installer-first release path for Windows preview builds. The preferred signing path for the first formal desktop preview is SignPath Foundation open-source code signing.
 
@@ -8,11 +8,9 @@ Free code signing provided by SignPath.io, certificate by SignPath Foundation.
 
 ## Release Intent
 
-The formal `v0.1.0` desktop preview should be published as a signed Windows installer if SignPath approval is completed before release.
+The preferred path is a signed Windows installer. SignPath Foundation approval was still pending on 2026-08-25, so the maintainer explicitly approved publishing `v0.1.0` as an unsigned desktop preview instead of blocking the first release.
 
-Unsigned builds may be published only as release candidates or previews used for testing, SignPath application review, or maintainer verification. Any unsigned public artifact must be clearly labeled as unsigned in the GitHub Release notes and README.
-
-If SignPath approval blocks the release for too long, maintainers must make an explicit release decision before publishing a formal unsigned installer.
+Unsigned public artifacts must be clearly labeled as unsigned in the GitHub Release notes and README. The release notes must include the final SHA256 and warn that Windows may show an unknown-publisher or SmartScreen prompt.
 
 ## Signing Scope
 
@@ -66,7 +64,7 @@ The uninstaller removes AIQD-owned startup entries. Startup behavior is document
 
 ## Verification
 
-Before publishing a signed installer:
+Before publishing a signed installer in a later follow-up release:
 
 1. Run the release checklist in [Release Checklist](release-checklist.md).
 2. Build the Windows installer through GitHub Actions.
@@ -74,7 +72,7 @@ Before publishing a signed installer:
 4. Manually approve the signing request in SignPath.
 5. Download the signed artifact from the workflow.
 6. Verify the Windows Authenticode signature reports `Valid`.
-7. Upload only the verified signed installer to the formal GitHub Release.
+7. Upload the verified signed installer to a new follow-up GitHub Release. Do not silently replace the `v0.1.0` unsigned installer asset.
 
 On Windows, verify the final artifact with:
 

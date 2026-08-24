@@ -1,6 +1,6 @@
 # Distribution and Startup
 
-Last updated: 2026-08-21
+Last updated: 2026-08-25
 
 ## Current Release Shape
 
@@ -12,9 +12,7 @@ The Windows x64 installer artifact is:
 release/AI Agent Quota Dashboard-0.1.0-win-x64.exe
 ```
 
-The current local artifact is unsigned. It may be used as a release-candidate or SignPath application artifact, but should not be treated as the formal public installer unless maintainers explicitly decide to ship unsigned.
-
-The preferred formal `v0.1.0` path is a SignPath Foundation signed Windows installer. Do not tag the first formal public preview until the artifact exists, packaged smoke checks pass, release notes explain the normal-user install path, and the signing status is explicit. If SignPath approval is complete, the GitHub Release should upload the signed artifact only.
+The v0.1.0 desktop preview artifact is published unsigned because SignPath Foundation approval is still pending. The maintainer explicitly approved this unsigned formal preview on 2026-08-25. Release notes must label the installer as unsigned, describe the normal Windows unknown-publisher or SmartScreen warning, and include the final SHA256.
 
 Build commands:
 
@@ -36,7 +34,7 @@ The packaged app uses Electron's bundled Node runtime for the local backend. Nor
 
 AIQD's preferred no-cost signing path is SignPath Foundation open-source signing. The repository policy is documented in [Code Signing Policy](code-signing.md).
 
-Release candidates may be unsigned and clearly labeled as such so SignPath can review a released/downloadable Windows artifact. The formal release should be signed if approval is available in time.
+Release candidates may be unsigned and clearly labeled as such so SignPath can review a released/downloadable Windows artifact. The v0.1.0 formal preview is also unsigned by maintainer decision while SignPath review is pending.
 
 The manual Windows packaging workflow can:
 
@@ -58,7 +56,7 @@ Recommended signing sequence:
 3. Submit the SignPath Foundation OSS application with the repository URL, RC release URL, license, privacy policy, and code signing policy.
 4. After approval, configure the SignPath GitHub secret and variables listed above.
 5. Run the same workflow with `sign_with_signpath` set to `true` from the intended release commit or tag.
-6. Verify the signed installer and upload only that artifact to the formal release.
+6. Verify the signed installer and upload only that artifact to a later signed follow-up release. Do not silently replace the v0.1.0 unsigned asset.
 
 ## Startup Decision
 
