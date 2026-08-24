@@ -12,6 +12,8 @@ Windows x64 installer asset:
 AI Agent Quota Dashboard-0.1.0-win-x64.exe
 ```
 
+GitHub may display or download the same asset with dots in the filename as `AI.Agent.Quota.Dashboard-0.1.0-win-x64.exe`; the SHA256 below applies to the installer either way.
+
 Developer fallback from source:
 
 ```bash
