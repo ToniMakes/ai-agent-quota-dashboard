@@ -1,7 +1,6 @@
-import { constants, existsSync } from "node:fs";
-import { access, readFile, stat } from "node:fs/promises";
-import { homedir, platform } from "node:os";
-import { delimiter, extname, join } from "node:path";
+import { existsSync } from "node:fs";
+import { readFile, stat } from "node:fs/promises";
+import { platform } from "node:os";
 import {
   defaultClaudeSettingsPath,
   defaultClaudeStatuslineHistoryPath,
@@ -9,9 +8,20 @@ import {
   defaultClaudeStatuslineShimPath
 } from "../config/paths.js";
 import { isRecord } from "../adapters/parse-utils.js";
-import type { DoctorCheck, DoctorStatus, QuotaWindowType } from "../core/types.js";
+import { claudeStatuslineFreshnessMs } from "../config/policy.js";
+import type { DoctorCheck, QuotaWindowType } from "../core/types.js";
+import {
+  claudeOpenCommandForProject,
+  defaultClaudeOpenCommand,
+  detectClaudeCli,
+  resolveClaudeInstallInfo,
+  type ClaudeCliStatus,
+  type ClaudeInstallMethod
+} from "./claude-cli-environment.js";
+import type { ReadinessResolution, SetupCheck } from "./setup-status-kit.js";
+import { secondsSince } from "./time-utils.js";
 
-const freshStatuslineSnapshotSeconds = 5 * 60 * 60;
+const freshStatuslineSnapshotSeconds = claudeStatuslineFreshnessMs / 1000;
 
 export type ClaudeStatuslineReadiness =
   | "ready"
@@ -19,14 +29,7 @@ export type ClaudeStatuslineReadiness =
   | "waiting_for_data"
   | "needs_attention";
 
-export type ClaudeStatuslineSetupCheck = {
-  id: string;
-  label: string;
-  status: DoctorStatus;
-  message: string;
-  detail?: string;
-  action?: string;
-};
+export type ClaudeStatuslineSetupCheck = SetupCheck;
 
 export type ClaudeStatuslineSetupStatus = {
   claudeCliAvailable: boolean;
@@ -35,6 +38,7 @@ export type ClaudeStatuslineSetupStatus = {
   claudeCliExampleProjectOpenCommand: string;
   claudeCliExampleProjectPath: string;
   claudeCliInstallCommand: string;
+  claudeCliInstallMethod: ClaudeInstallMethod;
   claudeCliOnPath?: boolean;
   claudeCliOpenCommand: string;
   claudeCliPath?: string;
@@ -77,13 +81,6 @@ export type ClaudeStatuslineSetupStatusOptions = {
   now?: Date;
 };
 
-type ClaudeCliStatus = {
-  available: boolean;
-  command?: string;
-  onPath?: boolean;
-  path?: string;
-};
-
 export async function getClaudeStatuslineSetupStatus(
   options: ClaudeStatuslineSetupStatusOptions = {}
 ): Promise<ClaudeStatuslineSetupStatus> {
@@ -106,7 +103,7 @@ export async function getClaudeStatuslineSetupStatus(
     latestAgeSeconds !== undefined &&
     latestAgeSeconds <= freshStatuslineSnapshotSeconds;
   const claudeCli = await (options.claudeCliLookup?.() ?? detectClaudeCli());
-  const claudeInstallCommand = await defaultClaudeInstallCommand();
+  const claudeInstallInfo = await resolveClaudeInstallInfo();
   const exampleProjectPath = process.cwd();
 
   const status: ClaudeStatuslineSetupStatus = {
@@ -116,7 +113,8 @@ export async function getClaudeStatuslineSetupStatus(
     claudeCliExampleProjectOpenCommand:
       claudeOpenCommandForProject(exampleProjectPath, claudeCli.command),
     claudeCliExampleProjectPath: exampleProjectPath,
-    claudeCliInstallCommand: claudeInstallCommand,
+    claudeCliInstallCommand: claudeInstallInfo.displayCommand,
+    claudeCliInstallMethod: claudeInstallInfo.method,
     claudeCliOpenCommand: defaultClaudeOpenCommand(claudeCli.command),
     settingsPath,
     settingsExists: existsSync(settingsPath),
@@ -242,11 +240,7 @@ function resolveReadiness(input: {
   latestFresh: boolean;
   latestIssue?: string;
   status: ClaudeStatuslineSetupStatus;
-}): {
-  readiness: ClaudeStatuslineReadiness;
-  readinessLabel: string;
-  nextAction: string;
-} {
+}): ReadinessResolution<ClaudeStatuslineReadiness> {
   if (!input.status.statusLineManagedByApp || !input.status.shimExists) {
     return {
       readiness: "needs_setup",
@@ -663,16 +657,6 @@ function hasSupportedRateLimitPayload(value: unknown): boolean {
   ].some((field) => typeof value[field] === "number");
 }
 
-function secondsSince(value: string, now: Date): number | undefined {
-  const parsed = Date.parse(value);
-
-  if (Number.isNaN(parsed)) {
-    return undefined;
-  }
-
-  return Math.max(0, Math.round((now.getTime() - parsed) / 1000));
-}
-
 function formatLatestSnapshotDetail(input: {
   latestAgeSeconds?: number;
   status: ClaudeStatuslineSetupStatus;
@@ -708,130 +692,3 @@ function formatDuration(seconds: number): string {
   return `${seconds}s`;
 }
 
-async function detectClaudeCli(): Promise<ClaudeCliStatus> {
-  const path = await findCommandOnPath("claude");
-
-  if (path) {
-    return {
-      available: true,
-      command: "claude",
-      onPath: true,
-      path
-    };
-  }
-
-  const localInstall = await findLocalClaudeInstall();
-
-  if (localInstall) {
-    return {
-      available: true,
-      command: shellExecutableCommand(localInstall),
-      onPath: false,
-      path: localInstall
-    };
-  }
-
-  return { available: false };
-}
-
-async function findLocalClaudeInstall(): Promise<string | undefined> {
-  const candidates =
-    process.platform === "win32"
-      ? [
-          join(homedir(), ".local", "bin", "claude.exe"),
-          process.env.LOCALAPPDATA
-            ? join(process.env.LOCALAPPDATA, "Programs", "Claude", "claude.exe")
-            : undefined
-        ]
-      : [join(homedir(), ".local", "bin", "claude")];
-
-  for (const candidate of candidates.filter(isDefined)) {
-    try {
-      await access(candidate, constants.X_OK);
-      return candidate;
-    } catch {
-      // Try the next common install location.
-    }
-  }
-
-  return undefined;
-}
-
-function isDefined(value: string | undefined): value is string {
-  return value !== undefined;
-}
-
-function shellExecutableCommand(path: string): string {
-  return process.platform === "win32"
-    ? `& ${quotePowerShellLiteral(path)}`
-    : quotePosixShellLiteral(path);
-}
-
-async function findCommandOnPath(command: string): Promise<string | undefined> {
-  const pathEntries = (process.env.PATH ?? "")
-    .split(delimiter)
-    .filter(Boolean);
-  const names = commandNames(command);
-
-  for (const directory of pathEntries) {
-    for (const name of names) {
-      const candidate = join(directory, name);
-
-      try {
-        await access(candidate, constants.X_OK);
-        return candidate;
-      } catch {
-        // Try the next PATH candidate.
-      }
-    }
-  }
-
-  return undefined;
-}
-
-function commandNames(command: string): string[] {
-  if (process.platform !== "win32" || extname(command)) {
-    return [command];
-  }
-
-  const extensions = (process.env.PATHEXT ?? ".COM;.EXE;.BAT;.CMD")
-    .split(";")
-    .filter(Boolean);
-  return [command, ...extensions.map((extension) => `${command}${extension}`)];
-}
-
-async function defaultClaudeInstallCommand(): Promise<string> {
-  if (process.platform === "win32") {
-    const wingetPath = await findCommandOnPath("winget");
-
-    if (wingetPath) {
-      return "winget install Anthropic.ClaudeCode";
-    }
-
-    return "irm https://claude.ai/install.ps1 | iex";
-  }
-
-  return "curl -fsSL https://claude.ai/install.sh | bash";
-}
-
-function defaultClaudeOpenCommand(command = "claude"): string {
-  return process.platform === "win32"
-    ? `Set-Location -LiteralPath 'C:\\path\\to\\your-project'\n${command}`
-    : `cd /path/to/your-project\n${command}`;
-}
-
-function claudeOpenCommandForProject(path: string, command = "claude"): string {
-  if (process.platform === "win32") {
-    return `Set-Location -LiteralPath ${quotePowerShellLiteral(path)}\n${command}`;
-  }
-
-  return `cd ${quotePosixShellLiteral(path)}\n${command}`;
-}
-
-function quotePowerShellLiteral(value: string): string {
-  return `'${value.replace(/'/g, "''")}'`;
-}
-
-function quotePosixShellLiteral(value: string): string {
-  return `'${value.replace(/'/g, "'\\''")}'`;
-}

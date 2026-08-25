@@ -5,8 +5,22 @@ import type {
   DoctorStatus,
   QuotaSnapshot,
   QuotaSnapshotView,
-  QuotaStatus
+  QuotaStatus,
+  QuotaWindowType
 } from "./types.js";
+
+const quotaWindowLabels: Record<QuotaWindowType, string> = {
+  billing_cycle: "Billing cycle",
+  credits: "Credits",
+  daily: "Daily",
+  monthly: "Monthly",
+  session_5h: "5h window",
+  weekly: "Weekly"
+};
+
+export function windowLabel(windowType: string): string {
+  return quotaWindowLabels[windowType as QuotaWindowType] ?? windowType;
+}
 
 const statusSeverity: Record<QuotaStatus, number> = {
   critical: 5,

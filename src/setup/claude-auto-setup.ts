@@ -198,10 +198,7 @@ function buildInstallPlan(
       displayCommand: string;
     }
   | undefined {
-  if (
-    platform !== "win32" ||
-    !status.claudeCliInstallCommand.includes("Anthropic.ClaudeCode")
-  ) {
+  if (platform !== "win32" || status.claudeCliInstallMethod !== "winget") {
     return undefined;
   }
 

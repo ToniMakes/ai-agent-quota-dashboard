@@ -44,3 +44,10 @@ export async function inspectPath(path: string): Promise<PathInspection> {
 export function uniquePaths(paths: Array<string | undefined>): string[] {
   return [...new Set(paths.filter((path): path is string => Boolean(path)))];
 }
+
+export function resolveDataPaths(
+  defaultDataPaths: string[],
+  configuredDataPaths: string[] = []
+): string[] {
+  return uniquePaths([...defaultDataPaths, ...configuredDataPaths]);
+}

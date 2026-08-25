@@ -76,7 +76,7 @@ async function writeClaudeSettings(
 
     if (settings.statusLine && !options.force) {
       throw new Error(
-        "Claude Code settings already has statusLine. Re-run with --force to replace it after reviewing the current value."
+        "Claude Code settings already defines statusLine. Review the current value, then re-run with --force to replace it."
       );
     }
 

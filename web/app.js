@@ -1,14 +1,32 @@
 import {
+  buildDisplayAgents as sharedBuildDisplayAgents,
   clamp,
   createI18n,
+  defaultOnboardingPreferences,
   escapeHtml,
+  filterAgentsByOnboarding as sharedFilterAgentsByOnboarding,
+  firstRunOnboardingStorageKey,
+  formatUsed as sharedFormatUsed,
+  hasSnapshotMeterValue,
+  isFreshRealSnapshot,
   isSameSnapshot,
   isStaleSnapshot,
   languageStorageKey,
+  loadFirstRunOnboardingPreferences,
   mergeClaudeSnapshots,
   mergeSnapshotResetTiming,
+  normalizeClaudeSources,
+  normalizeOnboardingPreferences,
+  preferredClaudeDashboardSource as sharedPreferredClaudeDashboardSource,
   primaryMeterClass,
-  resolveInitialLanguage
+  readinessDisplayName as sharedReadinessDisplayName,
+  resolveInitialLanguage,
+  shouldShowAgentFamily as sharedShouldShowAgentFamily,
+  shouldShowClaudeCliWorkflow as sharedShouldShowClaudeCliWorkflow,
+  shouldShowClaudeDesktopWorkflow as sharedShouldShowClaudeDesktopWorkflow,
+  snapshotMeterClass,
+  snapshotMeterValue,
+  staleReasonLabel as sharedStaleReasonLabel
 } from "./shared.js";
 
 let currentLanguage = resolveInitialLanguage();
@@ -547,26 +565,6 @@ async function loadDashboardClosePreferenceStatus() {
   }
 }
 
-async function loadFirstRunOnboardingPreferences() {
-  if (window.aiqdDesktop?.getFirstRunOnboarding) {
-    try {
-      return normalizeOnboardingPreferences(
-        await window.aiqdDesktop.getFirstRunOnboarding()
-      );
-    } catch {
-      return defaultOnboardingPreferences();
-    }
-  }
-
-  try {
-    return normalizeOnboardingPreferences(
-      JSON.parse(window.localStorage?.getItem("aiqd:first-run-onboarding:v1") ?? "null")
-    );
-  } catch {
-    return defaultOnboardingPreferences();
-  }
-}
-
 async function saveFirstRunOnboardingPreferences(preferences) {
   const normalized = normalizeOnboardingPreferences(preferences);
 
@@ -577,25 +575,10 @@ async function saveFirstRunOnboardingPreferences(preferences) {
   }
 
   window.localStorage?.setItem(
-    "aiqd:first-run-onboarding:v1",
+    firstRunOnboardingStorageKey,
     JSON.stringify(normalized)
   );
   return normalized;
-}
-
-function defaultOnboardingPreferences() {
-  return {
-    agents: {
-      claude: true,
-      codex: true
-    },
-    claudeSources: {
-      cli: false,
-      desktop: true
-    },
-    claudeSource: "desktop",
-    completed: false
-  };
 }
 
 function onboardingDraftFromPreferences(preferences) {
@@ -611,53 +594,6 @@ function onboardingDraftFromPreferences(preferences) {
       desktop: normalized.claudeSources.desktop
     },
     claudeSource: normalized.claudeSource
-  };
-}
-
-function normalizeOnboardingPreferences(preferences) {
-  const fallback = defaultOnboardingPreferences();
-  const value = preferences && typeof preferences === "object" ? preferences : {};
-  const agents = value.agents && typeof value.agents === "object" ? value.agents : {};
-  const claudeSources = normalizeClaudeSources(value, fallback.claudeSources);
-  const claudeSource = claudeSources.desktop ? "desktop" : "cli";
-
-  return {
-    agents: {
-      claude: agents.claude !== false,
-      codex: agents.codex !== false
-    },
-    claudeSources,
-    claudeSource,
-    completed: value.completed === true
-  };
-}
-
-function normalizeClaudeSources(value, fallback) {
-  const sources =
-    value?.claudeSources && typeof value.claudeSources === "object"
-      ? value.claudeSources
-      : undefined;
-  const legacySource =
-    value?.claudeSource === "cli" || value?.claudeSource === "desktop"
-      ? value.claudeSource
-      : undefined;
-
-  let desktop =
-    sources?.desktop === true ||
-    (sources?.desktop !== false && !sources && legacySource !== "cli") ||
-    (!sources && !legacySource && fallback.desktop === true);
-  let cli =
-    sources?.cli === true ||
-    (!sources && legacySource === "cli") ||
-    (!sources && !legacySource && fallback.cli === true);
-
-  if (!desktop && !cli) {
-    desktop = true;
-  }
-
-  return {
-    cli,
-    desktop
   };
 }
 
@@ -1040,7 +976,7 @@ async function runRefresh(successMessage) {
   elements.refreshButton.textContent = tx("Refreshing", "刷新中");
   state.refreshStatus = {
     kind: "pending",
-    message: tx("Refreshing local quota sources.", "正在刷新本地额度数据源。")
+    message: tx("Refreshing local quota sources.", "正在刷新本地额度来源。")
   };
   renderRefreshStatus();
 
@@ -1332,98 +1268,19 @@ function renderAgents() {
 }
 
 function filterAgentsByOnboarding(agents) {
-  return agents.filter((agent) => {
-    if (agent.agent === "codex") {
-      return shouldShowAgentFamily("codex");
-    }
-
-    if (agent.agent === "claude-code") {
-      return shouldShowClaudeCliWorkflow();
-    }
-
-    if (agent.agent === "claude-desktop") {
-      return shouldShowClaudeDesktopWorkflow();
-    }
-
-    if (agent.provider === "anthropic" || agent.agent.startsWith("claude")) {
-      return shouldShowAgentFamily("claude");
-    }
-
-    return true;
-  });
+  return sharedFilterAgentsByOnboarding(agents, state.onboardingPreferences);
 }
 
 function shouldShowAgentFamily(family) {
-  const preferences = state.onboardingPreferences;
-
-  if (!preferences?.completed) {
-    return true;
-  }
-
-  if (family === "codex") {
-    return preferences.agents.codex !== false;
-  }
-
-  if (family === "claude") {
-    return preferences.agents.claude !== false;
-  }
-
-  return true;
-}
-
-function preferredClaudeSource() {
-  if (!state.onboardingPreferences?.completed) {
-    return undefined;
-  }
-
-  return state.onboardingPreferences.claudeSources.desktop ? "desktop" : "cli";
-}
-
-function selectedClaudeSources() {
-  return normalizeOnboardingPreferences(state.onboardingPreferences).claudeSources;
+  return sharedShouldShowAgentFamily(family, state.onboardingPreferences);
 }
 
 function shouldShowClaudeDesktopWorkflow() {
-  if (!shouldShowAgentFamily("claude")) {
-    return false;
-  }
-
-  if (!state.onboardingPreferences?.completed) {
-    return true;
-  }
-
-  return selectedClaudeSources().desktop;
+  return sharedShouldShowClaudeDesktopWorkflow(state.onboardingPreferences);
 }
 
 function shouldShowClaudeCliWorkflow() {
-  if (!shouldShowAgentFamily("claude")) {
-    return false;
-  }
-
-  if (!state.onboardingPreferences?.completed) {
-    return true;
-  }
-
-  const sources = selectedClaudeSources();
-  return sources.cli && !sources.desktop;
-}
-
-function preferredClaudeDashboardSource() {
-  if (!state.onboardingPreferences?.completed) {
-    return undefined;
-  }
-
-  const sources = selectedClaudeSources();
-
-  if (sources.desktop) {
-    return "desktop";
-  }
-
-  if (sources.cli) {
-    return "cli";
-  }
-
-  return undefined;
+  return sharedShouldShowClaudeCliWorkflow(state.onboardingPreferences);
 }
 
 // The dashboard shows one Claude card, not two: Claude Code CLI and Claude
@@ -1432,75 +1289,10 @@ function preferredClaudeDashboardSource() {
 // actually usable right now; Doctor and Settings still show each source's
 // own status separately for troubleshooting.
 function buildDisplayAgents(agents) {
-  const claudeCode = agents.find((agent) => agent.agent === "claude-code");
-  const claudeDesktop = agents.find((agent) => agent.agent === "claude-desktop");
-
-  if (!claudeCode && !claudeDesktop) {
-    return agents;
-  }
-
-  const winner = pickPrimaryClaudeAgent(claudeCode, claudeDesktop);
-  const sources = [claudeCode, claudeDesktop].filter(Boolean);
-  const snapshots = mergeClaudeSnapshots(winner.snapshots ?? [], sources);
-  const primarySnapshot = mergeSnapshotResetTiming(
-    winner.primarySnapshot,
-    sources.flatMap((source) => source.snapshots ?? [])
+  return sharedBuildDisplayAgents(
+    agents,
+    sharedPreferredClaudeDashboardSource(state.onboardingPreferences)
   );
-  const merged = {
-    ...winner,
-    agent: "claude",
-    displayName: "Claude",
-    primarySnapshot,
-    snapshots,
-    shortName: "Claude"
-  };
-
-  return agents
-    .filter((agent) => agent.agent !== "claude-code" && agent.agent !== "claude-desktop")
-    .concat([merged]);
-}
-
-function pickPrimaryClaudeAgent(claudeCode, claudeDesktop) {
-  const preferredSource = preferredClaudeDashboardSource();
-
-  if (preferredSource === "desktop" && claudeDesktop) {
-    return claudeDesktop;
-  }
-
-  if (preferredSource === "cli" && claudeCode) {
-    return claudeCode;
-  }
-
-  if (!claudeDesktop) {
-    return claudeCode;
-  }
-
-  if (!claudeCode) {
-    return claudeDesktop;
-  }
-
-  const codeFresh = isFreshRealSnapshot(claudeCode.primarySnapshot);
-  const desktopFresh = isFreshRealSnapshot(claudeDesktop.primarySnapshot);
-
-  if (codeFresh !== desktopFresh) {
-    return codeFresh ? claudeCode : claudeDesktop;
-  }
-
-  if (codeFresh && desktopFresh) {
-    const codeAt = Date.parse(claudeCode.primarySnapshot?.observedAt ?? "") || 0;
-    const desktopAt = Date.parse(claudeDesktop.primarySnapshot?.observedAt ?? "") || 0;
-    return desktopAt > codeAt ? claudeDesktop : claudeCode;
-  }
-
-  if (claudeCode.primarySnapshot && !claudeDesktop.primarySnapshot) {
-    return claudeCode;
-  }
-
-  if (claudeDesktop.primarySnapshot && !claudeCode.primarySnapshot) {
-    return claudeDesktop;
-  }
-
-  return claudeCode;
 }
 
 function renderAgentCard(agent) {
@@ -1617,7 +1409,7 @@ function renderStaleQuotaSummary(agent, snapshot) {
         )
       : tx(
           "Refresh the source or record a new visible quota value.",
-          "刷新数据源，或重新记录一次可见额度。"
+          "刷新额度来源，或重新记录一次可见额度。"
         );
 
   return `
@@ -1631,7 +1423,7 @@ function renderStaleQuotaSummary(agent, snapshot) {
       )}">
         <span>${escapeHtml(tx("Last source", "上次来源"))}</span>
         <strong>${escapeHtml(source)}</strong>
-        <span>${escapeHtml(tx("Why hidden", "为什么隐藏额度"))}</span>
+        <span>${escapeHtml(tx("Reported reset", "报告的重置时间"))}</span>
         <strong>${escapeHtml(reset)}</strong>
       </div>
       <p class="stale-quota-action">${escapeHtml(action)}</p>
@@ -1679,18 +1471,7 @@ function renderStaleNote(snapshot) {
 }
 
 function staleReasonLabel(snapshot) {
-  if (snapshot?.freshness?.reason === "expired") {
-    return tx(
-      "past the reported reset time",
-      "已超过报告的重置时间"
-    );
-  }
-
-  if (snapshot?.freshness?.reason === "source_marked_stale" || snapshot?.stale) {
-    return tx("marked stale by source", "数据源标记为过期");
-  }
-
-  return tx("needs fresh data", "需要新数据");
+  return sharedStaleReasonLabel(snapshot, tx);
 }
 
 function renderSnapshotLines(agent) {
@@ -1702,7 +1483,7 @@ function renderSnapshotLines(agent) {
       emptyState?.action ??
       tx(
         "Open Doctor for source checks and refresh history.",
-        "打开诊断查看数据源检查和刷新历史。"
+        "打开诊断查看额度来源检查和刷新历史。"
       );
     const emptyText = agentEmptyText(agent);
 
@@ -1828,47 +1609,6 @@ function renderSnapshotMeter(snapshot) {
       ></div>
     </div>
   `;
-}
-
-function hasSnapshotMeterValue(snapshot) {
-  return Boolean(
-    typeof snapshot?.remainingPercent === "number" ||
-      (typeof snapshot?.remaining === "number" &&
-        typeof snapshot?.total === "number" &&
-        snapshot.total > 0)
-  );
-}
-
-function snapshotMeterValue(snapshot) {
-  if (!snapshot) {
-    return 0;
-  }
-
-  if (isStaleSnapshot(snapshot)) {
-    return 0;
-  }
-
-  if (typeof snapshot.remainingPercent === "number") {
-    return clamp(snapshot.remainingPercent, 0, 100);
-  }
-
-  if (
-    typeof snapshot.remaining === "number" &&
-    typeof snapshot.total === "number" &&
-    snapshot.total > 0
-  ) {
-    return clamp((snapshot.remaining / snapshot.total) * 100, 0, 100);
-  }
-
-  return 0;
-}
-
-function snapshotMeterClass(snapshot) {
-  if (snapshot.windowType === "session_5h") {
-    return "session";
-  }
-
-  return snapshot.stale ? "stale" : "standard";
 }
 
 function primaryRemainingLabel(snapshot) {
@@ -2632,15 +2372,7 @@ function renderTrialReadinessCheck(check) {
 }
 
 function readinessDisplayName(check) {
-  if (!check?.displayName || currentLanguage !== "zh") {
-    return check?.displayName;
-  }
-
-  const labels = {
-    Mode: "模式"
-  };
-
-  return labels[check.displayName] ?? check.displayName;
+  return sharedReadinessDisplayName(check, currentLanguage);
 }
 
 function renderInitialSetupFlow(items, readiness) {
@@ -2796,12 +2528,10 @@ function buildInitialSetupModel(items, readiness) {
   const claudeCliInstallCommand =
     state.setupStatus?.claudeCliInstallCommand ??
     "winget install Anthropic.ClaudeCode";
-  const claudeCanUseWindowsInstaller = Boolean(
-    state.setupStatus?.hostPlatform === "win32" &&
-      claudeCliInstallCommand.includes("Anthropic.ClaudeCode")
-  );
   const canInstallClaude =
-    !claudeComplete && !claudeCliAvailable && claudeCanUseWindowsInstaller;
+    !claudeComplete &&
+    !claudeCliAvailable &&
+    canAutoInstallClaudeCli(state.setupStatus);
   const canConnectClaude = !claudeComplete && !claudeManaged;
   const claudeSetupAction = canInstallClaude
     ? "install"
@@ -2917,8 +2647,8 @@ function buildInitialSetupModel(items, readiness) {
                 )
               : claudeInputIssue
               ? tx(
-                  "AIQD receiver ran, but not with Claude session JSON.",
-                  "AIQD 接收器运行了，但输入不是 Claude session JSON。"
+                  "AIQD receiver ran, but did not receive Claude session JSON.",
+                  "AIQD 接收器运行了，但没有收到 Claude session JSON。"
                 )
               : claudeCliOnPath
               ? tx(
@@ -3006,10 +2736,7 @@ function buildInitialSetupModel(items, readiness) {
                   "接入 Claude 数据"
                 )
         : claudeManaged
-          ? tx(
-              "I ran it; check",
-              "我已运行，检查"
-            )
+          ? tx("Check now", "立即检查")
           : tx("Open Claude setup", "打开 Claude 设置"),
       actionTitle: canAutoSetupClaude
         ? canInstallClaude
@@ -3923,14 +3650,6 @@ function findAgent(agentId) {
 
 function getCodexPrimarySnapshot() {
   return findAgent("codex")?.primarySnapshot;
-}
-
-function isFreshRealSnapshot(snapshot) {
-  return Boolean(
-    snapshot &&
-      snapshot.source !== "demo" &&
-      snapshot.freshness?.status !== "stale"
-  );
 }
 
 function isAutoCodexSnapshot(snapshot) {
@@ -4997,16 +4716,18 @@ function renderClaudeConnectionAction(status) {
   return "";
 }
 
+function canAutoInstallClaudeCli(status) {
+  return Boolean(
+    status?.hostPlatform === "win32" && status?.claudeCliInstallMethod === "winget"
+  );
+}
+
 function claudeSetupActionForStatus(status) {
   if (!status || status.readiness === "ready") {
     return undefined;
   }
 
-  const canInstall = Boolean(
-    !status.claudeCliAvailable &&
-      status.hostPlatform === "win32" &&
-      status.claudeCliInstallCommand?.includes("Anthropic.ClaudeCode")
-  );
+  const canInstall = !status.claudeCliAvailable && canAutoInstallClaudeCli(status);
 
   if (canInstall) {
     return "install";
@@ -5932,7 +5653,11 @@ function renderPathSettings() {
       (agent.configuredDataPaths ?? []).map((path) =>
         settingsRow(
           agent.displayName,
-          path.readable ? "Readable" : path.exists ? "Not readable" : "Not found",
+          path.readable
+            ? tx("Readable", "可读取")
+            : path.exists
+              ? tx("Not readable", "不可读取")
+              : tx("Not found", "未找到"),
           path.path,
           path.readable ? "healthy" : "warning"
         )
@@ -5951,7 +5676,7 @@ function renderPathSettings() {
       ${errorRows}
       ${agentRows}
     </div>
-    ${renderCommandBlock("List command", status.listCommand)}
+    ${renderCommandBlock(tx("List command", "列出命令"), status.listCommand)}
     ${
       configuredPathRows
         ? `<div class="settings-list">${configuredPathRows}</div>`
@@ -6290,19 +6015,7 @@ function formatRemaining(snapshot) {
 }
 
 function formatUsed(snapshot) {
-  if (!snapshot) {
-    return "";
-  }
-
-  if (typeof snapshot.usedPercent === "number") {
-    return `${Math.round(snapshot.usedPercent)}%`;
-  }
-
-  if (typeof snapshot.used === "number") {
-    return `${compactNumber(snapshot.used)} ${snapshot.unit ?? ""}`.trim();
-  }
-
-  return "";
+  return sharedFormatUsed(snapshot, compactNumber);
 }
 
 function formatTimestamp(value) {
@@ -6362,11 +6075,11 @@ function toTimeLocalValue(value) {
 
 function windowLabel(windowType) {
   const labels = {
-    session_5h: tx("5h window", "5 小时窗口"),
+    session_5h: tx("5h", "5 小时"),
     daily: tx("Daily", "每日"),
     weekly: tx("Weekly", "每周"),
     monthly: tx("Monthly", "每月"),
-    billing_cycle: tx("Billing cycle", "计费周期"),
+    billing_cycle: tx("Billing", "计费"),
     credits: tx("Credits", "点数")
   };
 
@@ -6424,8 +6137,8 @@ function localizedReadinessLabel(label) {
     ["No Codex snapshot yet", "还没有 Codex 兜底"],
     ["No Codex fallback yet", "还没有 Codex 兜底"],
     ["Manual Codex fallback ready", "Codex 手动兜底已就绪"],
-    ["Waiting for Claude Code data", "等待 Claude 数据"],
-    ["Waiting for Claude Code CLI command", "等待 Claude 命令"],
+    ["Waiting for Claude Code data", "等待 Claude Code 数据"],
+    ["Waiting for Claude Code CLI command", "等待 Claude Code 命令"],
     ["Claude Code setup needed", "需要设置 Claude Code"],
     ["Codex manual snapshot ready", "Codex 手动兜底已就绪"],
     ["Claude Code data ready", "Claude Code 数据已就绪"]
@@ -6496,7 +6209,7 @@ function agentEmptyText(agent) {
   if (agent.emptyState?.reason === "waiting_for_statusline_data") {
     return {
       detail: "按设置页当前步骤，从终端启动 Claude Code 一次。",
-      title: "等待 Claude 数据"
+      title: "等待 Claude Code 数据"
     };
   }
 

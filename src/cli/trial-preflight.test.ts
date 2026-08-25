@@ -182,6 +182,7 @@ function claudeStatus(
     claudeCliExampleProjectPath:
       "C:\\Users\\hitomi\\Desktop\\vibecoding\\AI Agent Quota Dashboard",
     claudeCliInstallCommand: "irm https://claude.ai/install.ps1 | iex",
+    claudeCliInstallMethod: "script",
     claudeCliOpenCommand: "Set-Location -LiteralPath 'C:\\path\\to\\your-project'\nclaude",
     claudeCliPath: "C:\\Users\\hitomi\\AppData\\Local\\Programs\\Claude\\claude.exe",
     settingsPath: "C:\\Users\\hitomi\\.claude\\settings.json",

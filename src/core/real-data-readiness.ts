@@ -1,3 +1,4 @@
+import { windowLabel } from "./quota-state.js";
 import type {
   AgentSummary,
   DoctorCheck,
@@ -145,17 +146,4 @@ export function hasBlockingDiagnosticFailures(
     input.refreshResult.errors.length > 0 ||
     input.checks.some((check) => check.status === "fail")
   );
-}
-
-function windowLabel(windowType: string): string {
-  const labels: Record<string, string> = {
-    billing_cycle: "Billing cycle",
-    credits: "Credits",
-    daily: "Daily",
-    monthly: "Monthly",
-    session_5h: "5h window",
-    weekly: "Weekly"
-  };
-
-  return labels[windowType] ?? windowType;
 }

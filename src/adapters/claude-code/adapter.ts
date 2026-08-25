@@ -1,8 +1,12 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { AgentAdapter, AdapterScanContext } from "../contracts.js";
+import type {
+  AgentAdapter,
+  AdapterScanContext,
+  CommonAdapterOptions
+} from "../contracts.js";
 import { findReadableCandidateFiles } from "../local-candidates.js";
-import { inspectPath, uniquePaths } from "../path-utils.js";
+import { inspectPath, resolveDataPaths, uniquePaths } from "../path-utils.js";
 import { defaultClaudeStatuslineSnapshotDir } from "../../config/paths.js";
 import type { DoctorCheck, QuotaSnapshot } from "../../core/types.js";
 import {
@@ -11,10 +15,9 @@ import {
 } from "../../setup/claude-statusline-status.js";
 import { parseClaudeCodeStatusline } from "./parse-statusline.js";
 
-export type ClaudeCodeAdapterOptions = {
-  configuredDataPaths?: string[];
-  demoMode: boolean;
-};
+export type ClaudeCodeAdapterOptions = CommonAdapterOptions;
+
+export const claudeCodeDisplayName = "Claude Code";
 
 export function createClaudeCodeAdapter(
   options: ClaudeCodeAdapterOptions
@@ -27,7 +30,7 @@ export function createClaudeCodeAdapter(
     manifest: {
       provider: "anthropic",
       agent: "claude-code",
-      displayName: "Claude Code",
+      displayName: claudeCodeDisplayName,
       shortName: "Claude Code",
       description: "Claude Code local usage files and statusline rate limits.",
       defaultDataPaths,
@@ -105,10 +108,7 @@ export function getDefaultClaudeCodeDataPaths(): string[] {
 export function resolveClaudeCodeDataPaths(
   configuredDataPaths: string[] = []
 ): string[] {
-  return uniquePaths([
-    ...getDefaultClaudeCodeDataPaths(),
-    ...configuredDataPaths
-  ]);
+  return resolveDataPaths(getDefaultClaudeCodeDataPaths(), configuredDataPaths);
 }
 
 async function readClaudeCodeQuotaSnapshots(

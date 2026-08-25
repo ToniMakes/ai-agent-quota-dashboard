@@ -6,6 +6,7 @@ import {
   readRecord,
   readResetAt
 } from "../parse-utils.js";
+import { claudeStatuslineFreshnessMs } from "../../config/policy.js";
 import type { QuotaSnapshot, QuotaWindowType } from "../../core/types.js";
 
 export type ParseClaudeCodeStatuslineOptions = {
@@ -13,7 +14,7 @@ export type ParseClaudeCodeStatuslineOptions = {
   rawSourceRef?: string;
 };
 
-const statuslineSnapshotMaxAgeMs = 5 * 60 * 60 * 1000;
+const statuslineSnapshotMaxAgeMs = claudeStatuslineFreshnessMs;
 
 const claudeRateLimitWindows: Array<{
   key: string;
