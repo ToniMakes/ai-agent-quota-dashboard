@@ -463,25 +463,32 @@ h3 {
 .screenshot-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr);
+  align-items: start;
+  gap: 16px;
+}
+
+.screenshot-column {
+  display: grid;
   gap: 16px;
 }
 
 .screenshot-card {
   display: grid;
   align-content: start;
-  gap: 12px;
+  gap: 0;
   margin: 0;
-  padding: 12px;
+  overflow: hidden;
+  padding: 0;
 }
 
 .screenshot-card.featured {
-  grid-row: span 2;
+  grid-row: auto;
 }
 
 .screenshot-card img {
+  display: block;
   width: 100%;
-  border-radius: 6px;
-  border: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   background: var(--soft);
 }
 
@@ -494,9 +501,38 @@ h3 {
 }
 
 .screenshot-card figcaption {
+  padding: 16px 18px 18px;
   color: var(--muted);
   font-size: 0.88rem;
   font-weight: 780;
+}
+
+.screenshot-promise {
+  padding: 24px;
+  border-radius: 8px;
+  background: #0d1812;
+  box-shadow: 0 18px 48px rgb(16 25 20 / 12%);
+  color: white;
+}
+
+.screenshot-promise .eyebrow {
+  margin-bottom: 10px;
+  color: var(--mint);
+}
+
+.screenshot-promise strong {
+  display: block;
+  max-width: 720px;
+  color: white;
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  line-height: 1.12;
+}
+
+.screenshot-promise p:last-child {
+  max-width: 680px;
+  margin: 12px 0 0;
+  color: #dce8df;
+  font-size: 1rem;
 }
 
 .final-cta {
