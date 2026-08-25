@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Agent Quota Dashboard</title>
+    <meta
+      id="meta-description"
+      name="description"
+      content="A local-first desktop quota dashboard for Codex, Claude Desktop, and Claude Code."
+      data-i18n-content-en="A local-first desktop quota dashboard for Codex, Claude Desktop, and Claude Code."
+      data-i18n-content-zh="一个本地优先的桌面额度看板，用于查看 Codex、Claude Desktop 和 Claude Code 的剩余额度。"
+    />
+    <meta property="og:title" content="AI Agent Quota Dashboard" />
+    <meta
+      property="og:description"
+      content="See remaining AI coding-agent quota, reset timing, and local source readiness at a glance."
+    />
+    <meta
+      property="og:image"
+      content="https://aiqd.tonimakes.com/assets/screenshots/dashboard-demo.png"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://aiqd.tonimakes.com/" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" href="./assets/icons/icon-256.png" />
+    <link rel="apple-touch-icon" href="./assets/icons/icon-256.png" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a
+        class="brand"
+        href="https://aiqd.tonimakes.com/"
+        aria-label="AIQD home"
+        data-i18n-aria-label-en="AIQD home"
+        data-i18n-aria-label-zh="AIQD 首页"
+      >
+        <img src="./assets/icons/icon-256.png" alt="" width="32" height="32" />
+        <span>AIQD</span>
+      </a>
+      <nav
+        class="nav-links"
+        aria-label="Primary navigation"
+        data-i18n-aria-label-en="Primary navigation"
+        data-i18n-aria-label-zh="主导航"
+      >
+        <a href="#privacy" data-i18n-en="Privacy" data-i18n-zh="隐私">Privacy</a>
+        <a href="#screenshots" data-i18n-en="Screenshots" data-i18n-zh="截图">Screenshots</a>
+        <a href="https://github.com/ToniMakes/ai-agent-quota-dashboard">GitHub</a>
+        <button
+          id="language-toggle"
+          class="language-toggle"
+          type="button"
+          aria-label="Switch language"
+          data-i18n-aria-label-en="Switch language"
+          data-i18n-aria-label-zh="切换语言"
+        >中文</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <img
+          class="hero-image"
+          src="./assets/screenshots/dashboard-demo.png"
+          alt="AI Agent Quota Dashboard showing Codex and Claude quota cards"
+          data-i18n-alt-en="AI Agent Quota Dashboard showing Codex and Claude quota cards"
+          data-i18n-alt-zh="AI Agent Quota Dashboard 显示 Codex 和 Claude 额度卡片"
+        />
+        <div class="hero-overlay" aria-hidden="true"></div>
+        <div class="hero-content">
+          <p
+            class="eyebrow"
+            data-i18n-en="v0.1.0 desktop preview"
+            data-i18n-zh="v0.1.0 桌面预览版"
+          >v0.1.0 desktop preview</p>
+          <h1 id="hero-title">AI Agent Quota Dashboard</h1>
+          <p
+            class="lede"
+            data-i18n-en="Local quota dashboard for Codex and Claude. See what is left, when it resets, and whether the local source is ready."
+            data-i18n-zh="面向 Codex 和 Claude 的本地额度看板。一眼看清还剩多少、什么时候重置，以及本地数据源是否就绪。"
+          >
+            Local quota dashboard for Codex and Claude. See what is left, when
+            it resets, and whether the local source is ready.
+          </p>
+          <div class="hero-actions">
+            <a
+              class="button primary"
+              href="https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/latest"
+              data-i18n-en="Download for Windows"
+              data-i18n-zh="下载 Windows 版"
+            >Download for Windows</a>
+            <a
+              class="button secondary"
+              href="https://github.com/ToniMakes/ai-agent-quota-dashboard"
+              data-i18n-en="View Source"
+              data-i18n-zh="查看源码"
+            >View Source</a>
+          </div>
+          <p
+            class="release-note"
+            data-i18n-en="Windows x64 desktop preview. Download from GitHub Releases."
+            data-i18n-zh="Windows x64 桌面预览版。通过 GitHub Releases 下载。"
+          >
+            Windows x64 desktop preview. Download from GitHub Releases.
+          </p>
+        </div>
+      </section>
+
+      <section class="intro-section" aria-labelledby="what-it-is">
+        <div>
+          <p
+            class="eyebrow"
+            data-i18n-en="Local-first by design"
+            data-i18n-zh="本地优先设计"
+          >Local-first by design</p>
+          <h2
+            id="what-it-is"
+            data-i18n-en="The public page is only the download door."
+            data-i18n-zh="公开页面只负责提供下载入口。"
+          >The public page is only the download door.</h2>
+        </div>
+        <p
+          data-i18n-html-en="AIQD still runs on your own machine. The desktop app starts a local service on &lt;code&gt;127.0.0.1&lt;/code&gt;, reads narrow quota-related local files from tools you already use, and renders the dashboard locally."
+          data-i18n-html-zh="AIQD 仍然运行在你自己的电脑上。桌面应用会在 &lt;code&gt;127.0.0.1&lt;/code&gt; 启动本地服务，只读取你已经在使用的工具写下的少量额度相关本地文件，并在本地渲染仪表盘。"
+        >
+          AIQD still runs on your own machine. The desktop app starts a local
+          service on <code>127.0.0.1</code>, reads narrow quota-related local
+          files from tools you already use, and renders the dashboard locally.
+        </p>
+      </section>
+
+      <section
+        class="source-grid"
+        aria-label="Supported sources"
+        data-i18n-aria-label-en="Supported sources"
+        data-i18n-aria-label-zh="支持的数据来源"
+      >
+        <article class="source-card">
+          <span class="source-mark openai"></span>
+          <h3>Codex CLI</h3>
+          <p
+            data-i18n-html-en="Reads supported local &lt;code&gt;rate_limits&lt;/code&gt; events when Codex writes them, with a visible-status manual fallback."
+            data-i18n-html-zh="当 Codex 写入受支持的本地 &lt;code&gt;rate_limits&lt;/code&gt; 事件时自动读取；不可用时，也支持从可见状态手动记录。"
+          >
+            Reads supported local <code>rate_limits</code> events when Codex
+            writes them, with a visible-status manual fallback.
+          </p>
+        </article>
+        <article class="source-card">
+          <span class="source-mark claude"></span>
+          <h3>Claude Desktop</h3>
+          <p
+            data-i18n-en="Reads local plan usage samples from Claude Desktop. No Claude Code CLI setup is required for desktop-only users."
+            data-i18n-zh="读取 Claude Desktop 的本地计划用量样本。只使用桌面版的用户不需要设置 Claude Code CLI。"
+          >
+            Reads local plan usage samples from Claude Desktop. No Claude Code
+            CLI setup is required for desktop-only users.
+          </p>
+        </article>
+        <article class="source-card">
+          <span class="source-mark terminal"></span>
+          <h3>Claude Code CLI</h3>
+          <p
+            data-i18n-html-en="Captures official statusline &lt;code&gt;rate_limits&lt;/code&gt; fields through an explicit local setup step."
+            data-i18n-html-zh="通过明确的本地设置步骤，接收官方 statusline 里的 &lt;code&gt;rate_limits&lt;/code&gt; 字段。"
+          >
+            Captures official statusline <code>rate_limits</code> fields
+            through an explicit local setup step.
+          </p>
+        </article>
+      </section>
+
+      <section id="privacy" class="privacy-section" aria-labelledby="privacy-title">
+        <div>
+          <p
+            class="eyebrow"
+            data-i18n-en="Privacy boundary"
+            data-i18n-zh="隐私边界"
+          >Privacy boundary</p>
+          <h2
+            id="privacy-title"
+            data-i18n-en="No prompts, code, cookies, or passwords."
+            data-i18n-zh="不读取 prompt、代码、cookie 或密码。"
+          >No prompts, code, cookies, or passwords.</h2>
+        </div>
+        <ul class="privacy-list">
+          <li
+            data-i18n-en="Runs locally and serves the dashboard through localhost."
+            data-i18n-zh="在本机运行，并通过 localhost 提供仪表盘。"
+          >Runs locally and serves the dashboard through localhost.</li>
+          <li
+            data-i18n-en="Stores normalized quota snapshots in local SQLite."
+            data-i18n-zh="把标准化后的额度快照存到本地 SQLite。"
+          >Stores normalized quota snapshots in local SQLite.</li>
+          <li
+            data-i18n-en="Does not upload prompts, responses, source code, or chat content."
+            data-i18n-zh="不会上传 prompt、回复内容、源代码或聊天内容。"
+          >Does not upload prompts, responses, source code, or chat content.</li>
+          <li
+            data-i18n-en="Does not read browser cookies, simulate login, or call hidden APIs."
+            data-i18n-zh="不读取浏览器 cookie，不模拟登录，也不调用隐藏 API。"
+          >Does not read browser cookies, simulate login, or call hidden APIs.</li>
+        </ul>
+      </section>
+
+      <section id="screenshots" class="screenshots-section" aria-labelledby="screenshots-title">
+        <div class="section-heading">
+          <p
+            class="eyebrow"
+            data-i18n-en="Product screenshots"
+            data-i18n-zh="产品截图"
+          >Product screenshots</p>
+          <h2
+            id="screenshots-title"
+            data-i18n-en="Small surfaces for daily quota checks."
+            data-i18n-zh="适合日常快速查看额度的小界面。"
+          >Small surfaces for daily quota checks.</h2>
+        </div>
+        <div class="screenshot-grid">
+          <figure class="screenshot-card featured">
+            <img
+              src="./assets/screenshots/dashboard-demo.png"
+              alt="Main AIQD dashboard with Codex and Claude quota cards"
+              data-i18n-alt-en="Main AIQD dashboard with Codex and Claude quota cards"
+              data-i18n-alt-zh="AIQD 主仪表盘，显示 Codex 和 Claude 额度卡片"
+            />
+            <figcaption data-i18n-en="Main dashboard" data-i18n-zh="主仪表盘">Main dashboard</figcaption>
+          </figure>
+          <figure class="screenshot-card">
+            <img
+              src="./assets/screenshots/settings-demo.png"
+              alt="AIQD settings page showing real quota setup steps"
+              data-i18n-alt-en="AIQD settings page showing real quota setup steps"
+              data-i18n-alt-zh="AIQD 设置页面，显示真实额度接入步骤"
+            />
+            <figcaption data-i18n-en="First-run setup" data-i18n-zh="首次设置">First-run setup</figcaption>
+          </figure>
+          <figure class="screenshot-card compact">
+            <img
+              src="./assets/screenshots/mini-panel-demo.png"
+              alt="Compact tray mini panel showing quota summaries"
+              data-i18n-alt-en="Compact tray mini panel showing quota summaries"
+              data-i18n-alt-zh="托盘小面板，显示紧凑额度摘要"
+            />
+            <figcaption data-i18n-en="Tray mini panel" data-i18n-zh="托盘小面板">Tray mini panel</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="final-cta" aria-labelledby="download-title">
+        <div>
+          <p class="eyebrow" data-i18n-en="Download" data-i18n-zh="下载">Download</p>
+          <h2
+            id="download-title"
+            data-i18n-en="Start with the Windows preview."
+            data-i18n-zh="先从 Windows 预览版开始。"
+          >Start with the Windows preview.</h2>
+          <p
+            data-i18n-en="Download from GitHub Releases, install the app, then open the local dashboard from the desktop shortcut."
+            data-i18n-zh="从 GitHub Releases 下载并安装，然后通过桌面快捷方式打开本地仪表盘。"
+          >
+            Download from GitHub Releases, install the app, then open the
+            local dashboard from the desktop shortcut.
+          </p>
+        </div>
+        <a
+          class="button primary"
+          href="https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/latest"
+          data-i18n-en="Download for Windows"
+          data-i18n-zh="下载 Windows 版"
+        >Download for Windows</a>
+      </section>
+
+      <details class="release-details">
+        <summary>
+          <span
+            data-i18n-en="Release verification details"
+            data-i18n-zh="发布校验信息"
+          >Release verification details</span>
+          <small
+            data-i18n-en="Checksum and Windows signature status"
+            data-i18n-zh="校验值和 Windows 签名状态"
+          >Checksum and Windows signature status</small>
+        </summary>
+        <div class="release-details-grid">
+          <div class="release-detail-item">
+            <span class="item-label" data-i18n-en="Current version" data-i18n-zh="当前版本">Current version</span>
+            <strong>v0.1.0</strong>
+            <p
+              data-i18n-en="Installer-first desktop preview for early testers."
+              data-i18n-zh="面向早期测试用户的安装器优先桌面预览版。"
+            >Installer-first desktop preview for early testers.</p>
+          </div>
+          <div class="release-detail-item checksum">
+            <span class="item-label" data-i18n-en="Windows SHA256" data-i18n-zh="Windows SHA256">Windows SHA256</span>
+            <code>7DDE28E8FE424268C752480889DBBEABFD5578D9D20D5EE77DAE117ADE867F6D</code>
+          </div>
+          <div class="release-detail-item">
+            <span class="item-label" data-i18n-en="Signature status" data-i18n-zh="签名状态">Signature status</span>
+            <strong data-i18n-en="Unsigned" data-i18n-zh="未签名">Unsigned</strong>
+            <p
+              data-i18n-en="Windows may show an unknown-publisher or SmartScreen warning."
+              data-i18n-zh="Windows 可能会显示未知发布者或 SmartScreen 提示。"
+            >Windows may show an unknown-publisher or SmartScreen warning.</p>
+          </div>
+        </div>
+      </details>
+    </main>
+
+    <footer class="site-footer">
+      <span data-i18n-en="AI Agent Quota Dashboard by ToniMakes" data-i18n-zh="AI Agent Quota Dashboard by ToniMakes">AI Agent Quota Dashboard by ToniMakes</span>
+      <a
+        href="https://github.com/ToniMakes/ai-agent-quota-dashboard/blob/main/docs/privacy.md"
+        data-i18n-en="Privacy"
+        data-i18n-zh="隐私"
+      >Privacy</a>
+      <a
+        href="https://github.com/ToniMakes/ai-agent-quota-dashboard/blob/main/docs/code-signing.md"
+        data-i18n-en="Code signing"
+        data-i18n-zh="代码签名"
+      >Code signing</a>
+    </footer>
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
