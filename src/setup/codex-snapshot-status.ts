@@ -4,11 +4,12 @@ import { parseCodexQuotaSnapshots } from "../adapters/codex/parse-quota-snapshot
 import { defaultCodexManualSnapshotPath } from "../config/paths.js";
 import type {
   ConfidenceLevel,
-  DoctorStatus,
   QuotaSnapshot,
   SourceKind
 } from "../core/types.js";
 import { isSnapshotExpired } from "../core/quota-state.js";
+import type { ReadinessResolution, SetupCheck } from "./setup-status-kit.js";
+import { secondsSince } from "./time-utils.js";
 
 const maxSnapshotBytes = 256 * 1024;
 
@@ -18,14 +19,7 @@ export type CodexSnapshotReadiness =
   | "expired"
   | "needs_attention";
 
-export type CodexSnapshotSetupCheck = {
-  id: string;
-  label: string;
-  status: DoctorStatus;
-  message: string;
-  detail?: string;
-  action?: string;
-};
+export type CodexSnapshotSetupCheck = SetupCheck;
 
 export type CodexSnapshotSetupStatus = {
   snapshotPath: string;
@@ -153,11 +147,7 @@ function resolveReadiness(input: {
   latestIssue?: string;
   snapshotExpired: boolean;
   status: CodexSnapshotSetupStatus;
-}): {
-  readiness: CodexSnapshotReadiness;
-  readinessLabel: string;
-  nextAction: string;
-} {
+}): ReadinessResolution<CodexSnapshotReadiness> {
   if (!input.status.snapshotExists) {
     return {
       readiness: "not_recorded",
@@ -372,16 +362,6 @@ function formatLatestSnapshotDetail(status: CodexSnapshotSetupStatus): string {
   ].filter(Boolean);
 
   return parts.length > 0 ? parts.join(" / ") : status.snapshotPath;
-}
-
-function secondsSince(value: string, now: Date): number | undefined {
-  const parsed = Date.parse(value);
-
-  if (Number.isNaN(parsed)) {
-    return undefined;
-  }
-
-  return Math.max(0, Math.round((now.getTime() - parsed) / 1000));
 }
 
 function isCodexSnapshotExpired(snapshot: QuotaSnapshot, now: Date): boolean {

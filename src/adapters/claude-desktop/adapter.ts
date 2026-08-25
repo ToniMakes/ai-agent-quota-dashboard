@@ -1,14 +1,17 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { AgentAdapter, AdapterScanContext } from "../contracts.js";
-import { inspectPath, uniquePaths } from "../path-utils.js";
+import type {
+  AgentAdapter,
+  AdapterScanContext,
+  CommonAdapterOptions
+} from "../contracts.js";
+import { inspectPath, resolveDataPaths, uniquePaths } from "../path-utils.js";
 import type { DoctorCheck, QuotaSnapshot } from "../../core/types.js";
 import { parsePlanUsageHistory } from "./parse-plan-usage-history.js";
 
-export type ClaudeDesktopAdapterOptions = {
-  configuredDataPaths?: string[];
-  demoMode: boolean;
-};
+export type ClaudeDesktopAdapterOptions = CommonAdapterOptions;
+
+export const claudeDesktopDisplayName = "Claude Desktop";
 
 export function createClaudeDesktopAdapter(
   options: ClaudeDesktopAdapterOptions
@@ -21,7 +24,7 @@ export function createClaudeDesktopAdapter(
     manifest: {
       provider: "anthropic",
       agent: "claude-desktop",
-      displayName: "Claude Desktop",
+      displayName: claudeDesktopDisplayName,
       shortName: "Claude Desktop",
       description: "Claude Desktop local plan-usage-history.json.",
       defaultDataPaths,
@@ -87,10 +90,7 @@ export function getDefaultClaudeDesktopDataPaths(): string[] {
 export function resolveClaudeDesktopDataPaths(
   configuredDataPaths: string[] = []
 ): string[] {
-  return uniquePaths([
-    ...getDefaultClaudeDesktopDataPaths(),
-    ...configuredDataPaths
-  ]);
+  return resolveDataPaths(getDefaultClaudeDesktopDataPaths(), configuredDataPaths);
 }
 
 async function readClaudeDesktopQuotaSnapshots(

@@ -451,14 +451,15 @@ function doctorHelpText(): string {
     "Runs one local scan, writes normalized results to SQLite, and prints agent",
     "status, Doctor checks, empty-state guidance, and refresh counts.",
     "",
-    "--json prints a machine-readable report with account identifiers, raw",
-    "source references, raw content, and local paths excluded or redacted.",
+    "--json prints a machine-readable report that excludes account identifiers,",
+    "raw source references, and raw content, and redacts local paths.",
     "",
     "Exit code is 1 only for blocking failures such as adapter errors or invalid",
     "config. Missing quota sources are reported as warnings.",
     "",
     "--strict also requires fresh non-demo quota snapshots for every configured",
-    "agent, which is useful before a real-data desktop trial."
+    "provider group (Claude Code and Claude Desktop count as alternatives), which",
+    "is useful before a real-data desktop trial."
   ].join("\n");
 }
 

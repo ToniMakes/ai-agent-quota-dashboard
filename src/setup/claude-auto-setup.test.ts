@@ -177,6 +177,7 @@ function status(
       "Set-Location -LiteralPath 'C:\\repo'\nclaude",
     claudeCliExampleProjectPath: "C:\\repo",
     claudeCliInstallCommand: "winget install Anthropic.ClaudeCode",
+    claudeCliInstallMethod: "winget",
     claudeCliOpenCommand: "Set-Location -LiteralPath 'C:\\path'\nclaude",
     forceWriteCommand: "node dist/index.js setup claude-statusline --write --force",
     historyExists: false,

@@ -1,9 +1,13 @@
 import { open, readdir, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
-import type { AgentAdapter, AdapterScanContext } from "../contracts.js";
+import type {
+  AgentAdapter,
+  AdapterScanContext,
+  CommonAdapterOptions
+} from "../contracts.js";
 import { findReadableCandidateFiles } from "../local-candidates.js";
-import { inspectPath, uniquePaths } from "../path-utils.js";
+import { inspectPath, resolveDataPaths, uniquePaths } from "../path-utils.js";
 import {
   defaultCodexManualSnapshotPath,
   defaultCodexSnapshotDir
@@ -11,11 +15,11 @@ import {
 import type { DoctorCheck, QuotaSnapshot } from "../../core/types.js";
 import { parseCodexQuotaSnapshots } from "./parse-quota-snapshot.js";
 
-export type CodexAdapterOptions = {
-  configuredDataPaths?: string[];
-  demoMode: boolean;
+export type CodexAdapterOptions = CommonAdapterOptions & {
   includeDefaultDataPaths?: boolean;
 };
+
+export const codexDisplayName = "Codex";
 
 type CodexCandidateFile = {
   path: string;
@@ -42,7 +46,7 @@ export function createCodexAdapter(options: CodexAdapterOptions): AgentAdapter {
     manifest: {
       provider: "openai",
       agent: "codex",
-      displayName: "Codex",
+      displayName: codexDisplayName,
       shortName: "Codex",
       description: "OpenAI Codex local session and quota snapshots.",
       defaultDataPaths,
@@ -111,7 +115,7 @@ export function getDefaultCodexDataPaths(): string[] {
 }
 
 export function resolveCodexDataPaths(configuredDataPaths: string[] = []): string[] {
-  return uniquePaths([...getDefaultCodexDataPaths(), ...configuredDataPaths]);
+  return resolveDataPaths(getDefaultCodexDataPaths(), configuredDataPaths);
 }
 
 async function readCodexQuotaSnapshots(

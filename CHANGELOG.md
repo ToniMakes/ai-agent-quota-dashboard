@@ -6,7 +6,19 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ## [Unreleased]
 
-No unreleased changes.
+### Changed
+
+- Deduplicated onboarding-preference, quota-meter formatting, and Claude-source-selection logic between the main dashboard and the mini panel into `web/shared.js`, so both surfaces render from one implementation instead of two
+- Extracted Claude CLI detection and install-command resolution out of the statusline setup-status module into `src/setup/claude-cli-environment.ts`, replacing a string-matched winget detection with an explicit install-method field
+- Consolidated the Codex/Claude Code/Claude Desktop adapter list into a single provider manifest shared by adapter registration and the local-paths Settings view
+- Trimmed the README's Status section from a long feature-bullet list to a short summary linking to `docs/status.md`, and removed repeated privacy/setup caveats from the README and Claude Desktop docs section
+
+### Fixed
+
+- Mini panel now honors the user's selected Claude source (CLI vs Desktop) when picking which quota card to show, matching the main dashboard instead of always picking by recency
+- Fixed a duplicated "window" word in the 5-hour quota window tooltip
+- Fixed several Chinese translations that had drifted out of sync between the main dashboard and mini panel for the same English source string (stale-data wording, quota-source terminology, Claude Code labels)
+- Fixed a handful of untranslated hardcoded English strings in the Settings view
 
 ## [0.1.0] - 2026-08-25
 

@@ -1,8 +1,8 @@
 # Project Status
 
-Last updated: 2026-08-25
+Last updated: 2026-08-26
 
-AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The core MVP is no longer just a scaffold: the local dashboard, desktop tray shell, real-data setup flow, and strict trial readiness checks are implemented and passing CI. The first public preview target is now installer-first for normal users, with source mode retained as a developer fallback.
+AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The local dashboard, desktop tray shell, real-data setup flow, and strict trial readiness checks are implemented and passing CI. The first public preview target is installer-first for normal users, with source mode retained as a developer fallback.
 
 ## Current Capability
 
@@ -59,6 +59,7 @@ The current maintainer checkout has passed:
 - Maintainer-profile desktop and Start menu entries were refreshed to the latest installed packaged executable after the `v0.1.0-rc.3` build
 - Maintainer-profile desktop and Start menu entries were refreshed again on 2026-08-21 after the Codex monthly-window hiding and desktop `EPIPE` fix; a hidden-window installed-app smoke exited `0`
 - Clean-copy trial from `.tmp/fresh-trial-v0.1.0-rc.1`: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, `npm run trial:ready`, and browser/API smoke
+- 2026-08-26 internal-quality pass (dashboard/mini-panel dedup into `web/shared.js`, Claude CLI environment and provider-manifest extraction): `npm run typecheck`, `npm test` (173 tests), and `npm run desktop:smoke`
 - GitHub Actions CI on `main`
 
 ## Latest Clean Trial Notes

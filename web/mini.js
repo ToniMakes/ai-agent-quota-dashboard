@@ -1,14 +1,26 @@
 import {
-  clamp,
+  buildDisplayAgents as sharedBuildDisplayAgents,
   createI18n,
   escapeHtml,
+  filterAgentsByOnboarding as sharedFilterAgentsByOnboarding,
+  formatUsed as sharedFormatUsed,
+  hasSnapshotMeterValue as hasMeterValue,
   isSameSnapshot,
   isStaleSnapshot,
   languageStorageKey,
+  loadFirstRunOnboardingPreferences,
   mergeClaudeSnapshots,
   mergeSnapshotResetTiming,
+  preferredClaudeDashboardSource as sharedPreferredClaudeDashboardSource,
   primaryMeterClass,
-  resolveInitialLanguage
+  readinessDisplayName as sharedReadinessDisplayName,
+  resolveInitialLanguage,
+  shouldShowAgentFamily as sharedShouldShowAgentFamily,
+  shouldShowClaudeCliWorkflow as sharedShouldShowClaudeCliWorkflow,
+  shouldShowClaudeDesktopWorkflow as sharedShouldShowClaudeDesktopWorkflow,
+  snapshotMeterClass as windowMeterClass,
+  snapshotMeterValue as meterValue,
+  staleReasonLabel as sharedStaleReasonLabel
 } from "./shared.js";
 
 let currentLanguage = resolveInitialLanguage();
@@ -236,215 +248,31 @@ function render() {
   renderFooter();
 }
 
-async function loadFirstRunOnboardingPreferences() {
-  try {
-    const preferences = window.aiqdDesktop?.getFirstRunOnboarding
-      ? await window.aiqdDesktop.getFirstRunOnboarding()
-      : JSON.parse(window.localStorage?.getItem("aiqd:first-run-onboarding:v1") ?? "null");
-
-    return normalizeOnboardingPreferences(preferences);
-  } catch {
-    return defaultOnboardingPreferences();
-  }
-}
-
-function defaultOnboardingPreferences() {
-  return {
-    agents: {
-      claude: true,
-      codex: true
-    },
-    claudeSources: {
-      cli: false,
-      desktop: true
-    },
-    claudeSource: "desktop",
-    completed: false
-  };
-}
-
-function normalizeOnboardingPreferences(preferences) {
-  const fallback = defaultOnboardingPreferences();
-  const value = preferences && typeof preferences === "object" ? preferences : {};
-  const agents = value.agents && typeof value.agents === "object" ? value.agents : {};
-  const claudeSources = normalizeClaudeSources(value, fallback.claudeSources);
-
-  return {
-    agents: {
-      claude: agents.claude !== false,
-      codex: agents.codex !== false
-    },
-    claudeSources,
-    claudeSource: claudeSources.desktop ? "desktop" : "cli",
-    completed: value.completed === true
-  };
-}
-
-function normalizeClaudeSources(value, fallback) {
-  const sources =
-    value?.claudeSources && typeof value.claudeSources === "object"
-      ? value.claudeSources
-      : undefined;
-  const legacySource =
-    value?.claudeSource === "cli" || value?.claudeSource === "desktop"
-      ? value.claudeSource
-      : undefined;
-
-  let desktop =
-    sources?.desktop === true ||
-    (sources?.desktop !== false && !sources && legacySource !== "cli") ||
-    (!sources && !legacySource && fallback.desktop === true);
-  let cli =
-    sources?.cli === true ||
-    (!sources && legacySource === "cli") ||
-    (!sources && !legacySource && fallback.cli === true);
-
-  if (!desktop && !cli) {
-    desktop = true;
-  }
-
-  return {
-    cli,
-    desktop
-  };
-}
-
 function filterAgentsByOnboarding(agents) {
-  return agents.filter((agent) => {
-    if (agent.agent === "codex") {
-      return shouldShowAgentFamily("codex");
-    }
-
-    if (agent.agent === "claude-code") {
-      return shouldShowClaudeCliWorkflow();
-    }
-
-    if (agent.agent === "claude-desktop") {
-      return shouldShowClaudeDesktopWorkflow();
-    }
-
-    if (agent.provider === "anthropic" || String(agent.agent).startsWith("claude")) {
-      return shouldShowAgentFamily("claude");
-    }
-
-    return true;
-  });
+  return sharedFilterAgentsByOnboarding(agents, state.onboardingPreferences);
 }
 
 function shouldShowAgentFamily(family) {
-  const preferences = state.onboardingPreferences;
-
-  if (!preferences?.completed) {
-    return true;
-  }
-
-  if (family === "codex") {
-    return preferences.agents.codex !== false;
-  }
-
-  if (family === "claude") {
-    return preferences.agents.claude !== false;
-  }
-
-  return true;
-}
-
-function selectedClaudeSources() {
-  return normalizeOnboardingPreferences(state.onboardingPreferences).claudeSources;
+  return sharedShouldShowAgentFamily(family, state.onboardingPreferences);
 }
 
 function shouldShowClaudeDesktopWorkflow() {
-  if (!shouldShowAgentFamily("claude")) {
-    return false;
-  }
-
-  if (!state.onboardingPreferences?.completed) {
-    return true;
-  }
-
-  return selectedClaudeSources().desktop;
+  return sharedShouldShowClaudeDesktopWorkflow(state.onboardingPreferences);
 }
 
 function shouldShowClaudeCliWorkflow() {
-  if (!shouldShowAgentFamily("claude")) {
-    return false;
-  }
-
-  if (!state.onboardingPreferences?.completed) {
-    return true;
-  }
-
-  const sources = selectedClaudeSources();
-  return sources.cli && !sources.desktop;
+  return sharedShouldShowClaudeCliWorkflow(state.onboardingPreferences);
 }
 
 // Mirrors app.js: Claude Code CLI and Claude Desktop report the same
 // underlying account, so the mini panel shows one auto-picked Claude card
-// instead of two, same as the main dashboard.
+// instead of two, same as the main dashboard. Honors the same onboarding
+// source preference as the dashboard, via the shared implementation.
 function buildDisplayAgents(agents) {
-  const claudeCode = agents.find((agent) => agent.agent === "claude-code");
-  const claudeDesktop = agents.find((agent) => agent.agent === "claude-desktop");
-
-  if (!claudeCode && !claudeDesktop) {
-    return agents;
-  }
-
-  const winner = pickPrimaryClaudeAgent(claudeCode, claudeDesktop);
-  const sources = [claudeCode, claudeDesktop].filter(Boolean);
-  const snapshots = mergeClaudeSnapshots(winner.snapshots ?? [], sources);
-  const primarySnapshot = mergeSnapshotResetTiming(
-    winner.primarySnapshot,
-    sources.flatMap((source) => source.snapshots ?? [])
+  return sharedBuildDisplayAgents(
+    agents,
+    sharedPreferredClaudeDashboardSource(state.onboardingPreferences)
   );
-  const merged = {
-    ...winner,
-    agent: "claude",
-    displayName: "Claude",
-    primarySnapshot,
-    snapshots,
-    shortName: "Claude"
-  };
-
-  return agents
-    .filter((agent) => agent.agent !== "claude-code" && agent.agent !== "claude-desktop")
-    .concat([merged]);
-}
-
-function pickPrimaryClaudeAgent(claudeCode, claudeDesktop) {
-  if (!claudeDesktop) {
-    return claudeCode;
-  }
-
-  if (!claudeCode) {
-    return claudeDesktop;
-  }
-
-  const codeFresh = Boolean(
-    claudeCode.primarySnapshot && !isStaleSnapshot(claudeCode.primarySnapshot)
-  );
-  const desktopFresh = Boolean(
-    claudeDesktop.primarySnapshot && !isStaleSnapshot(claudeDesktop.primarySnapshot)
-  );
-
-  if (codeFresh !== desktopFresh) {
-    return codeFresh ? claudeCode : claudeDesktop;
-  }
-
-  if (codeFresh && desktopFresh) {
-    const codeAt = Date.parse(claudeCode.primarySnapshot?.observedAt ?? "") || 0;
-    const desktopAt = Date.parse(claudeDesktop.primarySnapshot?.observedAt ?? "") || 0;
-    return desktopAt > codeAt ? claudeDesktop : claudeCode;
-  }
-
-  if (claudeCode.primarySnapshot && !claudeDesktop.primarySnapshot) {
-    return claudeCode;
-  }
-
-  if (claudeDesktop.primarySnapshot && !claudeCode.primarySnapshot) {
-    return claudeDesktop;
-  }
-
-  return claudeCode;
 }
 
 function renderAgent(agent) {
@@ -500,7 +328,7 @@ function renderError() {
     <article class="mini-agent unknown">
       <div class="mini-agent-top">
         <span class="status-dot unknown" aria-hidden="true"></span>
-        <strong>Offline</strong>
+        <strong>${escapeHtml(tx("Offline", "离线"))}</strong>
         <span class="mini-remaining">--</span>
       </div>
       <div class="mini-primary-label">${escapeHtml(tx("offline", "离线"))}</div>
@@ -807,23 +635,6 @@ function renderWindowMeter(snapshot) {
   `;
 }
 
-function hasMeterValue(snapshot) {
-  return Boolean(
-    typeof snapshot?.remainingPercent === "number" ||
-      (typeof snapshot?.remaining === "number" &&
-        typeof snapshot?.total === "number" &&
-        snapshot.total > 0)
-  );
-}
-
-function windowMeterClass(snapshot) {
-  if (snapshot.windowType === "session_5h") {
-    return "session";
-  }
-
-  return snapshot.stale ? "stale" : "standard";
-}
-
 function prioritizeSnapshots(snapshots, primary) {
   if (!primary) {
     return snapshots;
@@ -940,15 +751,7 @@ function readinessCheckTarget(check) {
 }
 
 function readinessDisplayName(check) {
-  if (!check?.displayName || currentLanguage !== "zh") {
-    return check?.displayName;
-  }
-
-  const labels = {
-    Mode: "模式"
-  };
-
-  return labels[check.displayName] ?? check.displayName;
+  return sharedReadinessDisplayName(check, currentLanguage);
 }
 
 function setupProgress(agents) {
@@ -1130,30 +933,6 @@ function formatRemaining(snapshot) {
   return "--";
 }
 
-function meterValue(snapshot) {
-  if (!snapshot) {
-    return 0;
-  }
-
-  if (isStaleSnapshot(snapshot)) {
-    return 0;
-  }
-
-  if (typeof snapshot.remainingPercent === "number") {
-    return clamp(snapshot.remainingPercent, 0, 100);
-  }
-
-  if (
-    typeof snapshot.remaining === "number" &&
-    typeof snapshot.total === "number" &&
-    snapshot.total > 0
-  ) {
-    return clamp((snapshot.remaining / snapshot.total) * 100, 0, 100);
-  }
-
-  return 0;
-}
-
 function agentDetail(agent) {
   const snapshots = prioritizeSnapshots(agent.snapshots ?? [], agent.primarySnapshot);
   const observedAt = latestObservedAt(snapshots) ?? agent.primarySnapshot?.observedAt;
@@ -1259,31 +1038,11 @@ function formatRemainingText(snapshot) {
 }
 
 function staleReasonLabel(snapshot) {
-  if (snapshot?.freshness?.reason === "expired") {
-    return tx("past reported reset", "超过报告的重置时间");
-  }
-
-  if (snapshot?.freshness?.reason === "source_marked_stale" || snapshot?.stale) {
-    return tx("marked stale by source", "数据源要求刷新");
-  }
-
-  return tx("needs fresh data", "需要新数据");
+  return sharedStaleReasonLabel(snapshot, tx);
 }
 
 function formatUsedText(snapshot) {
-  if (!snapshot) {
-    return "";
-  }
-
-  if (typeof snapshot.usedPercent === "number") {
-    return `${Math.round(snapshot.usedPercent)}%`;
-  }
-
-  if (typeof snapshot.used === "number") {
-    return `${compactNumber(snapshot.used)} ${snapshot.unit ?? ""}`.trim();
-  }
-
-  return "";
+  return sharedFormatUsed(snapshot, compactNumber);
 }
 
 function formatResetDistance(value) {
@@ -1342,7 +1101,7 @@ function windowLabel(windowType) {
     credits: tx("Credits", "点数"),
     daily: tx("Daily", "每日"),
     monthly: tx("Monthly", "每月"),
-    session_5h: "5h",
+    session_5h: tx("5h", "5 小时"),
     weekly: tx("Weekly", "每周")
   };
 

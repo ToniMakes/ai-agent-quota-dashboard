@@ -13,76 +13,13 @@ AIQD only reads local files written by desktop apps or CLIs (Codex CLI, Claude C
 
 ## Status
 
-This repository publishes the v0.1 desktop preview as an installer-first build for normal users: install the app, open the desktop shortcut, then finish setup from Settings. Source mode remains available as a developer fallback before and after the packaged release.
+This repository publishes the v0.1 desktop preview as an installer-first build for normal users: install the app, open the desktop shortcut, then finish setup from Settings. Source mode remains available as a developer fallback.
 
-Claude Code CLI is no longer required for Claude coverage: AIQD reads Claude quota from either the Claude Code statusline or Claude Desktop's local `plan-usage-history.json`, and treats them as alternatives, so desktop-only Claude users are already covered. The v0.1.0 desktop preview is published with an unsigned Windows installer while SignPath Foundation open-source signing remains pending.
+The app covers Codex (via local CLI `rate_limits` events, with a manual fallback for older versions) and Claude (via the Claude Code statusline or Claude Desktop's local `plan-usage-history.json` — see [Claude Desktop And Claude Code](#claude-desktop-and-claude-code) for how those two sources work as alternatives). It ships as a Windows desktop app with a main dashboard, a tray mini panel, and an always-on-top widget, alongside `doctor` and `export` CLI commands for local diagnostics. The v0.1.0 installer is unsigned while SignPath Foundation open-source signing remains pending; see [docs/code-signing.md](docs/code-signing.md).
 
-See [docs/status.md](docs/status.md) for the current project snapshot. The current app includes:
+If reliable quota data cannot be obtained from an official or local user-visible source, the app shows `unavailable` rather than guessing.
 
-- Local Node.js service bound to `127.0.0.1`
-- SQLite storage using Node's built-in `node:sqlite`
-- Codex, Claude Code, and Claude Desktop adapter boundaries
-- Claude Desktop local `plan-usage-history.json` adapter, an alternative Claude source that needs no CLI install
-- Fixture-driven parsers for Claude Code statusline rate limits
-- A conservative Codex parser for explicit structured quota snapshots
-- Automatic Codex CLI `rate_limits` detection when supported structured local events are available
-- Codex display/export surfaces show only supported visible windows, currently 5-hour and weekly, and hide unconfirmed monthly buckets
-- Manual Codex snapshot command and Settings form for visible `/status` or Usage values
-- Settings view status for Codex CLI quota detection with a manual fallback
-- Settings real-data overview for first-run Codex and Claude Code setup
-- Collapsible first-run setup details behind the `Set up Codex` and `Set up Claude` buttons
-- Beginner Claude Code setup flow with separate install and connect actions
-- Real-data desktop trial guide for Codex and Claude Code setup
-- Doctor first-run checklist for real-data readiness
-- Setup refresh feedback for Codex saves, Claude Code waiting state, and manual refreshes
-- Settings view strict real-data trial readiness from the same checks as `trial:ready`
-- Claude Code statusline setup helper with explicit opt-in
-- Reset event timeline for changed reset anchors and sharp replenishment
-- Dashboard reset display with relative and absolute reported reset times
-- Dashboard data freshness display with observed timestamps and freshness reasons per agent
-- Dashboard labels clarify remaining quota versus official pages that may show used quota
-- Dashboard quota cards place primary-window used/reset details below the main meter and show only extra windows as separate rows
-- Dashboard and Doctor views
-- Mini panel page for tray-sized quota checks
-- Electron desktop shell with a tray mini panel and optional always-on-top widget
-- Shared app icon assets for the tray, main window, and shortcut
-- One-time desktop first-run guide that uses strict trial readiness to open the exact setup or Doctor section
-- Desktop smoke coverage for the first-run guide deep-link and local state write
-- Desktop startup diagnostics with recovery guidance for backend failures
-- Packaged desktop launches tolerate disconnected GUI stdout/stderr pipes instead of surfacing `EPIPE` main-process errors
-- Desktop global shortcuts for AIQD mini panel, refresh, and widget actions
-- Local trial scripts for desktop launch, Doctor, and Claude statusline self-test
-- Windows NSIS installer build through `electron-builder`
-- Packaged desktop smoke checks that run without requiring a system Node.js install
-- Opt-in launch-at-login for packaged desktop builds, defaulting off and reversible from Settings
-- Real-data trial preflight command with source-specific next actions
-- Strict real-data readiness check before desktop trials
-- Settings view status for desktop shortcut bindings and overrides
-- Tray menu actions for manual refresh, Doctor, Settings, and Dashboard
-- Tray tooltip/menu status uses strict readiness before showing daily quota summaries
-- Mini footer summary for the latest refresh result and warnings
-- Mini strict readiness progress text for first-run Codex and Claude Code onboarding
-- Mini surfaces hide duplicate primary quota rows and show compact secondary-window bars, including a yellow Claude Code 5-hour bar
-- Clickable mini footer actions for refresh warnings and setup guidance
-- Mini and tray first-run actions that open Settings or Doctor directly
-- Mini first-run actions deep-link to the exact Settings or Doctor section
-- English-by-default UI with Chinese/English language switching in the main dashboard and mini surfaces
-- Dashboard guidance for missing quota data
-- CLI `doctor` command for one-shot local diagnostics
-- CLI export command for normalized JSON/CSV output
-- Refresh history with saved counts and adapter error summaries
-- Settings view for Claude Code statusline onboarding
-- Claude Code statusline readiness checks for setup, shim, and latest rate limit data
-- Claude Code real-data setup flow with a local statusline sink self-test
-- Copy buttons for setup and local path commands, with selection fallback when clipboard access is unavailable
-- Local `config.json` for user-configured agent data paths
-- Normalized JSON/CSV export from the Settings view
-- Explicit source and confidence labels
-- Public dashboard API snapshots exclude account identifiers and raw local source references
-- Demo data mode for UI development
-- Local real-data mode hides persisted demo snapshots
-
-If reliable quota data cannot be obtained from official or local user-visible sources, the app should show `unavailable`.
+See [docs/status.md](docs/status.md) for the full capability list and current engineering verification log.
 
 ## Screenshots
 
@@ -216,7 +153,7 @@ The mini surfaces reuse the same normalized `/api/agents`, `/api/trial-readiness
 
 Desktop shortcuts do not approve or automate other apps. Override or disable them with `AIQD_SHORTCUT_PANEL`, `AIQD_SHORTCUT_REFRESH`, and `AIQD_SHORTCUT_WIDGET`; set a value to `off` to disable that shortcut.
 
-Source mode is a development shell. The v0.1 public preview should ship a packaged desktop installer so non-technical users do not need `npm`, `node`, or source checkout steps.
+Source mode is a development shell. The v0.1 public preview ships as a packaged desktop installer so non-technical users do not need `npm`, `node`, or source checkout steps.
 
 Startup behavior is documented in [docs/distribution.md](docs/distribution.md). The installed desktop shortcut opens the main dashboard. Launch-at-login is explicit, reversible from Settings, and off by default for the first packaged release.
 
@@ -296,9 +233,9 @@ The export command refreshes local sources by default. Use `--no-refresh` to exp
 
 ## Codex Quota Detection
 
-AIQD first scans local Codex CLI session logs for supported `rate_limits` events. When those events are present, Codex quota is labeled `official_cli` and no manual copying is needed.
+AIQD first scans local Codex CLI session logs for supported `rate_limits` events. When those events are present, Codex quota is labeled `official_cli` and no manual setup is needed.
 
-First action: use Codex once, then refresh AIQD or run `npm run trial:preflight`. If Codex CLI wrote supported local `rate_limits` data, no manual setup is needed.
+First action: use Codex once, then refresh AIQD or run `npm run trial:preflight`.
 
 The manual fallback command remains only for machines or Codex versions that do not expose usable local rate-limit events. To record a value you can visibly confirm:
 
@@ -342,9 +279,9 @@ The Settings view shows the same config path, whether configured scan roots are 
 
 AIQD reads Claude quota from two independent local sources and treats them as alternatives, not a chain: Claude Code statusline and Claude Desktop's local `plan-usage-history.json`. Either one being fresh is enough for Claude to count as ready; the Claude Code CLI is not required.
 
-On Windows, Claude Desktop maintains a local `%APPDATA%\Claude\plan-usage-history.json` file with plan usage samples. The adapter parses only narrow usage fields — 5-hour and weekly used percentages plus observation timestamps — and does not scrape the app UI, import cookies, call hidden APIs, or read chat content. Reset time is not reported by this file, so AIQD shows percentage and observed time only for this source.
+On Windows, Claude Desktop maintains a local `%APPDATA%\Claude\plan-usage-history.json` file with plan usage samples. The adapter parses only narrow usage fields — 5-hour and weekly used percentages plus observation timestamps — and does not scrape the app UI (see [Non-goals](#non-goals) for the project's broader data-access guarantees). Reset time is not reported by this file, so AIQD shows percentage and observed time only for this source.
 
-Note the name: "Claude Desktop" here means the installed desktop app, not claude.ai opened in a regular web browser. A browser-only account has no local file for AIQD to read, so it cannot be monitored by either Claude source.
+Note the name: "Claude Desktop" here means the installed desktop app, not claude.ai opened in a regular web browser — see the intro above for why a browser-only account can't be monitored.
 
 ## Claude Code Statusline
 

@@ -2,6 +2,7 @@ import {
   sanitizeAgentQuotaSnapshot,
   type PublicAgentQuotaSnapshot
 } from "../core/export-data.js";
+import { windowLabel } from "../core/quota-state.js";
 import {
   buildRealDataReadiness,
   hasBlockingDiagnosticFailures,
@@ -332,17 +333,4 @@ function formatRemaining(snapshot: QuotaSnapshot): string {
   }
 
   return `unknown ${snapshot.unit} remaining`;
-}
-
-function windowLabel(windowType: string): string {
-  const labels: Record<string, string> = {
-    billing_cycle: "Billing cycle",
-    credits: "Credits",
-    daily: "Daily",
-    monthly: "Monthly",
-    session_5h: "5h window",
-    weekly: "Weekly"
-  };
-
-  return labels[windowType] ?? windowType;
 }

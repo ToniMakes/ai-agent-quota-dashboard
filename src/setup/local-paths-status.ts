@@ -1,16 +1,5 @@
-import {
-  getDefaultClaudeCodeDataPaths,
-  resolveClaudeCodeDataPaths
-} from "../adapters/claude-code/adapter.js";
-import {
-  getDefaultClaudeDesktopDataPaths,
-  resolveClaudeDesktopDataPaths
-} from "../adapters/claude-desktop/adapter.js";
-import {
-  getDefaultCodexDataPaths,
-  resolveCodexDataPaths
-} from "../adapters/codex/adapter.js";
 import { inspectPath, type PathInspection } from "../adapters/path-utils.js";
+import { providerManifest } from "../adapters/provider-manifest.js";
 import {
   loadUserConfig,
   readUserConfigDataPaths,
@@ -35,55 +24,27 @@ export type LocalPathsAgentStatus = {
   removeCommand: string;
 };
 
-type AgentPathDescriptor = {
-  agent: SupportedConfigAgent;
-  displayName: string;
-  defaultDataPaths: () => string[];
-  effectiveDataPaths: (configuredDataPaths: string[]) => string[];
-};
-
-const agents: AgentPathDescriptor[] = [
-  {
-    agent: "codex",
-    displayName: "Codex",
-    defaultDataPaths: getDefaultCodexDataPaths,
-    effectiveDataPaths: resolveCodexDataPaths
-  },
-  {
-    agent: "claude-code",
-    displayName: "Claude Code",
-    defaultDataPaths: getDefaultClaudeCodeDataPaths,
-    effectiveDataPaths: resolveClaudeCodeDataPaths
-  },
-  {
-    agent: "claude-desktop",
-    displayName: "Claude Desktop",
-    defaultDataPaths: getDefaultClaudeDesktopDataPaths,
-    effectiveDataPaths: resolveClaudeDesktopDataPaths
-  }
-];
-
 export async function getLocalPathsSetupStatus(
   configPath?: string
 ): Promise<LocalPathsSetupStatus> {
   const loaded = await loadUserConfig(configPath);
   const agentStatuses = await Promise.all(
-    agents.map(async (descriptor) => {
+    providerManifest.map(async (entry) => {
       const configuredDataPaths = readUserConfigDataPaths(
         loaded.config,
-        descriptor.agent
+        entry.agent
       );
 
       return {
-        agent: descriptor.agent,
-        displayName: descriptor.displayName,
-        defaultDataPaths: descriptor.defaultDataPaths(),
+        agent: entry.agent,
+        displayName: entry.displayName,
+        defaultDataPaths: entry.getDefaultDataPaths(),
         configuredDataPaths: await Promise.all(
           configuredDataPaths.map(inspectPath)
         ),
-        effectiveDataPaths: descriptor.effectiveDataPaths(configuredDataPaths),
-        addCommand: `node dist/index.js config path add ${descriptor.agent} <path>`,
-        removeCommand: `node dist/index.js config path remove ${descriptor.agent} <path>`
+        effectiveDataPaths: entry.resolveDataPaths(configuredDataPaths),
+        addCommand: `node dist/index.js config path add ${entry.agent} <path>`,
+        removeCommand: `node dist/index.js config path remove ${entry.agent} <path>`
       };
     })
   );
