@@ -112,62 +112,71 @@
         <div>
           <p
             class="eyebrow"
-            data-i18n-en="Local-first by design"
-            data-i18n-zh="本地优先设计"
-          >Local-first by design</p>
+            data-i18n-en="Built for long AI coding days"
+            data-i18n-zh="为高强度 AI 编程而做"
+          >Built for long AI coding days</p>
           <h2
             id="what-it-is"
-            data-i18n-en="The public page is only the download door."
-            data-i18n-zh="公开页面只负责提供下载入口。"
-          >The public page is only the download door.</h2>
+            data-i18n-en="Know whether you can keep going before the next agent run."
+            data-i18n-zh="开始下一轮 Agent 任务前，先知道额度还够不够。"
+          >Know whether you can keep going before the next agent run.</h2>
         </div>
         <p
-          data-i18n-html-en="AIQD still runs on your own machine. The desktop app starts a local service on &lt;code&gt;127.0.0.1&lt;/code&gt;, reads narrow quota-related local files from tools you already use, and renders the dashboard locally."
-          data-i18n-html-zh="AIQD 仍然运行在你自己的电脑上。桌面应用会在 &lt;code&gt;127.0.0.1&lt;/code&gt; 启动本地服务，只读取你已经在使用的工具写下的少量额度相关本地文件，并在本地渲染仪表盘。"
+          data-i18n-en="AIQD turns scattered Codex and Claude usage signals into a calm desktop view: remaining quota, reset timing when available, and clear guidance when something needs attention."
+          data-i18n-zh="AIQD 把 Codex 和 Claude 里分散的额度信息，整理成一个安静的桌面视图：剩余额度、可用时的恢复时间，以及需要处理时的清楚提示。"
         >
-          AIQD still runs on your own machine. The desktop app starts a local
-          service on <code>127.0.0.1</code>, reads narrow quota-related local
-          files from tools you already use, and renders the dashboard locally.
+          AIQD turns scattered Codex and Claude usage signals into a calm
+          desktop view: remaining quota, reset timing when available, and clear
+          guidance when something needs attention.
         </p>
       </section>
 
       <section
         class="source-grid"
-        aria-label="Supported sources"
-        data-i18n-aria-label-en="Supported sources"
-        data-i18n-aria-label-zh="支持的数据来源"
+        aria-label="Product benefits"
+        data-i18n-aria-label-en="Product benefits"
+        data-i18n-aria-label-zh="产品亮点"
       >
         <article class="source-card">
           <span class="source-mark openai"></span>
-          <h3>Codex CLI</h3>
+          <h3
+            data-i18n-en="Stop guessing your quota"
+            data-i18n-zh="不再靠猜额度"
+          >Stop guessing your quota</h3>
           <p
-            data-i18n-html-en="Reads supported local &lt;code&gt;rate_limits&lt;/code&gt; events when Codex writes them, with a visible-status manual fallback."
-            data-i18n-html-zh="当 Codex 写入受支持的本地 &lt;code&gt;rate_limits&lt;/code&gt; 事件时自动读取；不可用时，也支持从可见状态手动记录。"
+            data-i18n-en="See Codex and Claude side by side, so you know when to keep building and when to pause before the next reset."
+            data-i18n-zh="把 Codex 和 Claude 放在同一个视图里，什么时候继续推进、什么时候等下一次恢复，一眼就能判断。"
           >
-            Reads supported local <code>rate_limits</code> events when Codex
-            writes them, with a visible-status manual fallback.
+            See Codex and Claude side by side, so you know when to keep
+            building and when to pause before the next reset.
           </p>
         </article>
         <article class="source-card">
           <span class="source-mark claude"></span>
-          <h3>Claude Desktop</h3>
+          <h3
+            data-i18n-en="Made for daily flow"
+            data-i18n-zh="贴近日常工作流"
+          >Made for daily flow</h3>
           <p
-            data-i18n-en="Reads local plan usage samples from Claude Desktop. No Claude Code CLI setup is required for desktop-only users."
-            data-i18n-zh="读取 Claude Desktop 的本地计划用量样本。只使用桌面版的用户不需要设置 Claude Code CLI。"
+            data-i18n-en="Open the dashboard for the full picture, check the tray panel quickly, or keep the compact widget nearby while you work."
+            data-i18n-zh="需要细看时打开主仪表盘；平时用托盘小面板快速确认，也可以把小组件放在桌面边上。"
           >
-            Reads local plan usage samples from Claude Desktop. No Claude Code
-            CLI setup is required for desktop-only users.
+            Open the dashboard for the full picture, check the tray panel
+            quickly, or keep the compact widget nearby while you work.
           </p>
         </article>
         <article class="source-card">
           <span class="source-mark terminal"></span>
-          <h3>Claude Code CLI</h3>
+          <h3
+            data-i18n-en="Private by default"
+            data-i18n-zh="默认守住隐私边界"
+          >Private by default</h3>
           <p
-            data-i18n-html-en="Captures official statusline &lt;code&gt;rate_limits&lt;/code&gt; fields through an explicit local setup step."
-            data-i18n-html-zh="通过明确的本地设置步骤，接收官方 statusline 里的 &lt;code&gt;rate_limits&lt;/code&gt; 字段。"
+            data-i18n-en="AIQD focuses on quota signals only. It does not upload your prompts, replies, source code, chat content, cookies, or passwords."
+            data-i18n-zh="AIQD 只关注额度信号，不上传 prompt、回复内容、源代码、聊天内容、cookie 或密码。"
           >
-            Captures official statusline <code>rate_limits</code> fields
-            through an explicit local setup step.
+            AIQD focuses on quota signals only. It does not upload your
+            prompts, replies, source code, chat content, cookies, or passwords.
           </p>
         </article>
       </section>

@@ -348,6 +348,15 @@ h3 {
   padding: 86px 0;
 }
 
+.intro-section {
+  padding: 72px 0 58px;
+}
+
+.intro-section h2 {
+  font-size: clamp(1.9rem, 3vw, 3rem);
+  line-height: 1.05;
+}
+
 .intro-section .eyebrow,
 .privacy-section .eyebrow,
 .screenshots-section .eyebrow,
@@ -371,7 +380,7 @@ h3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
-  padding-bottom: 74px;
+  padding-bottom: 70px;
 }
 
 .source-card,
@@ -565,8 +574,12 @@ h3 {
     padding: 64px 0;
   }
 
+  .intro-section {
+    padding: 58px 0 42px;
+  }
+
   .source-grid {
-    padding-bottom: 58px;
+    padding-bottom: 54px;
   }
 
   .privacy-section {
