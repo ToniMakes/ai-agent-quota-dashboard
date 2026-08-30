@@ -21,7 +21,14 @@ import {
   resolveCodexDataPaths
 } from "./codex/adapter.js";
 import type { AgentAdapter, CommonAdapterOptions } from "./contracts.js";
-import type { SupportedConfigAgent } from "../config/user-config.js";
+
+// The full set of provider ids. SupportedConfigAgent is derived from this
+// list (not the reverse), so it is the one place that has to change when a
+// provider is added or removed; config/user-config.ts imports the type from
+// here instead of declaring its own copy.
+const providerAgentIds = ["codex", "claude-code", "claude-desktop"] as const;
+
+export type SupportedConfigAgent = (typeof providerAgentIds)[number];
 
 export type ProviderManifestEntry = {
   agent: SupportedConfigAgent;
