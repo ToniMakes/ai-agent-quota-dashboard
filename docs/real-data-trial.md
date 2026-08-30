@@ -116,7 +116,7 @@ Normal-user installer trial:
 3. Confirm the main dashboard window opens.
 4. Open Settings if the first-run guide does not take you there automatically.
 
-The normal-user first run should not require `npm`, `node`, or source checkout commands. PowerShell checks in this document are maintainer verification aids only.
+PowerShell checks in this document are maintainer verification aids only, not something a normal user should ever need to run.
 
 Developer source-mode trial:
 
@@ -213,7 +213,7 @@ Normal-user path from the desktop app:
 3. If the file exists and has a recent sample, it shows as `Done` immediately — nothing to install or connect.
 4. If it shows `Waiting`, open Claude Desktop so it records a new usage sample, then click `Refresh Claude Desktop`.
 
-Expected: AIQD shows Claude Desktop five-hour and weekly usage from local plan usage samples, labels the source clearly (`Local snapshot`), and does not read chat content, cookies, hidden API responses, prompts, responses, or attachments. Claude readiness in Doctor and the real-data overview shows ready as soon as this source is fresh, even if Claude Code CLI is never set up.
+Expected: AIQD shows Claude Desktop five-hour and weekly usage from local plan usage samples and labels the source clearly (`Local snapshot`); see [Privacy](privacy.md) for the data boundary this respects. Claude readiness in Doctor and the real-data overview shows ready as soon as this source is fresh, even if Claude Code CLI is never set up.
 
 ## 6. Connect Claude Code
 
@@ -293,5 +293,5 @@ The Settings > Real Data Setup summary, desktop first-run guide, tray status, an
 ## Notes
 
 - Reported reset times are observations from the current source, not guaranteed future reset predictions.
-- AIQD does not approve prompts, automate other apps, read cookies, or parse arbitrary transcripts.
 - If a source cannot be obtained legally and reliably, AIQD should show `unavailable` instead of guessing.
+- See [Privacy](privacy.md) for the full data boundary.

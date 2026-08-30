@@ -127,6 +127,6 @@ CI runs tests on Windows and Ubuntu with Node 24.
 
 ## Privacy Boundary
 
-AIQD does not read browser cookies, collect passwords, simulate login, call hidden APIs, bypass rate limits, switch accounts, or upload prompts, responses, source code, chat content, credentials, or raw local logs.
+AIQD is local-first; see [docs/privacy.md](https://github.com/ToniMakes/ai-agent-quota-dashboard/blob/main/docs/privacy.md) for the full data boundary.
 
 Exports and public dashboard APIs exclude account identifiers and raw local source references. If reliable quota data is unavailable, the app should show `unavailable` or an explicitly labeled manual fallback.

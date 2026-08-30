@@ -1,10 +1,8 @@
 # SignPath Foundation Application Draft
 
-Last updated: 2026-08-14
+Last updated: 2026-08-26
 
-Use this draft when applying for SignPath Foundation open-source code signing:
-
-https://signpath.org/apply.html
+**Status: submitted 2026-08-14, awaiting review.** This was the draft used for that submission; see [docs/status.md](status.md) for the current review status. The artifact/date/commit fields below have been refreshed to the current `v0.1.0` release so this draft stays usable if a follow-up submission or status update is needed — https://signpath.org/apply.html
 
 ## Project
 
@@ -23,13 +21,13 @@ ai-agent-quota-dashboard
 Homepage:
 
 ```text
-https://github.com/isToniLiu/ai-agent-quota-dashboard#readme
+https://github.com/ToniMakes/ai-agent-quota-dashboard#readme
 ```
 
 Repository:
 
 ```text
-https://github.com/isToniLiu/ai-agent-quota-dashboard
+https://github.com/ToniMakes/ai-agent-quota-dashboard
 ```
 
 License:
@@ -41,37 +39,37 @@ MIT License
 License URL:
 
 ```text
-https://github.com/isToniLiu/ai-agent-quota-dashboard/blob/main/LICENSE
+https://github.com/ToniMakes/ai-agent-quota-dashboard/blob/main/LICENSE
 ```
 
 Code of conduct:
 
 ```text
-https://github.com/isToniLiu/ai-agent-quota-dashboard/blob/main/CODE_OF_CONDUCT.md
+https://github.com/ToniMakes/ai-agent-quota-dashboard/blob/main/CODE_OF_CONDUCT.md
 ```
 
 Code signing policy:
 
 ```text
-https://github.com/isToniLiu/ai-agent-quota-dashboard/blob/main/docs/code-signing.md
+https://github.com/ToniMakes/ai-agent-quota-dashboard/blob/main/docs/code-signing.md
 ```
 
 Privacy policy:
 
 ```text
-https://github.com/isToniLiu/ai-agent-quota-dashboard/blob/main/docs/privacy.md
+https://github.com/ToniMakes/ai-agent-quota-dashboard/blob/main/docs/privacy.md
 ```
 
 Download / release URL:
 
 ```text
-https://github.com/isToniLiu/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.1
+https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/tag/v0.1.0
 ```
 
-Unsigned RC installer URL:
+Unsigned installer URL:
 
 ```text
-https://github.com/isToniLiu/ai-agent-quota-dashboard/releases/download/v0.1.0-rc.1/AI.Agent.Quota.Dashboard-0.1.0-win-x64.exe
+https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/download/v0.1.0/AI.Agent.Quota.Dashboard-0.1.0-win-x64.exe
 ```
 
 ## Project Description
@@ -87,9 +85,9 @@ Detailed description:
 ```text
 AI Agent Quota Dashboard (AIQD) is an open-source Windows desktop preview application for developers who use local AI coding agents and want a conservative view of available quota. It runs a local service bound to 127.0.0.1, stores normalized quota snapshots in local SQLite, and provides an Electron desktop shell with a dashboard, tray mini panel, Doctor diagnostics, Settings, and JSON/CSV export.
 
-AIQD reads only narrow local quota-related data produced by tools the user already runs: Codex CLI structured local rate-limit events, Claude Code official statusline rate-limit payloads when explicitly configured, and Claude Desktop's local plan usage history file. It does not read browser cookies, simulate login, call hidden APIs, bypass rate limits, switch accounts, or upload prompts, responses, source code, chat content, credentials, cookies, session tokens, or raw local logs.
+AIQD reads only narrow local quota-related data produced by tools the user already runs: Codex CLI structured local rate-limit events, Claude Code official statusline rate-limit payloads when explicitly configured, and Claude Desktop's local plan usage history file. See the privacy policy link above for the full data boundary (no cookies, login simulation, hidden API calls, or prompt/response/source-code upload).
 
-The Windows distribution is an NSIS installer built with electron-builder from the public GitHub repository using GitHub Actions. The current v0.1.0-rc.1 release candidate is unsigned and published only for clean-machine testing and SignPath Foundation review. The formal v0.1.0 release is intended to use a SignPath Foundation signed Windows installer if approval is complete.
+The Windows distribution is an NSIS installer built with electron-builder from the public GitHub repository using GitHub Actions. The formal `v0.1.0` release has been published unsigned, with the maintainer's explicit approval, because SignPath Foundation review was still pending; a signed installer is planned as a follow-up release once approval completes.
 ```
 
 Artifact type:
@@ -101,7 +99,7 @@ Windows x64 NSIS installer (.exe)
 Current unsigned artifact SHA256:
 
 ```text
-D938A30F4289EE676FD181AC804B5DE0F372EEF502706FFE43142B85F26A0F72
+7DDE28E8FE424268C752480889DBBEABFD5578D9D20D5EE77DAE117ADE867F6D
 ```
 
 ## Repository Status
@@ -127,13 +125,13 @@ TypeScript, JavaScript, Node.js, Electron
 Project age:
 
 ```text
-Started 2026-08-09; currently an active v0.1 desktop preview.
+Started 2026-08-09; v0.1.0 desktop preview published 2026-08-25.
 ```
 
 Commit count:
 
 ```text
-109 commits as of 2026-08-14.
+126 commits as of 2026-08-26.
 ```
 
 Contributors / maintainers:
@@ -145,7 +143,7 @@ Contributors / maintainers:
 Development status:
 
 ```text
-Active. The project has local tests, Windows/Ubuntu GitHub Actions CI, a Windows package workflow, release checklist, privacy policy, and a published unsigned release candidate for review.
+Active. The project has local tests, Windows/Ubuntu GitHub Actions CI, a Windows package workflow, release checklist, privacy policy, and a published unsigned `v0.1.0` release for review.
 ```
 
 ## Build And Signing Plan
@@ -153,13 +151,13 @@ Active. The project has local tests, Windows/Ubuntu GitHub Actions CI, a Windows
 CI workflow:
 
 ```text
-https://github.com/isToniLiu/ai-agent-quota-dashboard/blob/main/.github/workflows/package-windows.yml
+https://github.com/ToniMakes/ai-agent-quota-dashboard/blob/main/.github/workflows/package-windows.yml
 ```
 
 Successful unsigned package workflow run:
 
 ```text
-https://github.com/isToniLiu/ai-agent-quota-dashboard/actions/runs/31796488211
+https://github.com/ToniMakes/ai-agent-quota-dashboard/actions/runs/31796488211
 ```
 
 Build process:
