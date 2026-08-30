@@ -185,16 +185,7 @@ If not ready: automatic detection may be unavailable on this machine or Codex ve
 - `Reported reset`
 - Optional label
 
-Then click `Save snapshot`.
-
-CLI equivalent:
-
-```bash
-npm run build
-node dist/index.js codex snapshot --remaining-percent 72 --reset-at 2026-08-16T03:00:00Z
-```
-
-Manual Codex fallback snapshots expire at their reported reset time. If Codex later changes the reset anchor, refresh first; if no CLI data appears, record a new visible fallback value.
+Then click `Save snapshot`, or use the CLI equivalent — see [Codex Quota Detection](../README.md#codex-quota-detection) for the command and how manual fallback snapshots expire.
 
 ## 5. Verify Claude Desktop Coverage
 
@@ -230,9 +221,7 @@ Normal-user path from the desktop app:
 
 Expected: Claude Code is marked ready after AIQD receives supported `rate_limits` fields. If Claude opens but AIQD still says it is waiting, send one short message in Claude and wait for the response to finish.
 
-Developer source-mode fallback:
-
-Run the sink self-test first. It uses fake `rate_limits` data and temporary files.
+Developer source-mode fallback — see [Claude Code Statusline](../README.md#claude-code-statusline) for the full build/preview/install walkthrough and `PATH` troubleshooting. For this trial, run the self-test first:
 
 ```bash
 npm run claude:self-test
@@ -240,26 +229,11 @@ npm run claude:self-test
 
 Expected: the self-test reports parsed rate-limit windows and does not write to the normal Claude statusline snapshot path.
 
-Preview the managed statusline command:
-
-```bash
-npm run build
-node dist/index.js setup claude-statusline
-```
-
-Expected: the preview shows the command AIQD would install, without changing Claude settings.
-
-Install only after reviewing the preview:
-
-```bash
-node dist/index.js setup claude-statusline --write
-```
-
-Then open Claude Code once in any project so its statusline renders. AIQD will refresh when supported `rate_limits` fields arrive.
+Then install (`node dist/index.js setup claude-statusline --write`) and open Claude Code once in any project so its statusline renders. AIQD will refresh when supported `rate_limits` fields arrive.
 
 Platform notes:
 
-- Windows: the Settings flow can install Claude Code CLI with the explicit install button when the supported Windows package is available. If Doctor says `claude.exe` is outside `PATH`, use the full-path command shown by Settings or Doctor, or restart AIQD after opening Claude Code from your normal terminal.
+- Windows: the Settings flow can install Claude Code CLI with the explicit install button when the supported Windows package is available.
 - macOS/Linux: open a terminal in a project and run `claude`; if the command is not found, install or expose the Claude Code CLI first.
 
 If not ready: run `npm run trial:preflight`. A common next action is `Open Claude Code to refresh the statusline snapshot`, which means Claude is configured but has not sent a fresh supported `rate_limits` payload yet.
