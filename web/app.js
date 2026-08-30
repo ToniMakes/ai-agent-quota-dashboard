@@ -5047,8 +5047,8 @@ function renderAgentPreferencesSettings() {
             ${renderAgentPreferenceRow({
               checked: preferences.claudeSources.desktop,
               detail: tx(
-                "Reads Claude Desktop's local usage history automatically.",
-                "自动读取 Claude Desktop 的本地用量历史文件。"
+                "Automatically reads your usage from Claude Desktop. No setup needed.",
+                "自动读取 Claude Desktop 里的用量记录，不用额外设置。"
               ),
               inputAttribute: 'data-agent-preference-claude-source="desktop"',
               label: "Claude Desktop"
@@ -5056,8 +5056,8 @@ function renderAgentPreferencesSettings() {
             ${renderAgentPreferenceRow({
               checked: preferences.claudeSources.cli,
               detail: tx(
-                "For Claude Code CLI users. Hidden from the main view when Desktop is selected.",
-                "如果你在终端里用 Claude Code，勾选这个。选中 Desktop 时，主界面会隐藏它。"
+                "If you use Claude Code in a terminal, check this.",
+                "如果你在终端里用 Claude Code，勾选这个。"
               ),
               inputAttribute: 'data-agent-preference-claude-source="cli"',
               label: "Claude Code CLI"
