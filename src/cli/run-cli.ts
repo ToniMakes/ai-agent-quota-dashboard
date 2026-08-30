@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { createDefaultRegistry } from "../adapters/registry.js";
+import { providerManifest } from "../adapters/provider-manifest.js";
 import { loadConfig } from "../config/app-config.js";
 import {
   addUserConfigDataPath,
@@ -272,6 +273,10 @@ async function runDoctorCommand(argv: string[]): Promise<void> {
   }
 }
 
+const supportedConfigAgentsUsage = providerManifest
+  .map((entry) => entry.agent)
+  .join("|");
+
 async function runConfigPathCommand(argv: string[]): Promise<void> {
   const [, , action, agent, dataPath] = argv;
   const config = loadConfig(argv);
@@ -285,7 +290,7 @@ async function runConfigPathCommand(argv: string[]): Promise<void> {
   if (action === "add") {
     if (!agent || !dataPath) {
       throw new Error(
-        "Usage: ai-agent-quota config path add codex|claude-code|claude-desktop <path>"
+        `Usage: ai-agent-quota config path add ${supportedConfigAgentsUsage} <path>`
       );
     }
 
@@ -307,7 +312,7 @@ async function runConfigPathCommand(argv: string[]): Promise<void> {
   if (action === "remove") {
     if (!agent || !dataPath) {
       throw new Error(
-        "Usage: ai-agent-quota config path remove codex|claude-code|claude-desktop <path>"
+        `Usage: ai-agent-quota config path remove ${supportedConfigAgentsUsage} <path>`
       );
     }
 
@@ -328,10 +333,10 @@ async function runConfigPathCommand(argv: string[]): Promise<void> {
 
   console.log("Usage: ai-agent-quota config path list");
   console.log(
-    "       ai-agent-quota config path add codex|claude-code|claude-desktop <path>"
+    `       ai-agent-quota config path add ${supportedConfigAgentsUsage} <path>`
   );
   console.log(
-    "       ai-agent-quota config path remove codex|claude-code|claude-desktop <path>"
+    `       ai-agent-quota config path remove ${supportedConfigAgentsUsage} <path>`
   );
 }
 

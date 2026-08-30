@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import { platform as hostPlatform } from "node:os";
 import { setupClaudeStatusline } from "../cli/claude-statusline-setup.js";
+import { wingetClaudeCodePackageId } from "./claude-cli-environment.js";
 import {
   getClaudeStatuslineSetupStatus,
   type ClaudeStatuslineSetupStatus
@@ -205,7 +206,7 @@ function buildInstallPlan(
   const args = [
     "install",
     "--id",
-    "Anthropic.ClaudeCode",
+    wingetClaudeCodePackageId,
     "--accept-source-agreements",
     "--accept-package-agreements"
   ];

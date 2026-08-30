@@ -53,12 +53,20 @@ export async function detectClaudeCli(): Promise<ClaudeCliStatus> {
   return { available: false };
 }
 
+// The single source of truth for the winget package id, so the display
+// command here and the executable install args in claude-auto-setup.ts
+// can't drift apart into naming two different packages.
+export const wingetClaudeCodePackageId = "Anthropic.ClaudeCode";
+
 export async function resolveClaudeInstallInfo(): Promise<ClaudeInstallInfo> {
   if (process.platform === "win32") {
     const wingetPath = await findCommandOnPath("winget");
 
     if (wingetPath) {
-      return { method: "winget", displayCommand: "winget install Anthropic.ClaudeCode" };
+      return {
+        method: "winget",
+        displayCommand: `winget install ${wingetClaudeCodePackageId}`
+      };
     }
 
     return { method: "script", displayCommand: "irm https://claude.ai/install.ps1 | iex" };

@@ -3,6 +3,14 @@
 // anything with legitimate per-surface differences (compact labels, widget
 // date formats) stays local to each file.
 
+// The frontend can't import the backend's provider manifest (src/adapters
+// is Node-only — fs/os/child_process — and has no build step that exposes
+// it to the browser), so these agent ids are named here once instead of
+// being repeated as string literals at every comparison below.
+export const codexAgentId = "codex";
+export const claudeCodeAgentId = "claude-code";
+export const claudeDesktopAgentId = "claude-desktop";
+
 export const languageStorageKey = "aiqd.language";
 export const defaultLanguage = "en";
 
@@ -344,7 +352,7 @@ export function shouldShowAgentFamily(family, onboardingPreferences) {
     return true;
   }
 
-  if (family === "codex") {
+  if (family === codexAgentId) {
     return onboardingPreferences.agents.codex !== false;
   }
 
@@ -386,15 +394,15 @@ export function shouldShowClaudeCliWorkflow(onboardingPreferences) {
 
 export function filterAgentsByOnboarding(agents, onboardingPreferences) {
   return agents.filter((agent) => {
-    if (agent.agent === "codex") {
-      return shouldShowAgentFamily("codex", onboardingPreferences);
+    if (agent.agent === codexAgentId) {
+      return shouldShowAgentFamily(codexAgentId, onboardingPreferences);
     }
 
-    if (agent.agent === "claude-code") {
+    if (agent.agent === claudeCodeAgentId) {
       return shouldShowClaudeCliWorkflow(onboardingPreferences);
     }
 
-    if (agent.agent === "claude-desktop") {
+    if (agent.agent === claudeDesktopAgentId) {
       return shouldShowClaudeDesktopWorkflow(onboardingPreferences);
     }
 
@@ -471,8 +479,8 @@ export function pickPrimaryClaudeAgent(claudeCode, claudeDesktop, preferredSourc
 }
 
 export function buildDisplayAgents(agents, preferredSource) {
-  const claudeCode = agents.find((agent) => agent.agent === "claude-code");
-  const claudeDesktop = agents.find((agent) => agent.agent === "claude-desktop");
+  const claudeCode = agents.find((agent) => agent.agent === claudeCodeAgentId);
+  const claudeDesktop = agents.find((agent) => agent.agent === claudeDesktopAgentId);
 
   if (!claudeCode && !claudeDesktop) {
     return agents;
@@ -495,6 +503,8 @@ export function buildDisplayAgents(agents, preferredSource) {
   };
 
   return agents
-    .filter((agent) => agent.agent !== "claude-code" && agent.agent !== "claude-desktop")
+    .filter(
+      (agent) => agent.agent !== claudeCodeAgentId && agent.agent !== claudeDesktopAgentId
+    )
     .concat([merged]);
 }

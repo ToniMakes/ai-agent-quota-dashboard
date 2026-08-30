@@ -3,9 +3,13 @@ import { homedir } from "node:os";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { isRecord } from "../adapters/parse-utils.js";
 import { uniquePaths } from "../adapters/path-utils.js";
+import {
+  providerManifest,
+  type SupportedConfigAgent
+} from "../adapters/provider-manifest.js";
 import { defaultUserConfigPath } from "./paths.js";
 
-export type SupportedConfigAgent = "codex" | "claude-code" | "claude-desktop";
+export type { SupportedConfigAgent };
 
 export type AgentUserConfig = {
   dataPaths: string[];
@@ -13,11 +17,7 @@ export type AgentUserConfig = {
 
 export type UserConfig = {
   schemaVersion: 1;
-  agents: {
-    codex?: AgentUserConfig;
-    "claude-code"?: AgentUserConfig;
-    "claude-desktop"?: AgentUserConfig;
-  };
+  agents: Partial<Record<SupportedConfigAgent, AgentUserConfig>>;
 };
 
 export type LoadedUserConfig = {
@@ -43,11 +43,9 @@ export type RemoveUserConfigDataPathResult = {
   config: UserConfig;
 };
 
-const supportedAgents = new Set<SupportedConfigAgent>([
-  "codex",
-  "claude-code",
-  "claude-desktop"
-]);
+const supportedAgents = new Set<SupportedConfigAgent>(
+  providerManifest.map((entry) => entry.agent)
+);
 
 export async function loadUserConfig(
   configPath = defaultUserConfigPath()
@@ -175,7 +173,7 @@ export function parseSupportedAgent(agent: string): SupportedConfigAgent {
   }
 
   throw new Error(
-    `Unsupported agent "${agent}". Use codex, claude-code, or claude-desktop.`
+    `Unsupported agent "${agent}". Use one of: ${[...supportedAgents].join(", ")}.`
   );
 }
 
