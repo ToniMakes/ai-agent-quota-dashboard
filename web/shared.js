@@ -266,6 +266,7 @@ export function readinessDisplayName(check, language) {
   }
 
   const labels = {
+    Diagnostics: "诊断",
     Mode: "模式"
   };
 

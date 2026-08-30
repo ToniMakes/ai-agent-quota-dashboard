@@ -36,7 +36,7 @@ export function buildRealDataReadiness(
     checks.push({
       provider: "local",
       agent: "doctor",
-      displayName: "Doctor",
+      displayName: "Diagnostics",
       status: "fail",
       message: "Blocking diagnostics must pass before a real-data trial.",
       action: "Run the normal doctor command and fix any failed checks first."
