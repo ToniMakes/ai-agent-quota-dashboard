@@ -18,9 +18,9 @@
           <h1>AI Agent Quota</h1>
           <p
             class="topbar-subtitle"
-            data-i18n-en="See remaining quota, reset time, and local source readiness at a glance."
-            data-i18n-zh="一眼看清剩余额度、重置时间和本地数据源是否就绪。"
-          >See remaining quota, reset time, and local source readiness at a glance.</p>
+            data-i18n-en="Track remaining quota and reset times for all your AI coding tools in one place."
+            data-i18n-zh="一个面板，掌握多个 AI 编程工具的剩余额度和重置时间。"
+          >Track remaining quota and reset times for all your AI coding tools in one place.</p>
         </div>
         <div class="topbar-actions">
           <div id="topbar-startup-control" class="topbar-startup-control"></div>
@@ -168,7 +168,16 @@
               <h2 data-i18n-en="Desktop Preferences" data-i18n-zh="桌面偏好">Desktop Preferences</h2>
             </div>
           </div>
-          <div id="agent-preferences-content" class="settings-content desktop-preference-content"></div>
+          <details class="advanced-settings-panel">
+            <summary>
+              <span data-i18n-en="Which apps to show" data-i18n-zh="显示哪些 App">Which apps to show</span>
+              <small
+                data-i18n-en="Codex, Claude, and which Claude source to use."
+                data-i18n-zh="Codex、Claude，以及用哪个 Claude 来源。"
+              >Codex, Claude, and which Claude source to use.</small>
+            </summary>
+            <div id="agent-preferences-content" class="settings-content desktop-preference-content"></div>
+          </details>
           <div id="startup-content" class="settings-content desktop-preference-content"></div>
         </div>
         <div id="feedback-panel" class="panel settings-preference-panel">
