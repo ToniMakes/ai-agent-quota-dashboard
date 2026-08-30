@@ -137,7 +137,7 @@ Commit count:
 Contributors / maintainers:
 
 ```text
-1 maintainer: Toni Liu / isToniLiu
+1 maintainer: Toni Liu / ToniMakes
 ```
 
 Development status:
@@ -177,21 +177,21 @@ After SignPath approval, the repository will configure SIGNPATH_API_TOKEN as a G
 Committer / reviewer:
 
 ```text
-Toni Liu / isToniLiu
-https://github.com/isToniLiu
+Toni Liu / ToniMakes
+https://github.com/ToniMakes
 ```
 
 Signing approver:
 
 ```text
-Toni Liu / isToniLiu
-https://github.com/isToniLiu
+Toni Liu / ToniMakes
+https://github.com/ToniMakes
 ```
 
 MFA:
 
 ```text
-Confirm before submitting: GitHub MFA is enabled for isToniLiu, and SignPath MFA will be enabled for the SignPath account.
+Confirm before submitting: GitHub MFA is enabled for ToniMakes, and SignPath MFA will be enabled for the SignPath account.
 ```
 
 ## Contact
@@ -211,7 +211,7 @@ TODO: use your preferred public or project contact email.
 GitHub account:
 
 ```text
-https://github.com/isToniLiu
+https://github.com/ToniMakes
 ```
 
 ## Terms Checklist

@@ -5,14 +5,14 @@
   "type": "module",
   "main": "desktop/main.cjs",
   "private": true,
-  "homepage": "https://github.com/isToniLiu/ai-agent-quota-dashboard#readme",
+  "homepage": "https://github.com/ToniMakes/ai-agent-quota-dashboard#readme",
   "author": "Toni Liu",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/isToniLiu/ai-agent-quota-dashboard.git"
+    "url": "git+https://github.com/ToniMakes/ai-agent-quota-dashboard.git"
   },
   "bugs": {
-    "url": "https://github.com/isToniLiu/ai-agent-quota-dashboard/issues"
+    "url": "https://github.com/ToniMakes/ai-agent-quota-dashboard/issues"
   },
   "bin": {
     "ai-agent-quota-dashboard": "./dist/index.js",
