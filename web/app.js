@@ -760,8 +760,8 @@ function renderFirstRunOnboarding() {
           <p class="first-run-modal-lede">${escapeHtml(
             step === "claude"
               ? tx(
-                  "You can choose both. When Desktop is selected, AIQD uses it as the normal source.",
-                  "可以多选；勾选 Desktop 时，AIQD 会把它作为常规来源。"
+                  "You can pick both. If Desktop is checked, AIQD shows that one by default.",
+                  "两个都可以选；如果勾选了 Desktop，AIQD 会默认显示它。"
                 )
               : tx(
                   "AIQD will only show the agents you choose. You can change this later in Settings.",
@@ -793,8 +793,8 @@ function renderOnboardingAgentStep(draft) {
           <strong>Codex</strong>
           <small>${escapeHtml(
             tx(
-              "Show Codex quota and local diagnostics.",
-              "显示 Codex 额度和本地诊断。"
+              "Show Codex's remaining quota.",
+              "显示 Codex 的剩余额度。"
             )
           )}</small>
         </span>
@@ -807,8 +807,8 @@ function renderOnboardingAgentStep(draft) {
           <strong>Claude</strong>
           <small>${escapeHtml(
             tx(
-              "Show Claude quota. Source selection is next.",
-              "显示 Claude 额度；下一步选择来源。"
+              "Show Claude's remaining quota. You'll pick Desktop or CLI next.",
+              "显示 Claude 的剩余额度，下一步选择用 Desktop 还是 CLI。"
             )
           )}</small>
         </span>
@@ -860,8 +860,8 @@ function renderOnboardingClaudeStep(draft) {
             <strong>Claude Code CLI</strong>
             <small>${escapeHtml(
               tx(
-                "Optional. Use this only if you want Claude Code's statusline snapshot path.",
-                "可选。只有你想使用 Claude Code 的状态栏快照通道时才需要。"
+                "Optional. Check this if you use Claude Code in a terminal.",
+                "可选。如果你在终端里用 Claude Code，勾选这个。"
               )
             )}</small>
           </span>
@@ -1434,7 +1434,7 @@ function renderStaleQuotaSummary(agent, snapshot) {
 function renderObservedLine(snapshot) {
   return `
     <div class="quota-line">
-      <span class="label">${escapeHtml(tx("Observed", "观测时间"))}</span>
+      <span class="label">${escapeHtml(tx("Updated", "更新时间"))}</span>
       <span class="value observed-value">
         <time datetime="${escapeHtml(snapshot.observedAt)}">${escapeHtml(
           formatRelative(snapshot.observedAt)
@@ -1482,7 +1482,7 @@ function renderSnapshotLines(agent) {
     const action =
       emptyState?.action ??
       tx(
-        "Open Doctor for source checks and refresh history.",
+        "Open Diagnostics for source checks and refresh history.",
         "打开诊断查看额度来源检查和刷新历史。"
       );
     const emptyText = agentEmptyText(agent);
@@ -1779,7 +1779,7 @@ function renderDoctorChecklist() {
     <div class="real-data-summary doctor-checklist-summary">
       <div class="setup-score">
         <strong>${readyCount}/${totalCount}</strong>
-        <span>${escapeHtml(tx("quota sources ready", "额度来源就绪"))}</span>
+        <span>${escapeHtml(tx("connected", "已连接"))}</span>
       </div>
       <div>
         <strong>${escapeHtml(
@@ -1788,8 +1788,8 @@ function renderDoctorChecklist() {
         <div class="settings-detail">${escapeHtml(
           nextItem?.nextAction ??
             tx(
-              "Real-data sources are ready for a local trial.",
-              "真实数据来源已经可以用于本地试用。"
+              "Everything is connected and ready to use.",
+              "都已经连好了，可以正常使用。"
             )
         )}</div>
         ${nextItem?.command ? renderInlineCommand(nextItem.command) : ""}
@@ -1830,7 +1830,7 @@ function buildDoctorCodexChecklistItem() {
     ...item,
     actionLabel: item.state === "pass" ? tx("Review", "查看") : tx("Settings", "设置"),
     actionView: "settings",
-    label: tx("Codex quota source", "Codex 额度来源"),
+    label: "Codex",
     target: "#codex-snapshot-content"
   };
 }
@@ -1842,7 +1842,7 @@ function buildDoctorClaudeChecklistItem() {
     ...item,
     actionLabel: item.state === "pass" ? tx("Review", "查看") : tx("Settings", "设置"),
     actionView: "settings",
-    label: tx("Claude quota (CLI or Desktop)", "Claude 额度（CLI 或 Desktop）"),
+    label: "Claude",
     target: "#settings-content"
   };
 }
@@ -1869,13 +1869,13 @@ function buildDoctorRefreshChecklistItem() {
       actionLabel: tx("Refresh now", "立即刷新"),
       countsTowardReady: false,
       detail: tx(
-        "No local refresh run has been recorded in this workspace yet.",
-        "这个工作区还没有记录过本地刷新。"
+        "AIQD has not checked your local data yet.",
+        "AIQD 还没有检查过本地数据。"
       ),
-      label: tx("Refresh pipeline", "刷新流程"),
+      label: tx("Last refresh", "上次刷新"),
       nextAction: tx(
-        "Run one refresh after setting up at least one quota source.",
-        "至少设置好一个额度来源后，运行一次刷新。"
+        "Set up at least one app above, then refresh.",
+        "先设置好上面至少一个来源，然后刷新。"
       ),
       refreshAction: true,
       state: "info",
@@ -1889,16 +1889,26 @@ function buildDoctorRefreshChecklistItem() {
     actionLabel: hasErrors ? tx("View details", "查看详情") : tx("Refresh now", "立即刷新"),
     actionView: hasErrors ? "doctor" : undefined,
     countsTowardReady: false,
-    detail: formatRefreshRunDetail(latestRun),
-    label: tx("Refresh pipeline", "刷新流程"),
-    nextAction: hasErrors
+    detail: hasErrors
       ? tx(
-          "Review the latest refresh errors before relying on the dashboard.",
-          "先查看最近一次刷新错误，再依赖仪表盘结果。"
+          "{count} app(s) had a problem during the last refresh.",
+          "上次刷新有 {count} 个来源出了问题。",
+          { count: latestRun.errors.length }
         )
       : tx(
-          "Refresh is recording source diagnostics and saved-count summaries.",
-          "刷新流程正在记录来源诊断和保存数量摘要。"
+          "Checked {count} app(s) and saved the latest quota data.",
+          "检查了 {count} 个来源，并保存了最新额度数据。",
+          { count: latestRun.adapterCount }
+        ),
+    label: tx("Last refresh", "上次刷新"),
+    nextAction: hasErrors
+      ? tx(
+          "Review the errors below before relying on the dashboard.",
+          "先查看下面的错误详情，再依赖仪表盘结果。"
+        )
+      : tx(
+          "AIQD checks your local data every time you refresh.",
+          "每次刷新，AIQD 都会重新检查一遍本地数据。"
         ),
     refreshAction: !hasErrors,
     state: hasErrors ? "warn" : "pass",
@@ -1916,7 +1926,7 @@ function buildDoctorPathChecklistItem() {
     ...item,
     actionLabel: tx("Path settings", "路径设置"),
     actionView: "settings",
-    label: tx("Local path config", "本地路径配置"),
+    label: tx("File locations", "文件位置"),
     target: "#paths-content"
   };
 }
@@ -1966,20 +1976,20 @@ function renderDoctorChecklistAction(item) {
 function doctorChecklistSummaryTitle(readyCount, totalCount, hasSupportingIssue) {
   if (readyCount === totalCount && hasSupportingIssue) {
     return tx(
-      "Quota sources are ready; review setup warnings",
-      "额度来源已就绪；请查看设置警告"
+      "Everything's connected - but check the warnings below",
+      "都已连接，但下面有需要注意的警告"
     );
   }
 
   if (readyCount === totalCount) {
-    return tx("Ready for a real-data trial", "真实数据试用已准备好");
+    return tx("You're all set", "都设置好了");
   }
 
   if (readyCount === 0) {
-    return tx("Real-data setup is not ready yet", "真实数据设置尚未就绪");
+    return tx("Not set up yet", "还没设置好");
   }
 
-  return tx("One quota source is ready", "已有一个额度来源就绪");
+  return tx("One app is connected", "已经连接了一个");
 }
 
 function renderRefreshRuns() {
@@ -2212,11 +2222,11 @@ function renderCodexPrimaryNextAction(status) {
   return `
     <div class="setup-watch-notice">
       <div>
-        <strong>${escapeHtml(tx("Codex needs one value", "Codex 还需要一个额度值"))}</strong>
+        <strong>${escapeHtml(tx("Add your Codex usage manually", "手动填写 Codex 用量"))}</strong>
         <div class="settings-detail">${escapeHtml(
           tx(
-            "First try Refresh after using Codex once. If automatic detection still cannot read quota, fill the fallback form below.",
-            "先使用 Codex 一次后点刷新。如果自动检测仍然读不到额度，再填写下面的兜底表单。"
+            "Use Codex once, then click Refresh. If AIQD still can't find it automatically, fill in the form below.",
+            "先用一次 Codex，然后点刷新。如果 AIQD 还是自动找不到，就填写下面的表单。"
           )
         )}</div>
       </div>
@@ -2252,21 +2262,21 @@ function renderCodexAutoDetectionStatus(status) {
   const title = autoDetected
     ? tx("Codex is being detected automatically", "Codex 正在自动检测")
     : manualReady
-      ? tx("Manual fallback is currently active", "当前使用手动兜底")
-      : tx("Automatic Codex detection is waiting", "正在等待 Codex 自动检测");
+      ? tx("Using the value you entered", "正在使用你手动填写的数值")
+      : tx("Waiting for Codex usage data", "正在等待 Codex 用量数据");
   const detail = autoDetected
     ? tx(
-        "AIQD is reading Codex quota from local CLI rate_limits. You do not need to copy numbers by hand.",
-        "AIQD 正在从本地 CLI rate_limits 读取 Codex 额度；你不需要手动抄数字。"
+        "AIQD reads your Codex usage automatically. You don't need to copy any numbers by hand.",
+        "AIQD 会自动读取你的 Codex 用量，你不需要手动抄数字。"
       )
     : manualReady
       ? tx(
-          "AIQD has a manual fallback value saved. Refresh after using Codex once; if CLI data appears, it will replace the fallback.",
-          "AIQD 已保存手动兜底值。使用 Codex 一次后刷新；如果出现 CLI 数据，它会替代兜底。"
+          "AIQD saved the value you entered. Use Codex once, then refresh - if AIQD can detect your usage automatically, it will replace this.",
+          "AIQD 已经保存了你填写的数值。使用一次 Codex 后刷新——如果能自动检测到用量，会自动替换这个数值。"
         )
       : tx(
-          "After Codex CLI writes a supported rate_limits event, click Refresh. If this machine exposes no usable Codex quota data, use the fallback form below.",
-          "等 Codex CLI 写入支持的 rate_limits 事件后点击刷新。如果这台机器没有暴露可用 Codex 额度数据，再使用下面的兜底表单。"
+          "Use Codex once, then click Refresh. If AIQD still can't find your usage automatically, fill in the form below.",
+          "先用一次 Codex，然后点刷新。如果 AIQD 还是自动找不到你的用量，就填写下面的表单。"
         );
   const snapshotLine = snapshot ? formatSnapshotOverview(snapshot) : undefined;
 
@@ -3731,8 +3741,8 @@ function buildCodexOverviewItem() {
       detailParts.length > 0
         ? detailParts.join(" / ")
         : tx(
-            "AIQD checks local Codex CLI session rate_limits first. Manual entry below is only a fallback.",
-            "AIQD 会先检查本地 Codex CLI session rate_limits；下面的手动录入只是兜底。"
+            "AIQD checks for Codex usage automatically first. The form below is only a backup.",
+            "AIQD 会先自动检查 Codex 用量，下面的表单只是备用方式。"
           ),
     id: "codex",
     label: "Codex",
@@ -3748,16 +3758,16 @@ function buildCodexOverviewItem() {
           )
       : needsAttention
         ? tx(
-            "Refresh after using Codex once. If no CLI quota appears, update the manual fallback.",
-            "使用 Codex 一次后刷新；如果仍没有 CLI 额度，再更新手动兜底。"
+            "Use Codex once, then refresh. If nothing shows up, fill in the form below.",
+            "先用一次 Codex，然后刷新；如果还是没有数据，就填写下面的表单。"
           )
         : tx(
-            "Refresh to detect local Codex CLI quota. Use the manual form only if detection is unavailable.",
-            "刷新以检测本地 Codex CLI 额度；只有检测不可用时才使用手动表单。"
+            "Refresh to detect your Codex usage automatically, or fill in the form below.",
+            "刷新以自动检测 Codex 用量，或者直接填写下面的表单。"
           ),
     state: ready ? "pass" : needsAttention ? "warn" : "info",
     status: autoDetected
-      ? tx("CLI detected", "CLI 已检测")
+      ? tx("Detected automatically", "已自动检测")
       : localizedReadinessLabel(status?.readinessLabel) ??
         tx("Waiting for Codex data", "等待 Codex 数据"),
     target: "#codex-snapshot-content"
@@ -3879,25 +3889,25 @@ function buildPathOverviewItem() {
     countsTowardReady: false,
     detail: hasLoadErrors
       ? status?.loadErrors?.join("\n") ??
-        tx("Local path config has warnings.", "本地路径配置有警告。")
+        tx("There's a problem with your file locations.", "文件位置有问题。")
       : configuredCount > 0
-        ? tx("{count} configured scan root(s)", "已配置 {count} 个扫描根目录", {
+        ? tx("{count} custom folder(s) added", "已添加 {count} 个自定义文件夹", {
             count: configuredCount
           })
-        : tx("Default local scan paths are active.", "默认本地扫描路径已启用。"),
+        : tx("Using the default file locations.", "正在使用默认文件位置。"),
     id: "local-paths",
-    label: tx("Local paths", "本地路径"),
+    label: tx("File locations", "文件位置"),
     nextAction: hasLoadErrors
       ? tx(
-          "Fix the local path config warning before relying on configured scan roots.",
-          "先修复本地路径配置警告，再依赖自定义扫描根目录。"
+          "Fix this before AIQD can use your custom folders.",
+          "先修复这个问题，AIQD 才能使用你的自定义文件夹。"
         )
       : tx(
-          "Path checks are available if a source needs a custom scan root.",
-          "如果某个来源需要自定义扫描根目录，可以在这里检查路径。"
+          "Add a custom folder here if AIQD can't find an app's files automatically.",
+          "如果 AIQD 找不到某个 App 的文件，可以在这里手动添加文件夹。"
         ),
     state: hasLoadErrors ? "warn" : "pass",
-    status: hasLoadErrors ? tx("Check config", "检查配置") : tx("Ready", "就绪"),
+    status: hasLoadErrors ? tx("Needs a look", "需要检查") : tx("Ready", "就绪"),
     target: "#paths-content"
   };
 }
@@ -3927,17 +3937,14 @@ function renderRealDataOverviewItem(item) {
 
 function realDataSummaryTitle(readyCount, totalCount) {
   if (readyCount === totalCount) {
-    return tx("Primary quota sources are ready", "主要额度来源已就绪");
+    return tx("You're all set", "都设置好了");
   }
 
   if (readyCount === 0) {
-    return tx(
-      "No primary quota source is ready yet",
-      "还没有主要额度来源就绪"
-    );
+    return tx("Not set up yet", "还没设置好");
   }
 
-  return tx("One primary quota source is ready", "已有一个主要额度来源就绪");
+  return tx("One app is connected", "已经连接了一个");
 }
 
 function renderCodexSnapshotForm(status) {
@@ -3960,11 +3967,11 @@ function renderCodexSnapshotForm(status) {
   return `
     <form id="codex-snapshot-form" class="settings-form">
       <div>
-        <strong>${escapeHtml(tx("Manual fallback form", "手动兜底表单"))}</strong>
+        <strong>${escapeHtml(tx("Enter your usage manually", "手动填写用量"))}</strong>
         <div class="settings-detail">${escapeHtml(
           tx(
-            "Use this only when automatic Codex CLI detection is unavailable on this machine.",
-            "只有这台机器无法自动检测 Codex CLI 额度时，才需要填写这里。"
+            "Only needed if AIQD can't detect Codex automatically on this computer.",
+            "只有这台电脑上 AIQD 没法自动检测 Codex 时才需要。"
           )
         )}</div>
       </div>
@@ -4506,7 +4513,7 @@ function renderSettings() {
             tx("Readiness", "就绪状态"),
             localizedReadinessLabel(status.readinessLabel) ?? tx("Unknown", "未知"),
             localizedNextAction(status.nextAction) ??
-              tx("Run Doctor for setup details.", "运行诊断查看设置详情。"),
+              tx("Open Diagnostics for setup details.", "运行诊断查看设置详情。"),
             readinessBadgeClass(status.readiness),
             statusLabel(status.readiness ?? "unknown")
           )}
@@ -5086,8 +5093,8 @@ function renderAgentPreferencesSettings() {
     ${renderAgentPreferenceRow({
       checked: preferences.agents.codex,
       detail: tx(
-        "Show Codex quota cards, setup checks, and diagnostics.",
-        "显示 Codex 额度卡、设置检查和诊断项。"
+        "Show Codex on the dashboard and in setup.",
+        "在仪表盘和设置页显示 Codex。"
       ),
       inputAttribute: 'data-agent-preference-agent="codex"',
       label: "Codex"
@@ -5095,8 +5102,8 @@ function renderAgentPreferencesSettings() {
     ${renderAgentPreferenceRow({
       checked: preferences.agents.claude,
       detail: tx(
-        "Show Claude quota cards, setup checks, and diagnostics.",
-        "显示 Claude 额度卡、设置检查和诊断项。"
+        "Show Claude on the dashboard and in setup.",
+        "在仪表盘和设置页显示 Claude。"
       ),
       inputAttribute: 'data-agent-preference-agent="claude"',
       label: "Claude"
@@ -5109,8 +5116,8 @@ function renderAgentPreferencesSettings() {
               <span>${escapeHtml(
                 preferences.claudeSources.desktop
                   ? tx(
-                      "Claude Desktop is the normal source when selected.",
-                      "勾选 Claude Desktop 时，常规界面优先使用它。"
+                      "Claude Desktop is used by default when checked.",
+                      "勾选后，AIQD 默认使用 Claude Desktop。"
                     )
                   : tx(
                       "Claude Code CLI is shown only when Desktop is not selected.",
@@ -5130,8 +5137,8 @@ function renderAgentPreferencesSettings() {
             ${renderAgentPreferenceRow({
               checked: preferences.claudeSources.cli,
               detail: tx(
-                "Uses Claude Code statusline snapshots; normal UI hides it when Desktop is selected.",
-                "使用 Claude Code 状态栏快照；选中 Desktop 时常规界面会隐藏它。"
+                "For Claude Code CLI users. Hidden from the main view when Desktop is selected.",
+                "如果你在终端里用 Claude Code，勾选这个。选中 Desktop 时，主界面会隐藏它。"
               ),
               inputAttribute: 'data-agent-preference-claude-source="cli"',
               label: "Claude Code CLI"
@@ -6197,46 +6204,51 @@ function localizedNextAction(action) {
 }
 
 function agentEmptyText(agent) {
-  if (currentLanguage !== "zh") {
-    return {
-      detail:
-        agent.emptyState?.detail ??
-        "The latest refresh did not produce a quota snapshot for this agent.",
-      title: agent.emptyState?.title ?? "No quota data yet"
-    };
-  }
-
   if (agent.emptyState?.reason === "waiting_for_statusline_data") {
     return {
-      detail: "按设置页当前步骤，从终端启动 Claude Code 一次。",
-      title: "等待 Claude Code 数据"
+      detail: tx(
+        "Open Claude Code from a terminal once, following the current step in Settings.",
+        "按设置页当前步骤，从终端启动 Claude Code 一次。"
+      ),
+      title: tx("Waiting for Claude Code data", "等待 Claude Code 数据")
     };
   }
 
   if (agent.emptyState?.reason === "waiting_for_desktop_data") {
     return {
-      detail: "打开 Claude Desktop，让它记录一次新的用量样本，然后刷新 AIQD。",
-      title: "等待 Claude Desktop 数据"
+      detail: tx(
+        "Open Claude Desktop so it records a new usage sample, then refresh AIQD.",
+        "打开 Claude Desktop，让它记录一次新的用量样本，然后刷新 AIQD。"
+      ),
+      title: tx("Waiting for Claude Desktop data", "等待 Claude Desktop 数据")
     };
   }
 
   if (agent.emptyState?.reason === "adapter_error") {
     return {
-      detail: "打开诊断页查看失败的适配器。",
-      title: "扫描失败"
+      detail: tx("Open Diagnostics to see what went wrong.", "打开诊断页查看出了什么问题。"),
+      title: tx("Something went wrong", "出了点问题")
     };
   }
 
   if (agent.agent === "codex") {
     return {
-      detail: "AIQD 会先读取本地 Codex CLI session rate_limits。使用 Codex 一次后刷新；如果仍没有数据，再用设置页的手动兜底。",
-      title: "等待 Codex CLI 额度数据"
+      detail: tx(
+        "AIQD checks for Codex usage automatically first. Use Codex once, then refresh; if nothing appears, use the manual form in Settings.",
+        "AIQD 会先自动检查 Codex 用量。使用 Codex 一次后刷新；如果还是没有数据，就用设置页里的手动表单。"
+      ),
+      title: tx("Waiting for Codex data", "等待 Codex 数据")
     };
   }
 
   return {
-    detail: "最近一次刷新没有为这个 Agent 生成额度快照。",
-    title: "还没有额度数据"
+    detail:
+      agent.emptyState?.detail ??
+      tx(
+        "The latest refresh did not find any quota data for this app.",
+        "最近一次刷新没有找到这个 App 的额度数据。"
+      ),
+    title: agent.emptyState?.title ?? tx("No quota data yet", "还没有额度数据")
   };
 }
 

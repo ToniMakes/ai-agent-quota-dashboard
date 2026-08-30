@@ -401,10 +401,10 @@ function footerState() {
   if ((latestRun?.errors?.length ?? 0) > 0) {
     return {
       action: "doctor",
-      ariaLabel: tx("Open Doctor for refresh warning", "打开诊断查看刷新警告"),
+      ariaLabel: tx("Open Diagnostics for refresh warning", "打开诊断查看刷新警告"),
       kind: "warning",
       target: "refresh-run-list",
-      text: tx("Refresh warning - open Doctor", "刷新有警告 - 打开诊断"),
+      text: tx("Refresh warning - open Diagnostics", "刷新有警告 - 打开诊断"),
       title: refreshRunTitle(latestRun)
     };
   }
@@ -512,7 +512,7 @@ function footerState() {
 
 function readinessActionLabel(action, reason) {
   return action === "doctor"
-    ? tx("Open Doctor to {reason}", "打开诊断以{reason}", { reason })
+    ? tx("Open Diagnostics to {reason}", "打开诊断以{reason}", { reason })
     : tx("Open Settings to {reason}", "打开设置以{reason}", { reason });
 }
 
@@ -848,8 +848,8 @@ function emptyStateGuidance(agent) {
   if (agent.emptyState?.reason === "adapter_error") {
     return {
       action: "doctor",
-      actionLabel: tx("Doctor", "诊断"),
-      detail: tx("Check the failing adapter", "检查失败的适配器"),
+      actionLabel: tx("Diagnostics", "诊断"),
+      detail: tx("Something went wrong - see details", "出了点问题，查看详情"),
       label: tx("check", "检查"),
       target: "doctor-list",
       title: tx("Scan failed", "扫描失败")
@@ -871,7 +871,7 @@ function emptyStateGuidance(agent) {
     return {
       action: "settings",
       actionLabel: tx("Install setup", "安装设置"),
-      detail: tx("Add local statusline sink, or use Claude Desktop instead", "添加本地 statusline sink，或改用 Claude Desktop"),
+      detail: tx("Connect Claude Code's statusline, or use Claude Desktop instead", "连接 Claude Code 的状态栏，或改用 Claude Desktop"),
       label: tx("setup 2", "设置 2"),
       target: "settings-content",
       title: tx("Claude statusline needed", "需要 Claude 状态栏")
@@ -891,7 +891,7 @@ function emptyStateGuidance(agent) {
 
   return {
     action: "doctor",
-    actionLabel: tx("Doctor", "诊断"),
+    actionLabel: tx("Diagnostics", "诊断"),
     detail: agent.emptyState?.detail ?? tx("No quota data yet", "还没有额度数据"),
     label: tx("unavailable", "不可用"),
     target: "doctor-list",
