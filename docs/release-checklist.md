@@ -4,7 +4,7 @@ Use this checklist before tagging a release.
 
 ## Per-Change Checklist (before merging any feature, not just before release)
 
-Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` have previously described a source as "planned" for a full session after it shipped, because nothing prompted an update until the pre-release pass below. Do this check as part of the change itself, not the release:
+Docs drift silently: `docs/status.md`, `README.md`, `docs/data-sources.md`, and `docs/roadmap.md` have previously described a source or milestone as still pending for a full session after it shipped, because nothing prompted an update until the pre-release pass below. Do this check as part of the change itself, not the release:
 
 - [ ] If this change adds/changes a data source, adapter, or readiness rule: `docs/data-sources.md` and `docs/architecture.md` describe the current behavior, not the pre-change one
 - [ ] If this change is the thing a roadmap/status entry was waiting on: that entry is updated to reflect it shipped, in the same commit or PR
@@ -39,7 +39,7 @@ Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` h
 - [x] `docs/data-sources.md` documents source and confidence mapping
 - [x] UI copy labels estimates and reported reset times conservatively
 - [ ] Bilingual UI copy still fits the main dashboard and mini surfaces
-- [ ] Desktop tray, main window, and shortcut use the intended app icon
+- [x] Desktop tray, main window, and shortcut use the intended app icon
 - [x] No unintended generated files, local databases, raw logs, prompts, responses, source code, or credentials are staged
 
 ## First Preview Work Plan
@@ -104,7 +104,7 @@ Docs drift silently: `docs/status.md`, `README.md`, and `docs/data-sources.md` h
 - [x] Startup launches only the tray shell and local backend unless setup or recovery needs attention
 - [x] Disabling startup removes AIQD's OS startup entry
 - [x] Uninstall or app removal does not leave an orphaned startup entry
-- [ ] Uninstall removes AIQD-owned Electron app data such as `%APPDATA%\AI Agent Quota`
+- [x] Uninstall removes AIQD-owned Electron app data such as `%APPDATA%\AI Agent Quota`
 - [x] Startup behavior preserves the same local-first privacy boundary as manual launch
 
 ## Optional

@@ -1,10 +1,10 @@
 # Roadmap
 
-Last updated: 2026-08-25
+Last updated: 2026-08-26
 
-## Current Milestone: v0.1 Desktop Preview
+## Current Milestone: Signed Follow-Up Release
 
-The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and Claude quota experience trustworthy enough for early public testers, with an installer-first path for normal users and source mode retained for developers.
+`v0.1.0` shipped 2026-08-25 as an installer-first desktop preview, unsigned while SignPath Foundation review is pending. The current milestone is closing the gaps that block the next, signed release: a true clean-machine trial and a signed installer.
 
 ### Done
 
@@ -34,24 +34,15 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 - Claude Desktop local `plan-usage-history.json` adapter, an alternative Claude source that needs no CLI install
 - Real-data readiness treats Claude Code and Claude Desktop as alternatives (any-of per provider) instead of both being mandatory
 - CI on Windows and Ubuntu with Node 24
+- Created the GitHub Release and uploaded the unsigned `v0.1.0` installer artifact
 
-### Remaining Before First Public Preview
+### Remaining Before a Signed Follow-Up Release
 
 - True clean Windows user or VM real-data trial from installer to Codex, Claude Desktop, and Claude Code readiness
-- SignPath Foundation approval, CI signing configuration, and final signed-installer verification for a later signed follow-up release
+- SignPath Foundation approval, CI signing configuration, and final signed-installer verification
 - Beginner onboarding copy pass for Windows, macOS, and Linux
-- Create the GitHub Release and upload the unsigned installer artifact after final verification
 
-### First Preview Work Plan
-
-1. Hardening: keep smoke checks deterministic, verify `npm test`, `desktop:smoke`, `desktop:first-run-smoke`, and `git diff --check` locally.
-2. Packaging: keep the Windows installer artifact reproducible and verify packaged smoke checks before each tag.
-3. Claude Desktop coverage: the adapter parsing local plan usage samples from `%APPDATA%\Claude\plan-usage-history.json` is implemented; verify it end-to-end on a clean machine alongside Codex and Claude Code.
-4. Real-data trial: run a fresh install from installer to Codex, Claude Desktop, and Claude Code readiness, recording every point where setup copy is confusing.
-5. Developer fallback: verify a clean clone still works for technical testers.
-6. Onboarding pass: tighten Settings and README instructions around the next action, expected result, and recovery path for each platform.
-7. Release assets: capture dashboard, tray mini panel, widget, and setup-flow screenshots or short GIFs.
-8. Release finish: publish v0.1.0 as an explicitly unsigned desktop preview, update `CHANGELOG.md`, complete `docs/release-checklist.md`, verify CI on `main`, tag the preview, and create the GitHub Release.
+See [Release Checklist](release-checklist.md) for the step-by-step work plan.
 
 ## v0.2
 
@@ -76,9 +67,6 @@ The v0.1 MVP is in real-data dogfooding. The goal is to make the local Codex and
 
 ## Non-goals
 
-- Browser cookie import
-- Automatic login
-- Hidden API scraping
-- Multi-account limit avoidance
-- Prompt, response, transcript, or source-code upload
 - Team management in the personal MVP
+
+See the [README Non-goals](../README.md#non-goals) for the project's privacy/data-access non-goals.

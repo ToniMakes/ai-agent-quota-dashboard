@@ -12,7 +12,7 @@ The Windows x64 installer artifact is:
 release/AI Agent Quota Dashboard-0.1.0-win-x64.exe
 ```
 
-The v0.1.0 desktop preview artifact is published unsigned because SignPath Foundation approval is still pending. The maintainer explicitly approved this unsigned formal preview on 2026-08-25. Release notes must label the installer as unsigned, describe the normal Windows unknown-publisher or SmartScreen warning, and include the final SHA256.
+The v0.1.0 desktop preview artifact is published unsigned while SignPath Foundation approval is pending; see [Code Signing Policy](code-signing.md) for the signing rationale and process.
 
 Build commands:
 
@@ -32,31 +32,14 @@ The packaged app uses Electron's bundled Node runtime for the local backend. Nor
 
 ## Code Signing
 
-AIQD's preferred no-cost signing path is SignPath Foundation open-source signing. The repository policy is documented in [Code Signing Policy](code-signing.md).
+AIQD's preferred no-cost signing path is SignPath Foundation open-source signing. See [Code Signing Policy](code-signing.md) for the full policy, roles, and verification steps; the SignPath Foundation OSS application was submitted on 2026-08-14 and is awaiting review (see [docs/status.md](status.md)).
 
-Release candidates may be unsigned and clearly labeled as such so SignPath can review a released/downloadable Windows artifact. The v0.1.0 formal preview is also unsigned by maintainer decision while SignPath review is pending.
-
-The manual Windows packaging workflow can:
-
-- build and upload an unsigned installer artifact for RC testing
-- submit the GitHub Actions artifact to SignPath after approval and secret configuration
-- verify the downloaded signed artifact with Windows Authenticode before release upload
-
-Required GitHub configuration after SignPath approval:
+Required GitHub configuration once SignPath approves the project:
 
 - repository secret: `SIGNPATH_API_TOKEN`
 - repository variables: `SIGNPATH_ORGANIZATION_ID`, `SIGNPATH_PROJECT_SLUG`, `SIGNPATH_SIGNING_POLICY_SLUG`
 
-The SignPath project should use the workflow artifact as the signing input. Maintainers should not sign locally built release binaries with the SignPath Foundation certificate.
-
-Recommended signing sequence:
-
-1. Run the manual `Package Windows` GitHub Actions workflow with `sign_with_signpath` set to `false`.
-2. Create a GitHub Pre-release such as `v0.1.0-rc.1`, upload the unsigned installer, and use `docs/release-notes-v0.1.0-rc.1.md` as the release text.
-3. Submit the SignPath Foundation OSS application with the repository URL, RC release URL, license, privacy policy, and code signing policy.
-4. After approval, configure the SignPath GitHub secret and variables listed above.
-5. Run the same workflow with `sign_with_signpath` set to `true` from the intended release commit or tag.
-6. Verify the signed installer and upload only that artifact to a later signed follow-up release. Do not silently replace the v0.1.0 unsigned asset.
+Once approved: configure the secret/variables above, run the `Package Windows` GitHub Actions workflow with `sign_with_signpath` set to `true` from the intended release commit or tag, verify the signed installer's Authenticode signature, and upload only that artifact to a new signed follow-up release. Do not replace the `v0.1.0` unsigned asset.
 
 ## Startup Decision
 
@@ -68,7 +51,7 @@ For packaged releases, startup control is provided in two places:
 - App Settings toggle: `Launch at startup` in Desktop Preferences
 - Dashboard topbar toggle: `Startup`
 
-The first packaged release defaults startup to off. AIQD runs a local backend and a tray shell, so startup behavior is explicit, reversible, and easy to understand.
+The first packaged release defaults startup to off. Startup behavior is explicit and reversible: it only ever starts AIQD's own local backend and tray shell, never a full dashboard window, unless setup or recovery needs attention.
 
 Implementation notes:
 
@@ -79,7 +62,7 @@ Implementation notes:
 - The NSIS installer checkbox calls the packaged app's short `--set-launch-at-login=1` mode, so AIQD owns the login-item write.
 - The uninstaller removes AIQD-owned Windows Run and StartupApproved entries to avoid orphaned startup entries.
 
-The installed desktop shortcut should open the main dashboard window. The tray mini panel remains a quick-access surface from the system tray, not the primary result of double-clicking the app entry.
+The installed desktop shortcut opens the main dashboard window; double-clicking the app entry is not how users reach the tray mini panel, which stays a quick-access surface from the system tray only.
 
 ## Main Window Close Behavior
 
@@ -117,4 +100,4 @@ The main dashboard window's close button is explicit for first-time users:
 - Settings can restore the close prompt or choose tray/quit as the default close action.
 - Opening the packaged app from the desktop or Start menu does not crash if no console is attached or the inherited log pipe closes.
 - Uninstall or app removal does not leave an orphaned startup entry.
-- Startup launch preserves the same privacy boundary as manual launch: no cookies, no simulated login, no hidden APIs, and no prompt/response/source-code upload.
+- Startup launch preserves the same [privacy boundary](privacy.md) as manual launch.

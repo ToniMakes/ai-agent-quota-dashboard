@@ -2,9 +2,7 @@
 
 Last updated: 2026-08-25
 
-AI Agent Quota Dashboard uses an installer-first release path for Windows preview builds. The preferred signing path for the first formal desktop preview is SignPath Foundation open-source code signing.
-
-Free code signing provided by SignPath.io, certificate by SignPath Foundation.
+AI Agent Quota Dashboard uses an installer-first release path for Windows preview builds. The preferred signing path for the first formal desktop preview is SignPath Foundation open-source code signing: SignPath.io provides the signing service at no cost, with the certificate issued by SignPath Foundation.
 
 ## Release Intent
 
@@ -50,11 +48,7 @@ Signed Windows artifacts should enforce these metadata values:
 
 ## Privacy
 
-AIQD is local-first. It reads narrow local quota-related files from tools the user already runs and serves normalized data through `127.0.0.1`.
-
-AIQD does not upload prompts, responses, source code, chat content, credentials, cookies, session tokens, or raw local logs.
-
-See [Privacy](privacy.md) for the full privacy boundary.
+AIQD is local-first: it reads narrow local quota-related files from tools the user already runs and serves normalized data through `127.0.0.1`. See [Privacy](privacy.md) for the full data boundary.
 
 ## System Changes
 

@@ -1,6 +1,6 @@
 # Data Sources
 
-The project should only parse data that is explicit, local or official, and narrow enough to avoid prompts, responses, source code, and chat content.
+The project only parses data that is explicit, local, or official — structured CLI/API/UI-documented fields. See [Privacy](privacy.md) for what it never reads.
 
 Every source below depends on a local file or CLI output written by a desktop app or CLI (Codex CLI, Claude Code CLI, Claude Desktop). None of them can see usage for an account that only uses a browser-based product (claude.ai or chatgpt.com in a plain web browser, with no desktop app or CLI installed) — there is no local file for AIQD to read in that case.
 
@@ -53,7 +53,7 @@ Mapping:
 - `u.fh` -> `session_5h`, `u.sd` -> `weekly`
 - `t` (epoch ms) -> `observedAt`
 - source -> `local_quota_snapshot`, confidence -> `high`
-- `expiresAt` -> `observedAt` plus a fixed max-age window (a local freshness deadline only; no reset time is available in the file)
+- `expiresAt` -> `observedAt` plus a fixed max-age window (a local freshness deadline only — see the boundary notes below)
 
 Implementation boundary:
 
@@ -64,7 +64,8 @@ Implementation boundary:
 - Do not scrape the desktop UI.
 - Do not import cookies, session tokens, or browser storage.
 - Do not call hidden Claude endpoints.
-- Do not read prompts, responses, attachments, transcript paths, or source code.
+
+(See [Privacy](privacy.md) for the project-wide data boundary.)
 
 ## Claude Code
 
