@@ -139,6 +139,8 @@ v0.5: 浏览器插件读取网页可见 quota，但只做 opt-in
 
 ### 4.1 打包与开机启动决策
 
+（本节描述的行为已经实现并发布，不再是待定决策；当前权威说明见 [docs/distribution.md](distribution.md)，这里只保留原始设计动机供参考）
+
 v0.1 目标改为提供安装包或等价桌面发布 artifact。普通用户路径不应要求 `npm`、`node`、PowerShell 或源码 checkout；这些只保留在开发者文档里。
 
 packaged desktop 的开机启动已经放在两个位置：
@@ -954,7 +956,7 @@ It does not collect prompts, responses, source code, passwords, or session cooki
 中文：
 
 ```text
-本工具只读取你本机上已存在的使用统计、额度快照或官方状态输出。
+本工具只读取你本机上已存在的额度快照或官方状态输出。
 不会收集 prompt、回复内容、源代码、密码或浏览器 session。
 ```
 
@@ -967,13 +969,9 @@ It does not collect prompts, responses, source code, passwords, or session cooki
 - 每个网络请求都 opt-in
 - 导出 quota 数据时提醒是否包含账户信息
 
-不要做：
+不要做（完整清单见 [README Non-goals](../README.md#non-goals)，避免两处各写一遍）：
 
-- 自动读取浏览器 cookie
-- 自动模拟网页登录
-- 未经同意扫描任意目录
-- 把 prompt/response 上传到云
-- 夸大“官方准确”
+- 夸大"官方准确"
 
 ## 16. 建议的首页信息架构
 
