@@ -42,7 +42,7 @@ export function createI18n(getLanguage) {
     const labels = {
       official_api: tx("Official API", "官方 API"),
       official_cli: tx("Official CLI", "官方 CLI"),
-      official_statusline: tx("Claude Code statusline", "Claude Code 状态栏"),
+      official_statusline: tx("Claude Code", "Claude Code"),
       local_quota_snapshot: tx("Local snapshot", "本地快照"),
       local_usage_log: tx("Local log", "本地日志"),
       estimated: tx("Estimated", "估算"),

@@ -6,7 +6,7 @@
   "main": "desktop/main.cjs",
   "private": true,
   "homepage": "https://github.com/ToniMakes/ai-agent-quota-dashboard#readme",
-  "author": "Toni Liu",
+  "author": "ToniMakes",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ToniMakes/ai-agent-quota-dashboard.git"

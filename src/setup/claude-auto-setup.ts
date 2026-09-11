@@ -229,9 +229,9 @@ async function maybeWriteStatusline(options: {
     const step: ClaudeAutoSetupStep = {
       command: options.status.forceWriteCommand,
       id: "statusline",
-      label: "Claude Code statusline",
+      label: "Local usage capture",
       message:
-        "Claude Code already has a statusLine command, so AIQD did not replace it automatically.",
+        "Claude Code already has a custom setup for this, so AIQD did not replace it automatically.",
       state: "warn"
     };
 
@@ -252,15 +252,15 @@ async function maybeWriteStatusline(options: {
       command: result.command,
       detail: `Settings: ${result.settingsPath}\nShim: ${result.shimPath}`,
       id: "statusline",
-      label: "Claude Code statusline",
-      message: "AIQD statusline capture is installed.",
+      label: "Local usage capture",
+      message: "AIQD's local usage capture is installed.",
       state: "pass"
     };
   } catch (error) {
     return {
       id: "statusline",
-      label: "Claude Code statusline",
-      message: "AIQD could not write the Claude Code statusline setting.",
+      label: "Local usage capture",
+      message: "AIQD could not set up local usage capture for Claude Code.",
       detail: error instanceof Error ? error.message : String(error),
       state: "fail"
     };

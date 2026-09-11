@@ -18,9 +18,9 @@
           <h1>AI Agent Quota</h1>
           <p
             class="topbar-subtitle"
-            data-i18n-en="Track remaining quota and reset times for all your AI coding tools in one place."
-            data-i18n-zh="一个面板，掌握多个 AI 编程工具的剩余额度和重置时间。"
-          >Track remaining quota and reset times for all your AI coding tools in one place.</p>
+            data-i18n-en="Track remaining quota and reset times for all your AI tools in one place."
+            data-i18n-zh="一个面板，掌握多个 AI 工具的剩余额度和重置时间。"
+          >Track remaining quota and reset times for all your AI tools in one place.</p>
         </div>
         <div class="topbar-actions">
           <div id="topbar-startup-control" class="topbar-startup-control"></div>
@@ -102,12 +102,7 @@
         <div class="panel">
           <div class="panel-header">
             <div>
-              <h2 data-i18n-en="Setup Status" data-i18n-zh="设置状态">Setup Status</h2>
-              <p
-                class="panel-note"
-                data-i18n-en="Shows what's connected and what still needs setup."
-                data-i18n-zh="显示哪些已经连上，哪些还需要设置。"
-              >Shows what's connected and what still needs setup.</p>
+              <h2 data-i18n-en="Diagnostics" data-i18n-zh="诊断">Diagnostics</h2>
             </div>
             <span id="doctor-checklist-score" class="badge stale">--</span>
           </div>
@@ -115,23 +110,16 @@
         </div>
         <details class="panel advanced-settings-panel">
           <summary>
-            <span data-i18n-en="Raw diagnostics" data-i18n-zh="原始诊断信息">Raw diagnostics</span>
+            <span data-i18n-en="Technical report" data-i18n-zh="技术报告">Technical report</span>
             <small
-              data-i18n-en="Technical detail per source. Usually only needed when troubleshooting."
-              data-i18n-zh="每个数据源的技术细节，一般排障时才需要看。"
-            >Technical detail per source. Usually only needed when troubleshooting.</small>
+              data-i18n-en="Raw per-source detail and refresh log. For troubleshooting or bug reports."
+              data-i18n-zh="每个来源的原始细节和刷新记录，排障或提 bug 反馈时用。"
+            >Raw per-source detail and refresh log. For troubleshooting or bug reports.</small>
           </summary>
-          <div id="doctor-list" class="doctor-list"></div>
-        </details>
-        <details class="panel advanced-settings-panel">
-          <summary>
-            <span data-i18n-en="Refresh History" data-i18n-zh="刷新历史">Refresh History</span>
-            <small
-              data-i18n-en="Local refresh log. Usually not needed unless a refresh fails."
-              data-i18n-zh="本地刷新记录，一般只有刷新失败时才需要看。"
-            >Local refresh log. Usually not needed unless a refresh fails.</small>
-          </summary>
-          <div id="refresh-run-list" class="refresh-run-list"></div>
+          <div class="advanced-settings-body">
+            <div id="doctor-list" class="doctor-list"></div>
+            <div id="refresh-run-list" class="refresh-run-list"></div>
+          </div>
         </details>
       </section>
 
@@ -152,13 +140,13 @@
         </div>
         <div id="codex-connection-panel" class="panel settings-connection-panel">
           <div class="panel-header">
-            <h2 data-i18n-en="Codex Connection" data-i18n-zh="Codex 连接状态">Codex Connection</h2>
+            <h2>Codex</h2>
           </div>
           <div id="codex-snapshot-content" class="settings-content"></div>
         </div>
         <div id="claude-connection-panel" class="panel settings-connection-panel">
           <div class="panel-header">
-            <h2 data-i18n-en="Claude Connection" data-i18n-zh="Claude 连接状态">Claude Connection</h2>
+            <h2>Claude</h2>
           </div>
           <div id="settings-content" class="settings-content"></div>
         </div>
@@ -179,28 +167,6 @@
             <div id="agent-preferences-content" class="settings-content desktop-preference-content"></div>
           </details>
           <div id="startup-content" class="settings-content desktop-preference-content"></div>
-        </div>
-        <div id="feedback-panel" class="panel settings-preference-panel">
-          <div class="panel-header">
-            <div>
-              <h2 data-i18n-en="Feedback" data-i18n-zh="反馈">Feedback</h2>
-              <p
-                class="panel-note"
-                data-i18n-en="Report a bug or request a feature. Opens the public feedback board in your browser."
-                data-i18n-zh="报告 bug 或提功能需求，会在系统默认浏览器打开公开反馈面板。"
-              >Report a bug or request a feature. Opens the public feedback board in your browser.</p>
-            </div>
-          </div>
-          <div class="settings-content">
-            <a
-              class="button"
-              href="https://aiqd.board.tonimakes.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              data-i18n-en="Send Feedback"
-              data-i18n-zh="发送反馈"
-            >Send Feedback</a>
-          </div>
         </div>
         <details id="advanced-settings-panel" class="panel advanced-settings-panel">
           <summary>
@@ -248,6 +214,14 @@
           </div>
         </details>
       </section>
+
+      <p class="app-footer-note">
+        <span
+          data-i18n-en="Feedback or bug reports:"
+          data-i18n-zh="有反馈或 bug，欢迎发到："
+        >Feedback or bug reports:</span>
+        <a href="mailto:hello@tonimakes.com">hello@tonimakes.com</a>
+      </p>
     </main>
 
     <div id="first-run-onboarding-root" class="modal-root" hidden></div>

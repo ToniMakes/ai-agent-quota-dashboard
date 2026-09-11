@@ -62,6 +62,23 @@ button {
   padding: 28px 0 40px;
 }
 
+.app-footer-note {
+  margin-top: 28px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.app-footer-note a {
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.app-footer-note a:hover {
+  color: var(--text);
+}
+
 .topbar {
   display: flex;
   align-items: start;
@@ -453,6 +470,11 @@ h2 {
   gap: 10px;
 }
 
+.settings-content > .button,
+.settings-content > a.button {
+  justify-self: start;
+}
+
 .reset-list,
 .doctor-list,
 .event-list,
@@ -588,6 +610,21 @@ h2 {
 
 .desktop-preferences-panel .panel-header {
   margin-bottom: 6px;
+}
+
+.desktop-preferences-panel > * + * {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+/* The title is a section heading, not a peer row - no divider under it,
+   just spacing, so it reads as "Desktop Preferences" containing the two
+   rows below rather than a third row alongside them. */
+.desktop-preferences-panel > .panel-header + * {
+  margin-top: 10px;
+  padding-top: 0;
+  border-top: none;
 }
 
 .desktop-preference-content + .desktop-preference-content {
@@ -1701,33 +1738,6 @@ h2 {
   margin-top: 12px;
 }
 
-.optional-settings-details {
-  margin-top: 12px;
-  padding: 10px 0;
-  border-top: 1px solid var(--border);
-}
-
-.optional-settings-details summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  cursor: pointer;
-  color: var(--text);
-  font-weight: 800;
-}
-
-.optional-settings-details summary small {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-align: right;
-}
-
-.optional-settings-body {
-  margin-top: 12px;
-}
-
 .setup-flow {
   display: grid;
   gap: 10px;
@@ -1969,12 +1979,6 @@ h2 {
   color: var(--text);
   font-size: 0.86rem;
   white-space: pre;
-}
-
-.inline-command-list {
-  display: grid;
-  gap: 8px;
-  margin-top: 8px;
 }
 
 .inline-command {

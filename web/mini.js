@@ -485,8 +485,8 @@ function footerState() {
       kind: "info",
       target: "settings-content",
       text: state.setupStatus?.statusLineManagedByApp
-        ? tx("Watching Claude Code for rate_limits", "正在监听 Claude Code rate_limits")
-        : tx("Claude Code setup needed", "需要设置 Claude Code"),
+        ? tx("Claude listening", "正在监听 Claude")
+        : tx("Claude setup needed", "需要设置 Claude"),
       title: latestRun ? refreshRunTitle(latestRun) : undefined
     };
   }
@@ -686,8 +686,8 @@ function strictReadinessProgress() {
     ready,
     target: target.target,
     title: tx(
-      "{ready}/{total} strict trial checks ready. Missing: {missing}.",
-      "{ready}/{total} 项严格试用检查就绪。缺少：{missing}。",
+      "{ready}/{total} ready. Missing: {missing}.",
+      "{ready}/{total} 已就绪。缺少：{missing}。",
       {
         missing: missingText,
         ready,
@@ -859,22 +859,22 @@ function emptyStateGuidance(agent) {
   if (agent.agent === "codex") {
     return {
       action: "settings",
-      actionLabel: tx("Save /status", "保存 /status"),
-      detail: tx("Paste visible quota + reset", "粘贴可见额度和重置时间"),
-      label: tx("setup 1", "设置 1"),
+      actionLabel: tx("Settings", "设置"),
+      detail: tx("Use Codex once, then refresh", "先用一次 Codex，然后刷新"),
+      label: tx("setup", "设置"),
       target: "codex-snapshot-content",
-      title: tx("Codex /status needed", "需要 Codex /status")
+      title: tx("Codex needs setup", "Codex 需要设置")
     };
   }
 
   if (agent.agent === "claude-code") {
     return {
       action: "settings",
-      actionLabel: tx("Install setup", "安装设置"),
-      detail: tx("Connect Claude Code's statusline, or use Claude Desktop instead", "连接 Claude Code 的状态栏，或改用 Claude Desktop"),
-      label: tx("setup 2", "设置 2"),
+      actionLabel: tx("Settings", "设置"),
+      detail: tx("Set up Claude Code, or use Claude Desktop instead", "设置 Claude Code，或改用 Claude Desktop"),
+      label: tx("setup", "设置"),
       target: "settings-content",
-      title: tx("Claude statusline needed", "需要 Claude 状态栏")
+      title: tx("Claude needs setup", "Claude 需要设置")
     };
   }
 
