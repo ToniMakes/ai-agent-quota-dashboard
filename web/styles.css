@@ -609,27 +609,25 @@ h2 {
 }
 
 .desktop-preferences-panel .panel-header {
-  margin-bottom: 6px;
+  margin-bottom: 12px;
 }
 
-.desktop-preferences-panel > * + * {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
+/* The two preference rows live inside their own recessed, bordered
+   group - visually distinct from the "Desktop Preferences" title above
+   it - so the title reads as a heading over the group, not a third row
+   alongside "Which apps to show" / "Launch at startup". */
+.preference-group {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
 }
 
-/* The title is a section heading, not a peer row - no divider under it,
-   just spacing, so it reads as "Desktop Preferences" containing the two
-   rows below rather than a third row alongside them. */
-.desktop-preferences-panel > .panel-header + * {
-  margin-top: 10px;
-  padding-top: 0;
-  border-top: none;
+.preference-group > details,
+.preference-group > .desktop-preference-content {
+  padding: 14px 16px;
 }
 
-.desktop-preference-content + .desktop-preference-content {
-  margin-top: 2px;
-  padding-top: 8px;
+.preference-group > * + * {
   border-top: 1px solid var(--border);
 }
 
@@ -662,7 +660,7 @@ h2 {
 
 .preference-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 480px) auto;
   gap: 16px;
   align-items: center;
   min-height: 58px;
@@ -1821,7 +1819,7 @@ h2 {
 .setup-next-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
   padding: 12px 0;
   border-top: 1px solid var(--border);
