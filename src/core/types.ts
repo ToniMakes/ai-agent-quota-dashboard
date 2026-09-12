@@ -81,6 +81,19 @@ export type QuotaSnapshot = {
   rawSourceRef?: string;
 };
 
+export type CodexResetCredit = {
+  provider: "openai";
+  agent: "codex";
+  resetType: "codexRateLimits";
+  title: string;
+  status: "available";
+  grantedAt?: string;
+  expiresAt: string;
+  observedAt: string;
+  source: SourceKind;
+  confidence: ConfidenceLevel;
+};
+
 export type QuotaSnapshotView = QuotaSnapshot & {
   freshness: SnapshotFreshness;
 };
@@ -135,6 +148,7 @@ export type AgentSummary = {
   snapshots: QuotaSnapshotView[];
   doctorStatus: DoctorStatus;
   lastObservedAt?: string;
+  resetCredits?: CodexResetCredit[];
 };
 
 export type AgentEmptyStateReason =

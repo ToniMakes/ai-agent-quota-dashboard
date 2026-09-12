@@ -147,6 +147,35 @@ describe("AgentQuotaService supported windows", () => {
   });
 });
 
+describe("AgentQuotaService Codex reset credits", () => {
+  it("attaches current Codex reset credits to the Codex agent summary", async () => {
+    await withStore(async (store) => {
+      store.replaceCodexResetCredits([
+        {
+          provider: "openai",
+          agent: "codex",
+          resetType: "codexRateLimits",
+          title: "Full reset",
+          status: "available",
+          expiresAt: "2999-01-01T00:00:00.000Z",
+          observedAt: "2026-08-21T00:23:00.000Z",
+          source: "official_cli",
+          confidence: "official"
+        }
+      ]);
+
+      const service = new AgentQuotaService(
+        createRegistry(codexManifest),
+        store
+      );
+      const agents = service.listAgents();
+
+      assert.equal(agents[0]?.resetCredits?.length, 1);
+      assert.equal(agents[0]?.resetCredits?.[0]?.title, "Full reset");
+    });
+  });
+});
+
 async function withStore(
   callback: (store: SqliteStore) => Promise<void>
 ): Promise<void> {

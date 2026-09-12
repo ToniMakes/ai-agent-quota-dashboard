@@ -117,6 +117,21 @@ describe("Codex adapter paths", () => {
         sessionPath,
         [
           JSON.stringify({
+            timestamp: "2026-08-10T09:25:00.000Z",
+            result: {
+              rateLimitResetCredits: {
+                credits: [
+                  {
+                    resetType: "codexRateLimits",
+                    status: "available",
+                    expiresAt: "2026-08-20T00:00:00.000Z",
+                    title: "Old reset"
+                  }
+                ]
+              }
+            }
+          }),
+          JSON.stringify({
             timestamp: "2026-08-10T09:30:00.000Z",
             type: "event_msg",
             payload: {
@@ -151,6 +166,35 @@ describe("Codex adapter paths", () => {
                 },
                 secondary: null,
                 plan_type: "pro"
+              }
+            }
+          }),
+          JSON.stringify({
+            timestamp: "2026-08-10T09:36:00.000Z",
+            result: {
+              rateLimitResetCredits: {
+                availableCount: 2,
+                credits: [
+                  {
+                    resetType: "codexRateLimits",
+                    status: "available",
+                    grantedAt: "2026-08-01T00:00:00.000Z",
+                    expiresAt: "2026-08-18T00:00:00.000Z",
+                    title: "Full reset"
+                  },
+                  {
+                    resetType: "codexRateLimits",
+                    status: "available",
+                    expiresAt: "2026-08-19T00:00:00.000Z",
+                    title: "Full reset"
+                  },
+                  {
+                    resetType: "codexRateLimits",
+                    status: "used",
+                    expiresAt: "2026-08-20T00:00:00.000Z",
+                    title: "Full reset"
+                  }
+                ]
               }
             }
           })
@@ -193,6 +237,10 @@ describe("Codex adapter paths", () => {
       assert.equal(weeklyWindow?.remainingPercent, 39);
       assert.equal(weeklyWindow?.source, "official_cli");
       assert.equal(weeklyWindow?.observedAt, "2026-08-10T09:35:00.000Z");
+      assert.equal(result.resetCredits?.length, 2);
+      assert.equal(result.resetCredits?.[0]?.title, "Full reset");
+      assert.equal(result.resetCredits?.[0]?.expiresAt, "2026-08-18T00:00:00.000Z");
+      assert.equal(result.resetCredits?.[1]?.expiresAt, "2026-08-19T00:00:00.000Z");
       assert.equal(
         result.doctorChecks.find((check) => check.id === "codex:quota-source")
           ?.status,

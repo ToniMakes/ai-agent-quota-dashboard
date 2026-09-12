@@ -1,5 +1,6 @@
 import type {
   AgentManifest,
+  CodexResetCredit,
   DoctorCheck,
   QuotaSnapshot,
   UsageEvent
@@ -20,6 +21,7 @@ export type CommonAdapterOptions = {
 
 export type AdapterScanResult = {
   snapshots: QuotaSnapshot[];
+  resetCredits?: CodexResetCredit[];
   usageEvents: UsageEvent[];
   doctorChecks: DoctorCheck[];
 };

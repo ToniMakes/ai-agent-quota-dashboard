@@ -5,7 +5,11 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { describe, it } from "node:test";
 import { SqliteStore } from "./sqlite-store.js";
-import type { QuotaSnapshot, RefreshResult } from "../core/types.js";
+import type {
+  CodexResetCredit,
+  QuotaSnapshot,
+  RefreshResult
+} from "../core/types.js";
 
 const firstSnapshot: QuotaSnapshot = {
   provider: "openai",
@@ -35,7 +39,7 @@ describe("SqliteStore migrations", () => {
 
       assert.deepEqual(
         rows.map((row) => row.version),
-        [1, 2]
+        [1, 2, 3]
       );
     } finally {
       store.close();
@@ -123,6 +127,57 @@ describe("SqliteStore migrations", () => {
       const runs = store.listRefreshRuns();
 
       assert.equal(runs[0]?.resetEventsSaved, 3);
+    } finally {
+      store.close();
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+});
+
+describe("SqliteStore Codex reset credits", () => {
+  it("replaces and lists only currently available Codex reset credits", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-store-"));
+    const store = new SqliteStore(join(directory, "quota.db"));
+    const credits: CodexResetCredit[] = [
+      {
+        provider: "openai",
+        agent: "codex",
+        resetType: "codexRateLimits",
+        title: "Full reset",
+        status: "available",
+        grantedAt: "2026-08-01T00:00:00.000Z",
+        expiresAt: "2026-08-20T00:00:00.000Z",
+        observedAt: "2026-08-10T00:00:00.000Z",
+        source: "official_cli",
+        confidence: "official"
+      },
+      {
+        provider: "openai",
+        agent: "codex",
+        resetType: "codexRateLimits",
+        title: "Full reset",
+        status: "available",
+        expiresAt: "2026-08-09T00:00:00.000Z",
+        observedAt: "2026-08-10T00:00:00.000Z",
+        source: "official_cli",
+        confidence: "official"
+      }
+    ];
+
+    try {
+      assert.equal(store.replaceCodexResetCredits(credits), 2);
+
+      const listed = store.listCodexResetCredits(
+        new Date("2026-08-10T01:00:00.000Z")
+      );
+
+      assert.equal(listed.length, 1);
+      assert.equal(listed[0]?.title, "Full reset");
+      assert.equal(listed[0]?.grantedAt, "2026-08-01T00:00:00.000Z");
+      assert.equal(listed[0]?.expiresAt, "2026-08-20T00:00:00.000Z");
+
+      store.replaceCodexResetCredits([]);
+      assert.deepEqual(store.listCodexResetCredits(), []);
     } finally {
       store.close();
       await rm(directory, { force: true, recursive: true });

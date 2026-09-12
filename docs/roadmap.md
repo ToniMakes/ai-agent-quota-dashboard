@@ -1,6 +1,6 @@
 # Roadmap
 
-Last updated: 2026-08-26
+Last updated: 2026-09-12
 
 ## Current Milestone: Signed Follow-Up Release
 
@@ -14,6 +14,7 @@ Last updated: 2026-08-26
 - Claude Code setup helper, readiness checks, and first-data waiting states
 - Codex structured quota parser and automatic local CLI `rate_limits` detection
 - Manual Codex visible-status fallback with expiry at reported reset time
+- Read-only Codex reset-credit display and in-app expiry reminders when structured local Codex data exposes current reset credits
 - SQLite snapshot, reset event, and refresh run storage
 - Localhost Web Dashboard, Diagnostics, Settings, reset timeline, and refresh history
 - Source confidence, stale state, low quota state, and reported-reset labels

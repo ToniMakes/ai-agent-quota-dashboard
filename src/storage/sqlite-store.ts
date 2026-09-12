@@ -2,6 +2,7 @@ import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import type {
+  CodexResetCredit,
   DoctorCheck,
   QuotaSnapshot,
   RefreshRun,
@@ -70,6 +71,17 @@ type RefreshRunRow = {
   errors_json: string;
 };
 
+type CodexResetCreditRow = {
+  title: string;
+  reset_type: string;
+  status: string;
+  granted_at: string | null;
+  expires_at: string;
+  observed_at: string;
+  source: string;
+  confidence: string;
+};
+
 type SaveQuotaSnapshotsResult = {
   resetEventsSaved: number;
   snapshotsSaved: number;
@@ -92,7 +104,8 @@ export class SqliteStore {
     this.database.exec("PRAGMA busy_timeout = 5000;");
     this.migrations = [
       { version: 1, run: () => this.createBaseSchema() },
-      { version: 2, run: () => this.ensureRefreshRunsResetEventsColumn() }
+      { version: 2, run: () => this.ensureRefreshRunsResetEventsColumn() },
+      { version: 3, run: () => this.ensureCodexResetCreditsTable() }
     ];
     this.migrate();
   }
@@ -232,6 +245,22 @@ export class SqliteStore {
 
       CREATE INDEX IF NOT EXISTS reset_events_agent_time_idx
         ON reset_events(provider, agent, observed_at DESC);
+
+      CREATE TABLE IF NOT EXISTS codex_reset_credits (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        reset_type TEXT NOT NULL,
+        status TEXT NOT NULL,
+        granted_at TEXT,
+        expires_at TEXT NOT NULL,
+        observed_at TEXT NOT NULL,
+        source TEXT NOT NULL,
+        confidence TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS codex_reset_credits_expires_idx
+        ON codex_reset_credits(expires_at ASC);
     `);
   }
 
@@ -402,6 +431,45 @@ export class SqliteStore {
     }
   }
 
+  replaceCodexResetCredits(credits: CodexResetCredit[]): number {
+    this.database.exec("BEGIN;");
+
+    try {
+      this.database.exec("DELETE FROM codex_reset_credits;");
+      const statement = this.database.prepare(`
+        INSERT INTO codex_reset_credits (
+          title,
+          reset_type,
+          status,
+          granted_at,
+          expires_at,
+          observed_at,
+          source,
+          confidence
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      for (const credit of credits) {
+        statement.run(
+          credit.title,
+          credit.resetType,
+          credit.status,
+          credit.grantedAt ?? null,
+          credit.expiresAt,
+          credit.observedAt,
+          credit.source,
+          credit.confidence
+        );
+      }
+
+      this.database.exec("COMMIT;");
+      return credits.length;
+    } catch (error) {
+      this.database.exec("ROLLBACK;");
+      throw error;
+    }
+  }
+
   replaceDoctorChecks(checks: DoctorCheck[]): number {
     this.database.exec("BEGIN;");
 
@@ -559,6 +627,25 @@ export class SqliteStore {
     return rows.map(mapResetEventRow);
   }
 
+  listCodexResetCredits(now = new Date()): CodexResetCredit[] {
+    const rows = this.database.prepare(`
+      SELECT
+        title,
+        reset_type,
+        status,
+        granted_at,
+        expires_at,
+        observed_at,
+        source,
+        confidence
+      FROM codex_reset_credits
+      WHERE status = 'available' AND expires_at > ?
+      ORDER BY expires_at ASC, id ASC;
+    `).all(now.toISOString()) as CodexResetCreditRow[];
+
+    return rows.map(mapCodexResetCreditRow);
+  }
+
   listRefreshRuns(limit = 10): RefreshRun[] {
     const rows = this.database.prepare(`
       SELECT
@@ -628,6 +715,26 @@ export class SqliteStore {
       );
     }
   }
+
+  private ensureCodexResetCreditsTable(): void {
+    this.database.exec(`
+      CREATE TABLE IF NOT EXISTS codex_reset_credits (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        reset_type TEXT NOT NULL,
+        status TEXT NOT NULL,
+        granted_at TEXT,
+        expires_at TEXT NOT NULL,
+        observed_at TEXT NOT NULL,
+        source TEXT NOT NULL,
+        confidence TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS codex_reset_credits_expires_idx
+        ON codex_reset_credits(expires_at ASC);
+    `);
+  }
 }
 
 function mapSnapshotRow(row: SnapshotRow): QuotaSnapshot {
@@ -681,6 +788,26 @@ function mapResetEventRow(row: ResetEventRow): ResetEvent {
   }
 
   return event;
+}
+
+function mapCodexResetCreditRow(row: CodexResetCreditRow): CodexResetCredit {
+  const credit: CodexResetCredit = {
+    provider: "openai",
+    agent: "codex",
+    resetType: row.reset_type as CodexResetCredit["resetType"],
+    title: row.title,
+    status: "available",
+    expiresAt: row.expires_at,
+    observedAt: row.observed_at,
+    source: row.source as CodexResetCredit["source"],
+    confidence: row.confidence as CodexResetCredit["confidence"]
+  };
+
+  if (row.granted_at !== null) {
+    credit.grantedAt = row.granted_at;
+  }
+
+  return credit;
 }
 
 function mapRefreshRunRow(row: RefreshRunRow): RefreshRun {

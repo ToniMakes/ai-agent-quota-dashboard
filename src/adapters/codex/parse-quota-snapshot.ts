@@ -14,6 +14,7 @@ import {
   readString
 } from "../parse-utils.js";
 import type {
+  CodexResetCredit,
   QuotaSnapshot,
   QuotaUnit,
   QuotaWindowType,
@@ -36,6 +37,21 @@ export function parseCodexQuotaSnapshots(
 
     return extractCodexQuotaCandidates(document)
       .flatMap((candidate) => normalizeCodexQuotaCandidate(candidate, options));
+  });
+}
+
+export function parseCodexResetCredits(
+  text: string,
+  options: ParseCodexQuotaSnapshotOptions
+): CodexResetCredit[] {
+  return parseJsonDocuments(text).flatMap((document) => {
+    if (!isRecord(document)) {
+      return [];
+    }
+
+    return extractCodexResetCreditContainers(document).flatMap((container) =>
+      normalizeCodexResetCreditContainer(container, document, options)
+    );
   });
 }
 
@@ -117,6 +133,98 @@ function extractRateLimitCandidatesFromContainer(
   }
 
   return candidates;
+}
+
+function extractCodexResetCreditContainers(
+  document: Record<string, unknown>
+): Record<string, unknown>[] {
+  const containers: Record<string, unknown>[] = [];
+
+  for (const container of [
+    document,
+    readRecord(document, ["result"]),
+    readRecord(document, ["params"]),
+    readRecord(document, ["payload"])
+  ]) {
+    if (!container) {
+      continue;
+    }
+
+    const resetCredits = readRecord(container, [
+      "rateLimitResetCredits",
+      "rate_limit_reset_credits",
+      "resetCredits",
+      "reset_credits"
+    ]);
+
+    if (resetCredits) {
+      containers.push(resetCredits);
+    }
+  }
+
+  return containers;
+}
+
+function normalizeCodexResetCreditContainer(
+  container: Record<string, unknown>,
+  document: Record<string, unknown>,
+  options: ParseCodexQuotaSnapshotOptions
+): CodexResetCredit[] {
+  const observedAt =
+    readResetAt(document, ["timestamp", "observed_at", "observedAt"]) ??
+    options.observedAt.toISOString();
+  const credits = Array.isArray(container.credits) ? container.credits : [];
+
+  return credits.flatMap((credit) => {
+    if (!isRecord(credit)) {
+      return [];
+    }
+
+    const status = readString(credit, ["status"])?.trim().toLowerCase();
+    const resetType = readString(credit, ["resetType", "reset_type"]);
+    const expiresAt = readResetAt(credit, ["expiresAt", "expires_at"]);
+
+    if (
+      status !== "available" ||
+      !isCodexRateLimitResetType(resetType) ||
+      !expiresAt
+    ) {
+      return [];
+    }
+
+    const source = readCodexResetCreditSource(container);
+    const resetCredit: CodexResetCredit = {
+      provider: "openai",
+      agent: "codex",
+      resetType: "codexRateLimits",
+      title: readString(credit, ["title"]) ?? "Full reset",
+      status: "available",
+      expiresAt,
+      observedAt,
+      source,
+      confidence: confidenceForSource(source)
+    };
+    const grantedAt = readResetAt(credit, ["grantedAt", "granted_at"]);
+
+    if (grantedAt) {
+      resetCredit.grantedAt = grantedAt;
+    }
+
+    return [resetCredit];
+  });
+}
+
+function isCodexRateLimitResetType(value: string | undefined): boolean {
+  return value?.trim().toLowerCase().replaceAll("_", "") === "codexratelimits";
+}
+
+function readCodexResetCreditSource(
+  container: Record<string, unknown>
+): SourceKind {
+  return (
+    mapSourceKind(readString(container, ["source", "source_kind", "sourceKind"])) ??
+    "official_cli"
+  );
 }
 
 function extractCodexRateLimitCandidates(

@@ -389,6 +389,21 @@ button {
   line-height: 1.15;
 }
 
+.mini-reset-credit {
+  margin-top: 5px;
+  overflow: hidden;
+  color: var(--accent-strong);
+  font-size: 0.66rem;
+  font-weight: 760;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-reset-credit.warning {
+  color: var(--warning);
+}
+
 .mini-empty-state {
   display: grid;
   gap: 3px;

@@ -538,6 +538,108 @@ h2 {
   padding-top: 0;
 }
 
+.reset-credit-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.reset-credit-panel.warning {
+  border-color: color-mix(in srgb, var(--warning) 46%, var(--border));
+  background: color-mix(in srgb, var(--warning) 8%, var(--bg));
+}
+
+.reset-credit-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.reset-credit-header > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.reset-credit-header strong,
+.reset-credit-header span,
+.reset-credit-row span,
+.reset-credit-row time,
+.reset-credit-warning,
+.reset-credit-empty {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reset-credit-header strong {
+  font-size: 0.92rem;
+}
+
+.reset-credit-header > div > span,
+.reset-credit-empty {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.reset-credit-warning {
+  color: var(--warning);
+  font-size: 0.82rem;
+  font-weight: 720;
+}
+
+.reset-credit-list {
+  display: grid;
+  gap: 8px;
+}
+
+.reset-credit-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 12px;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.reset-credit-row:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.reset-credit-row span {
+  color: var(--text);
+  font-weight: 720;
+  white-space: nowrap;
+}
+
+.reset-credit-row time {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.reset-credit-days-row .preference-control {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.reset-credit-days-input {
+  width: 72px;
+  min-height: 34px;
+  padding: 0 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 720;
+}
+
 .toggle-row {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr);
@@ -2252,6 +2354,8 @@ h2 {
   .doctor-row,
   .event-row,
   .refresh-run-row,
+  .reset-credit-header,
+  .reset-credit-row,
   .onboarding-guide,
   .current-step-panel,
   .guided-step,
@@ -2280,6 +2384,7 @@ h2 {
 
   .quota-window-remaining,
   .primary-quota-meta time,
+  .reset-credit-row time,
   .quota-window-meta time {
     text-align: left;
   }

@@ -13,6 +13,8 @@ export const claudeDesktopAgentId = "claude-desktop";
 
 export const languageStorageKey = "aiqd.language";
 export const defaultLanguage = "en";
+export const codexResetCreditReminderStorageKey =
+  "aiqd:codex-reset-credit-reminder:v1";
 
 export function resolveInitialLanguage() {
   const savedLanguage = window.localStorage?.getItem(languageStorageKey);
@@ -258,6 +260,71 @@ export function staleReasonLabel(snapshot, tx) {
   }
 
   return tx("needs fresh data", "需要新数据");
+}
+
+export function defaultCodexResetCreditReminderPreferences() {
+  return {
+    enabled: false,
+    daysBefore: 3
+  };
+}
+
+export function normalizeCodexResetCreditReminderPreferences(value) {
+  const fallback = defaultCodexResetCreditReminderPreferences();
+  const preferences = value && typeof value === "object" ? value : {};
+  const rawDays = Number(preferences.daysBefore);
+  const daysBefore = Number.isFinite(rawDays)
+    ? Math.round(clamp(rawDays, 1, 30))
+    : fallback.daysBefore;
+
+  return {
+    enabled: preferences.enabled === true,
+    daysBefore
+  };
+}
+
+export function availableCodexResetCredits(credits, nowMs = Date.now()) {
+  return (Array.isArray(credits) ? credits : [])
+    .filter((credit) => {
+      const expiresAtMs = Date.parse(credit?.expiresAt);
+
+      return (
+        credit?.status === "available" &&
+        credit?.resetType === "codexRateLimits" &&
+        Number.isFinite(expiresAtMs) &&
+        expiresAtMs > nowMs
+      );
+    })
+    .slice()
+    .sort((left, right) => Date.parse(left.expiresAt) - Date.parse(right.expiresAt));
+}
+
+export function codexResetCreditReminderState(
+  credits,
+  preferences,
+  nowMs = Date.now()
+) {
+  const activeCredits = availableCodexResetCredits(credits, nowMs);
+  const normalized = normalizeCodexResetCreditReminderPreferences(preferences);
+  const nextCredit = activeCredits[0];
+  const nextExpiresAtMs = nextCredit ? Date.parse(nextCredit.expiresAt) : undefined;
+  const daysUntilNext =
+    typeof nextExpiresAtMs === "number"
+      ? Math.max(0, Math.ceil((nextExpiresAtMs - nowMs) / 86_400_000))
+      : undefined;
+  const withinReminder =
+    normalized.enabled &&
+    typeof daysUntilNext === "number" &&
+    daysUntilNext <= normalized.daysBefore;
+
+  return {
+    count: activeCredits.length,
+    credits: activeCredits,
+    daysUntilNext,
+    nextCredit,
+    preferences: normalized,
+    withinReminder
+  };
 }
 
 export function readinessDisplayName(check, language) {

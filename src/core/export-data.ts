@@ -135,6 +135,9 @@ export function sanitizeAgentSummary(agent: AgentSummary): PublicAgentSummary {
   if (agent.lastObservedAt !== undefined) {
     sanitized.lastObservedAt = agent.lastObservedAt;
   }
+  if (agent.resetCredits !== undefined) {
+    sanitized.resetCredits = agent.resetCredits;
+  }
 
   return sanitized;
 }

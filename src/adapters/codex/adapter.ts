@@ -12,8 +12,15 @@ import {
   defaultCodexManualSnapshotPath,
   defaultCodexSnapshotDir
 } from "../../config/paths.js";
-import type { DoctorCheck, QuotaSnapshot } from "../../core/types.js";
-import { parseCodexQuotaSnapshots } from "./parse-quota-snapshot.js";
+import type {
+  CodexResetCredit,
+  DoctorCheck,
+  QuotaSnapshot
+} from "../../core/types.js";
+import {
+  parseCodexQuotaSnapshots,
+  parseCodexResetCredits
+} from "./parse-quota-snapshot.js";
 
 export type CodexAdapterOptions = CommonAdapterOptions & {
   includeDefaultDataPaths?: boolean;
@@ -30,6 +37,11 @@ type CodexSessionLogCandidate = {
   path: string;
   mtimeMs: number;
   size: number;
+};
+
+type CodexScanData = {
+  resetCredits: CodexResetCredit[];
+  snapshots: QuotaSnapshot[];
 };
 
 const maxCodexSessionDepth = 5;
@@ -56,12 +68,16 @@ export function createCodexAdapter(options: CodexAdapterOptions): AgentAdapter {
       const checks: DoctorCheck[] = [];
       const inspections = await Promise.all(defaultDataPaths.map(inspectPath));
       const readableRoots = inspections.filter((inspection) => inspection.readable);
-      const snapshots = options.demoMode
-        ? [createDemoCodexSnapshot(context.now)]
-        : await readCodexQuotaSnapshots(
+      const scanData = options.demoMode
+        ? {
+            resetCredits: [],
+            snapshots: [createDemoCodexSnapshot(context.now)]
+          }
+        : await readCodexData(
             readableRoots.map((inspection) => inspection.path),
             context
           );
+      const { resetCredits, snapshots } = scanData;
 
       for (const inspection of inspections) {
         checks.push({
@@ -94,6 +110,7 @@ export function createCodexAdapter(options: CodexAdapterOptions): AgentAdapter {
 
       return {
         snapshots,
+        resetCredits,
         usageEvents: [],
         doctorChecks: checks
       };
@@ -118,10 +135,10 @@ export function resolveCodexDataPaths(configuredDataPaths: string[] = []): strin
   return resolveDataPaths(getDefaultCodexDataPaths(), configuredDataPaths);
 }
 
-async function readCodexQuotaSnapshots(
+async function readCodexData(
   roots: string[],
   context: AdapterScanContext
-): Promise<QuotaSnapshot[]> {
+): Promise<CodexScanData> {
   const structuredCandidates = await findReadableCandidateFiles(roots, {
     namePattern:
       /(?:quota|snapshot|status|usage[-_]?limits?|limits?).*\.(?:jsonl?|txt)$/i
@@ -132,15 +149,26 @@ async function readCodexQuotaSnapshots(
     ...sessionCandidates
   ]);
 
-  return bestSnapshotPerWindow(
-    candidates.flatMap((candidate) =>
-      parseCodexQuotaSnapshots(candidate.content, {
-        observedAt: context.now,
-        rawSourceRef: candidate.path
-      })
+  return {
+    resetCredits: latestAvailableResetCredits(
+      candidates.flatMap((candidate) =>
+        parseCodexResetCredits(candidate.content, {
+          observedAt: context.now,
+          rawSourceRef: candidate.path
+        })
+      ),
+      context.now
     ),
-    context.now
-  );
+    snapshots: bestSnapshotPerWindow(
+      candidates.flatMap((candidate) =>
+        parseCodexQuotaSnapshots(candidate.content, {
+          observedAt: context.now,
+          rawSourceRef: candidate.path
+        })
+      ),
+      context.now
+    )
+  };
 }
 
 async function findCodexSessionLogCandidates(
@@ -306,6 +334,52 @@ function isExpiredByReset(snapshot: QuotaSnapshot, now: Date): boolean {
   const expiresAtMs = expiresAt ? Date.parse(expiresAt) : undefined;
 
   return typeof expiresAtMs === "number" && expiresAtMs <= now.getTime();
+}
+
+function latestAvailableResetCredits(
+  credits: CodexResetCredit[],
+  now: Date
+): CodexResetCredit[] {
+  const activeCredits = credits.filter((credit) => {
+    const expiresAtMs = Date.parse(credit.expiresAt);
+    return Number.isFinite(expiresAtMs) && expiresAtMs > now.getTime();
+  });
+
+  if (activeCredits.length === 0) {
+    return [];
+  }
+
+  const latestObservedAt = Math.max(
+    ...activeCredits
+      .map((credit) => Date.parse(credit.observedAt))
+      .filter((timestamp) => Number.isFinite(timestamp))
+  );
+
+  return dedupeResetCredits(
+    activeCredits.filter(
+      (credit) => Date.parse(credit.observedAt) === latestObservedAt
+    )
+  ).sort((left, right) => Date.parse(left.expiresAt) - Date.parse(right.expiresAt));
+}
+
+function dedupeResetCredits(credits: CodexResetCredit[]): CodexResetCredit[] {
+  const seen = new Set<string>();
+
+  return credits.filter((credit) => {
+    const key = [
+      credit.resetType,
+      credit.title,
+      credit.grantedAt ?? "",
+      credit.expiresAt
+    ].join(":");
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
 }
 
 function sourcePriority(source: string): number {

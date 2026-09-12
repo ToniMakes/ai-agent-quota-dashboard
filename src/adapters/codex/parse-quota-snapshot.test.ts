@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, it } from "node:test";
-import { parseCodexQuotaSnapshots } from "./parse-quota-snapshot.js";
+import {
+  parseCodexQuotaSnapshots,
+  parseCodexResetCredits
+} from "./parse-quota-snapshot.js";
 
 const fixturesDir = join(
   process.cwd(),
@@ -151,5 +154,69 @@ describe("parseCodexQuotaSnapshots", () => {
     );
 
     assert.deepEqual(snapshots, []);
+  });
+});
+
+describe("parseCodexResetCredits", () => {
+  it("parses available Codex reset credits from app-server response shapes", () => {
+    const credits = parseCodexResetCredits(
+      JSON.stringify({
+        timestamp: "2026-09-12T12:00:00.000Z",
+        result: {
+          rateLimitResetCredits: {
+            availableCount: 2,
+            credits: [
+              {
+                id: "RateLimitResetCredit_private",
+                resetType: "codexRateLimits",
+                status: "available",
+                grantedAt: 1787357865,
+                expiresAt: 1789949865,
+                title: "Full reset"
+              },
+              {
+                resetType: "codexRateLimits",
+                status: "used",
+                expiresAt: 1789949865,
+                title: "Full reset"
+              }
+            ]
+          }
+        }
+      }),
+      { observedAt }
+    );
+
+    assert.equal(credits.length, 1);
+    assert.equal(credits[0]?.provider, "openai");
+    assert.equal(credits[0]?.agent, "codex");
+    assert.equal(credits[0]?.resetType, "codexRateLimits");
+    assert.equal(credits[0]?.status, "available");
+    assert.equal(credits[0]?.title, "Full reset");
+    assert.equal(credits[0]?.grantedAt, "2026-08-22T00:17:45.000Z");
+    assert.equal(credits[0]?.expiresAt, "2026-09-21T00:17:45.000Z");
+    assert.equal(credits[0]?.observedAt, "2026-09-12T12:00:00.000Z");
+    assert.equal(credits[0]?.source, "official_cli");
+    assert.equal(Object.hasOwn(credits[0] ?? {}, "id"), false);
+  });
+
+  it("ignores non-Codex reset credit records", () => {
+    const credits = parseCodexResetCredits(
+      JSON.stringify({
+        rateLimitResetCredits: {
+          credits: [
+            {
+              resetType: "otherRateLimits",
+              status: "available",
+              expiresAt: "2026-09-20T00:00:00.000Z",
+              title: "Full reset"
+            }
+          ]
+        }
+      }),
+      { observedAt }
+    );
+
+    assert.deepEqual(credits, []);
   });
 });

@@ -6,6 +6,10 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ## [Unreleased]
 
+### Added
+
+- Added read-only Codex reset credit parsing, storage, dashboard details, mini-panel summary, and in-app expiry reminders
+
 ### Changed
 
 - Renamed the Doctor tab to Diagnostics and rewrote its checklist and Settings setup copy for non-technical users

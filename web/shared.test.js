@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  availableCodexResetCredits,
   buildDisplayAgents,
+  codexResetCreditReminderState,
   clamp,
   createI18n,
   defaultLanguage,
@@ -14,6 +16,7 @@ import {
   isSameSnapshot,
   isStaleSnapshot,
   languageStorageKey,
+  normalizeCodexResetCreditReminderPreferences,
   normalizeClaudeSources,
   normalizeOnboardingPreferences,
   pickPrimaryClaudeAgent,
@@ -423,6 +426,61 @@ describe("staleReasonLabel", () => {
 
     assert.equal(staleReasonLabel(snapshot, tx), "marked stale by source");
     assert.equal(staleReasonLabel(snapshot, txZh), "额度来源标记为过期");
+  });
+});
+
+describe("Codex reset credit helpers", () => {
+  const now = Date.parse("2026-09-12T00:00:00.000Z");
+  const credits = [
+    {
+      resetType: "codexRateLimits",
+      status: "available",
+      expiresAt: "2026-09-15T00:00:00.000Z"
+    },
+    {
+      resetType: "codexRateLimits",
+      status: "available",
+      expiresAt: "2026-09-13T00:00:00.000Z"
+    },
+    {
+      resetType: "codexRateLimits",
+      status: "used",
+      expiresAt: "2026-09-14T00:00:00.000Z"
+    },
+    {
+      resetType: "codexRateLimits",
+      status: "available",
+      expiresAt: "2026-09-01T00:00:00.000Z"
+    }
+  ];
+
+  it("normalizes reminder preferences", () => {
+    assert.deepEqual(
+      normalizeCodexResetCreditReminderPreferences({
+        enabled: true,
+        daysBefore: 99
+      }),
+      { enabled: true, daysBefore: 30 }
+    );
+  });
+
+  it("sorts only future available reset credits", () => {
+    assert.deepEqual(
+      availableCodexResetCredits(credits, now).map((credit) => credit.expiresAt),
+      ["2026-09-13T00:00:00.000Z", "2026-09-15T00:00:00.000Z"]
+    );
+  });
+
+  it("reports when the next reset credit is inside the reminder window", () => {
+    const reminder = codexResetCreditReminderState(
+      credits,
+      { enabled: true, daysBefore: 1 },
+      now
+    );
+
+    assert.equal(reminder.count, 2);
+    assert.equal(reminder.daysUntilNext, 1);
+    assert.equal(reminder.withinReminder, true);
   });
 });
 

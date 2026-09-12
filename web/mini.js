@@ -1,6 +1,9 @@
 import {
+  codexResetCreditReminderState,
+  codexResetCreditReminderStorageKey,
   buildDisplayAgents as sharedBuildDisplayAgents,
   createI18n,
+  defaultCodexResetCreditReminderPreferences,
   escapeHtml,
   filterAgentsByOnboarding as sharedFilterAgentsByOnboarding,
   formatUsed as sharedFormatUsed,
@@ -11,6 +14,7 @@ import {
   loadFirstRunOnboardingPreferences,
   mergeClaudeSnapshots,
   mergeSnapshotResetTiming,
+  normalizeCodexResetCreditReminderPreferences,
   preferredClaudeDashboardSource as sharedPreferredClaudeDashboardSource,
   primaryMeterClass,
   readinessDisplayName as sharedReadinessDisplayName,
@@ -30,6 +34,8 @@ const { tx, locale, compactNumber, formatRelative } = createI18n(
 
 const state = {
   agents: [],
+  codexResetCreditReminderPreferences:
+    defaultCodexResetCreditReminderPreferences(),
   generatedAt: undefined,
   isRefreshing: false,
   lastError: undefined,
@@ -210,6 +216,8 @@ async function load(options = {}) {
     ]);
 
     state.agents = agentsPayload.agents ?? [];
+    state.codexResetCreditReminderPreferences =
+      loadCodexResetCreditReminderPreferences();
     state.generatedAt = agentsPayload.generatedAt;
     state.lastError = undefined;
     state.onboardingPreferences = onboardingPreferences;
@@ -298,6 +306,7 @@ function renderAgent(agent) {
         ></div>
       </div>
       <div class="mini-window-list">${renderWindowRows(agent)}</div>
+      ${renderMiniResetCreditSummary(agent)}
       <div class="mini-detail">${escapeHtml(detail)}</div>
     </article>
   `;
@@ -522,6 +531,18 @@ function latestRefreshRun() {
     .sort((left, right) => Date.parse(right.observedAt) - Date.parse(left.observedAt))[0];
 }
 
+function loadCodexResetCreditReminderPreferences() {
+  try {
+    return normalizeCodexResetCreditReminderPreferences(
+      JSON.parse(
+        window.localStorage?.getItem(codexResetCreditReminderStorageKey) ?? "null"
+      )
+    );
+  } catch {
+    return defaultCodexResetCreditReminderPreferences();
+  }
+}
+
 function snapshotCountText(count) {
   return tx("{count} snapshot{plural}", "{count} 个快照", {
     count,
@@ -595,6 +616,50 @@ function renderWindowRows(agent) {
       : "";
 
   return rows + more;
+}
+
+function renderMiniResetCreditSummary(agent) {
+  if (agent.provider !== "openai" || agent.agent !== "codex") {
+    return "";
+  }
+
+  const reminder = codexResetCreditReminderState(
+    agent.resetCredits,
+    state.codexResetCreditReminderPreferences
+  );
+
+  if (reminder.count === 0) {
+    return "";
+  }
+
+  const statusClass = reminder.withinReminder ? "warning" : "healthy";
+  const text = reminder.withinReminder
+    ? tx("Resets x{count} - expires in {days}d", "重置额度 {count} 次 · {days} 天后到期", {
+        count: reminder.count,
+        days: reminder.daysUntilNext
+      })
+    : tx("Resets x{count} - {time}", "重置额度 {count} 次 · {time}", {
+        count: reminder.count,
+        time: formatTimestamp(reminder.nextCredit?.expiresAt)
+      });
+
+  return `
+    <div
+      class="mini-reset-credit ${escapeHtml(statusClass)}"
+      title="${escapeHtml(miniResetCreditTitle(reminder))}"
+    >${escapeHtml(text)}</div>
+  `;
+}
+
+function miniResetCreditTitle(reminder) {
+  return tx(
+    "{count} Codex reset credits. Next expires {time}.",
+    "{count} 个 Codex 重置额度。最近到期：{time}。",
+    {
+      count: reminder.count,
+      time: formatTimestamp(reminder.nextCredit?.expiresAt, { long: true })
+    }
+  );
 }
 
 function renderWindowRow(snapshot) {
