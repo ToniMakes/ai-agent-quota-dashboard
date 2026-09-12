@@ -228,9 +228,9 @@ describe("getClaudeStatuslineSetupStatus", () => {
       const status = await getClaudeStatuslineSetupStatus({
         claudeCliLookup: async () => ({
           available: true,
-          command: "& 'C:\\Users\\hitomi\\.local\\bin\\claude.exe'",
+          command: "& 'C:\\Users\\testuser\\.local\\bin\\claude.exe'",
           onPath: false,
-          path: "C:\\Users\\hitomi\\.local\\bin\\claude.exe"
+          path: "C:\\Users\\testuser\\.local\\bin\\claude.exe"
         }),
         historyPath: join(directory, "history.jsonl"),
         latestPath: join(directory, "latest.json"),
@@ -243,11 +243,11 @@ describe("getClaudeStatuslineSetupStatus", () => {
       assert.equal(status.claudeCliOnPath, false);
       assert.equal(
         status.claudeCliCommand,
-        "& 'C:\\Users\\hitomi\\.local\\bin\\claude.exe'"
+        "& 'C:\\Users\\testuser\\.local\\bin\\claude.exe'"
       );
       assert.match(
         status.claudeCliExampleProjectOpenCommand,
-        /& 'C:\\Users\\hitomi\\.local\\bin\\claude\.exe'/
+        /& 'C:\\Users\\testuser\\.local\\bin\\claude\.exe'/
       );
       assert.equal(cliCheck?.status, "pass");
       assert.match(cliCheck?.message ?? "", /outside PATH/);

@@ -41,8 +41,8 @@ const baseInput: DoctorReportInput = {
   agents: [baseAgent],
   checks: [baseCheck],
   configErrors: [],
-  configPath: "C:\\Users\\hitomi\\.ai-agent-quota-dashboard\\config.json",
-  dbPath: "C:\\Users\\hitomi\\.ai-agent-quota-dashboard\\quota.db",
+  configPath: "C:\\Users\\testuser\\.ai-agent-quota-dashboard\\config.json",
+  dbPath: "C:\\Users\\testuser\\.ai-agent-quota-dashboard\\quota.db",
   demoMode: false,
   generatedAt: "2026-08-09T00:00:00.000Z",
   refreshResult: {
@@ -221,7 +221,7 @@ describe("doctor report", () => {
               source: "local_quota_snapshot",
               confidence: "high",
               stale: false,
-              rawSourceRef: "C:\\Users\\hitomi\\.codex\\quota.json"
+              rawSourceRef: "C:\\Users\\testuser\\.codex\\quota.json"
             })
           ]
         }
@@ -229,13 +229,13 @@ describe("doctor report", () => {
       checks: [
         {
           ...baseCheck,
-          id: "codex:path:C:\\Users\\hitomi\\.codex",
-          detail: "C:\\Users\\hitomi\\.codex"
+          id: "codex:path:C:\\Users\\testuser\\.codex",
+          detail: "C:\\Users\\testuser\\.codex"
         }
       ],
       refreshResult: {
         ...baseInput.refreshResult,
-        errors: ["Codex: failed to read C:\\Users\\hitomi\\.codex\\quota.json"]
+        errors: ["Codex: failed to read C:\\Users\\testuser\\.codex\\quota.json"]
       }
     });
     const serialized = JSON.stringify(report);

@@ -26,7 +26,7 @@ const snapshot: QuotaSnapshot = {
   source: "official_cli",
   confidence: "official",
   stale: false,
-  rawSourceRef: "C:\\Users\\hitomi\\.codex\\quota.json"
+  rawSourceRef: "C:\\Users\\testuser\\.codex\\quota.json"
 };
 
 const resetEvent: ResetEvent = {

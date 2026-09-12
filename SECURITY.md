@@ -19,9 +19,7 @@ Do not share:
 
 ## Reporting
 
-Once this repository is published on GitHub, please use GitHub private security reporting for vulnerabilities or accidental sensitive-data exposure.
-
-Until then, report security issues through a private channel with the project maintainer. Public issues should contain only sanitized, minimal reproduction details.
+Please report vulnerabilities or accidental sensitive-data exposure through [GitHub private security reporting](https://github.com/ToniMakes/ai-agent-quota-dashboard/security/advisories/new) rather than a public issue. Public issues should contain only sanitized, minimal reproduction details.
 
 For ordinary bugs, prefer the reviewed output from:
 
