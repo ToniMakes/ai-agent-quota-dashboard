@@ -10,7 +10,7 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The local dashboard
 - SQLite persistence for normalized quota snapshots, reset events, and refresh runs
 - Codex quota detection from local CLI `rate_limits` events, with a manual visible-status fallback
 - Codex reset-credit detection from structured local app-server records and trusted Codex usage-limit tool results, with read-only dashboard details, mini-panel summary, and optional in-app expiry reminders
-- Subscription-tier labels in the main agent card header when local data exposes a reliable tier, including Codex `planType` and Claude Code `subscriptionType`
+- Subscription-tier labels in the main agent card header when local data exposes a reliable tier, including Codex `planType` and Claude local credentials `subscriptionType`
 - Codex display/export surfaces hide unsupported monthly buckets and expose only the adapter-supported 5-hour and weekly windows
 - Claude Code quota ingestion from official statusline `rate_limits`
 - Claude Desktop quota ingestion from local `plan-usage-history.json`, an alternative to Claude Code so the CLI is not required

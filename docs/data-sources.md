@@ -100,7 +100,7 @@ Mapping:
 
 Subscription tier:
 
-- AIQD can read `claudeAiOauth.subscriptionType` from the local Claude Code `.credentials.json` file and expose only the normalized tier label, such as `Pro`.
+- AIQD can read `claudeAiOauth.subscriptionType` from the local Claude `.credentials.json` file and expose only the normalized tier label, such as `Pro`, for either the Claude Code or Claude Desktop dashboard source.
 - Access tokens, refresh tokens, account identifiers, and raw credential JSON are not stored, exported, or shown.
 
 Setup helper:
