@@ -98,6 +98,11 @@ Mapping:
 - source -> `official_statusline`
 - confidence -> `official`
 
+Subscription tier:
+
+- AIQD can read `claudeAiOauth.subscriptionType` from the local Claude Code `.credentials.json` file and expose only the normalized tier label, such as `Pro`.
+- Access tokens, refresh tokens, account identifiers, and raw credential JSON are not stored, exported, or shown.
+
 Setup helper:
 
 ```bash

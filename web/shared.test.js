@@ -383,6 +383,7 @@ describe("filterAgentsByOnboarding / buildDisplayAgents", () => {
     {
       agent: "claude-code",
       provider: "anthropic",
+      subscriptionTier: "Pro",
       snapshots: [],
       primarySnapshot: { source: "official_statusline", observedAt: "2026-08-20T00:00:00.000Z" }
     },
@@ -415,6 +416,7 @@ describe("filterAgentsByOnboarding / buildDisplayAgents", () => {
     ).find((agent) => agent.agent === "claude");
 
     assert.equal(merged.primarySnapshot.source, "official_statusline");
+    assert.equal(merged.subscriptionTier, "Pro");
   });
 });
 
@@ -486,6 +488,15 @@ describe("Codex reset credit helpers", () => {
 });
 
 describe("agentSubscriptionTier", () => {
+  it("uses the agent-level tier before looking at quota labels", () => {
+    assert.equal(
+      agentSubscriptionTier({
+        subscriptionTier: "Pro"
+      }),
+      "Pro"
+    );
+  });
+
   it("extracts a compact tier label from Codex plan labels", () => {
     assert.equal(
       agentSubscriptionTier({

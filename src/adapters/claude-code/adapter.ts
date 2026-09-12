@@ -1,11 +1,13 @@
+import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import type {
   AgentAdapter,
   AdapterScanContext,
   CommonAdapterOptions
 } from "../contracts.js";
 import { findReadableCandidateFiles } from "../local-candidates.js";
+import { isRecord, readString } from "../parse-utils.js";
 import { inspectPath, resolveDataPaths, uniquePaths } from "../path-utils.js";
 import { defaultClaudeStatuslineSnapshotDir } from "../../config/paths.js";
 import type { DoctorCheck, QuotaSnapshot } from "../../core/types.js";
@@ -18,6 +20,11 @@ import { parseClaudeCodeStatusline } from "./parse-statusline.js";
 export type ClaudeCodeAdapterOptions = CommonAdapterOptions;
 
 export const claudeCodeDisplayName = "Claude Code";
+
+type ClaudeCodeScanData = {
+  snapshots: QuotaSnapshot[];
+  subscriptionTier?: string;
+};
 
 export function createClaudeCodeAdapter(
   options: ClaudeCodeAdapterOptions
@@ -40,12 +47,15 @@ export function createClaudeCodeAdapter(
       const checks: DoctorCheck[] = [];
       const inspections = await Promise.all(defaultDataPaths.map(inspectPath));
       const readableRoots = inspections.filter((inspection) => inspection.readable);
-      const snapshots = options.demoMode
-        ? createDemoClaudeSnapshots(context.now)
-        : await readClaudeCodeQuotaSnapshots(
+      const scanData = options.demoMode
+        ? {
+            snapshots: createDemoClaudeSnapshots(context.now)
+          }
+        : await readClaudeCodeData(
             readableRoots.map((inspection) => inspection.path),
             context
           );
+      const { snapshots } = scanData;
 
       for (const inspection of inspections) {
         checks.push({
@@ -87,6 +97,9 @@ export function createClaudeCodeAdapter(
 
       return {
         snapshots,
+        ...(scanData.subscriptionTier
+          ? { subscriptionTier: scanData.subscriptionTier }
+          : {}),
         usageEvents: [],
         doctorChecks: checks
       };
@@ -125,6 +138,94 @@ async function readClaudeCodeQuotaSnapshots(
       rawSourceRef: candidate.path
     })
   );
+}
+
+async function readClaudeCodeData(
+  roots: string[],
+  context: AdapterScanContext
+): Promise<ClaudeCodeScanData> {
+  const snapshots = await readClaudeCodeQuotaSnapshots(roots, context);
+  const subscriptionTier = await readClaudeSubscriptionTier(roots);
+
+  return {
+    snapshots,
+    ...(subscriptionTier ? { subscriptionTier } : {})
+  };
+}
+
+async function readClaudeSubscriptionTier(
+  roots: string[]
+): Promise<string | undefined> {
+  for (const path of uniquePaths(roots.flatMap(claudeCredentialsCandidates))) {
+    try {
+      const parsed = JSON.parse(await readFile(path, "utf8"));
+      const tier = normalizeSubscriptionTier(
+        readClaudeCredentialsSubscriptionType(parsed)
+      );
+
+      if (tier) {
+        return tier;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return undefined;
+}
+
+function claudeCredentialsCandidates(path: string): string[] {
+  if (basename(path).toLowerCase() === ".credentials.json") {
+    return [path];
+  }
+
+  return [join(path, ".credentials.json")];
+}
+
+function readClaudeCredentialsSubscriptionType(value: unknown): string | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const claudeAiOauth = readRecordFromUnknown(value.claudeAiOauth);
+
+  return (
+    readString(value, ["subscriptionType", "subscription_type"]) ??
+    (claudeAiOauth
+      ? readString(claudeAiOauth, ["subscriptionType", "subscription_type"])
+      : undefined)
+  );
+}
+
+function readRecordFromUnknown(value: unknown): Record<string, unknown> | undefined {
+  return isRecord(value) ? value : undefined;
+}
+
+function normalizeSubscriptionTier(value: string | undefined): string | undefined {
+  const normalized = value
+    ?.trim()
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replaceAll("-", " ");
+
+  if (!normalized) {
+    return undefined;
+  }
+
+  switch (normalized.replace(/\s+/g, "")) {
+    case "pro":
+      return "Pro";
+    case "max":
+      return "Max";
+    case "team":
+      return "Team";
+    case "enterprise":
+      return "Enterprise";
+    case "free":
+      return "Free";
+    default:
+      return undefined;
+  }
 }
 
 function createDemoClaudeSnapshots(now: Date): QuotaSnapshot[] {

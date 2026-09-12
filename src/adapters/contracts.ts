@@ -22,6 +22,7 @@ export type CommonAdapterOptions = {
 export type AdapterScanResult = {
   snapshots: QuotaSnapshot[];
   resetCredits?: CodexResetCredit[];
+  subscriptionTier?: string;
   usageEvents: UsageEvent[];
   doctorChecks: DoctorCheck[];
 };

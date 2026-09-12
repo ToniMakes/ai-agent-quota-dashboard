@@ -44,6 +44,7 @@ type CodexSessionLogCandidate = {
 type CodexScanData = {
   resetCredits: CodexResetCredit[];
   snapshots: QuotaSnapshot[];
+  subscriptionTier?: string;
 };
 
 const maxCodexSessionDepth = 5;
@@ -113,6 +114,9 @@ export function createCodexAdapter(options: CodexAdapterOptions): AgentAdapter {
       return {
         snapshots,
         resetCredits,
+        ...(scanData.subscriptionTier
+          ? { subscriptionTier: scanData.subscriptionTier }
+          : {}),
         usageEvents: [],
         doctorChecks: checks
       };
@@ -150,6 +154,17 @@ async function readCodexData(
     ...structuredCandidates,
     ...sessionCandidates
   ]);
+  const snapshots = bestSnapshotPerWindow(
+    candidates.flatMap((candidate) =>
+      parseCodexQuotaSnapshots(candidate.content, {
+        observedAt: context.now,
+        rawSourceRef: candidate.path
+      })
+    ),
+    context.now
+  );
+
+  const subscriptionTier = readSubscriptionTierFromSnapshots(snapshots);
 
   return {
     resetCredits: latestAvailableResetCredits(
@@ -161,15 +176,8 @@ async function readCodexData(
       ),
       context.now
     ),
-    snapshots: bestSnapshotPerWindow(
-      candidates.flatMap((candidate) =>
-        parseCodexQuotaSnapshots(candidate.content, {
-          observedAt: context.now,
-          rawSourceRef: candidate.path
-        })
-      ),
-      context.now
-    )
+    snapshots,
+    ...(subscriptionTier ? { subscriptionTier } : {})
   };
 }
 
@@ -425,6 +433,43 @@ function sourcePriority(source: string): number {
     default:
       return 0;
   }
+}
+
+function readSubscriptionTierFromSnapshots(
+  snapshots: QuotaSnapshot[]
+): string | undefined {
+  for (const snapshot of snapshots) {
+    const tier = normalizeSubscriptionTier(snapshot.planLabel);
+
+    if (tier) {
+      return tier;
+    }
+  }
+
+  return undefined;
+}
+
+function normalizeSubscriptionTier(value: string | undefined): string | undefined {
+  const normalized = value
+    ?.trim()
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replaceAll("-", " ");
+  const compact = normalized?.replace(/\s+/g, "");
+
+  if (!normalized || !compact) {
+    return undefined;
+  }
+
+  if (compact.includes("prolite")) {
+    return "Pro Lite";
+  }
+
+  if (/(^|[^a-z])pro([^a-z]|$)/.test(normalized)) {
+    return "Pro";
+  }
+
+  return undefined;
 }
 
 function windowPriority(windowType: string): number {

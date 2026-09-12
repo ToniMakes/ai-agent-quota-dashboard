@@ -328,6 +328,10 @@ export function codexResetCreditReminderState(
 }
 
 export function agentSubscriptionTier(agent) {
+  if (typeof agent?.subscriptionTier === "string" && agent.subscriptionTier.trim()) {
+    return agent.subscriptionTier.trim();
+  }
+
   const snapshots = [
     agent?.primarySnapshot,
     ...(Array.isArray(agent?.snapshots) ? agent.snapshots : [])
@@ -614,13 +618,17 @@ export function buildDisplayAgents(agents, preferredSource) {
     winner.primarySnapshot,
     sources.flatMap((source) => source.snapshots ?? [])
   );
+  const subscriptionTier =
+    sources.find((source) => source.subscriptionTier)?.subscriptionTier ??
+    winner.subscriptionTier;
   const merged = {
     ...winner,
     agent: "claude",
     displayName: "Claude",
     primarySnapshot,
     snapshots,
-    shortName: "Claude"
+    shortName: "Claude",
+    subscriptionTier
   };
 
   return agents

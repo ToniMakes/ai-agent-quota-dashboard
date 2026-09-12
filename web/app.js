@@ -1355,16 +1355,14 @@ function renderAgentCard(agent) {
       <div class="agent-card-header">
         <div>
           <h3 class="agent-name">${escapeHtml(agent.displayName)}</h3>
-          <p class="agent-provider">${escapeHtml(agent.provider)}</p>
-          ${
-            subscriptionTier
-              ? `<p class="agent-plan">${escapeHtml(
-                  tx("Subscription: {tier}", "订阅：{tier}", {
-                    tier: subscriptionTier
-                  })
-                )}</p>`
-              : ""
-          }
+          <p class="agent-provider">
+            <span>${escapeHtml(agent.provider)}</span>
+            ${
+              subscriptionTier
+                ? `<span class="agent-plan">${escapeHtml(subscriptionTier)}</span>`
+                : ""
+            }
+          </p>
         </div>
         <span class="badge ${status}">${escapeHtml(statusLabel(status))}</span>
       </div>

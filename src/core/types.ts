@@ -142,6 +142,7 @@ export type AgentSummary = {
   agent: AgentId;
   displayName: string;
   shortName: string;
+  subscriptionTier?: string;
   status: QuotaStatus;
   emptyState?: AgentEmptyState;
   primarySnapshot?: QuotaSnapshotView;

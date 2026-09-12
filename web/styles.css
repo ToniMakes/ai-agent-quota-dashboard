@@ -342,17 +342,24 @@ h2 {
 }
 
 .agent-provider {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
   margin-bottom: 0;
   color: var(--muted);
   font-size: 0.88rem;
 }
 
 .agent-plan {
-  margin-top: 4px;
-  margin-bottom: 0;
-  color: var(--text);
-  font-size: 0.82rem;
+  color: var(--accent-strong);
   font-weight: 720;
+}
+
+.agent-plan::before {
+  margin-right: 8px;
+  color: var(--muted);
+  content: "·";
 }
 
 .badge {

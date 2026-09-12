@@ -176,6 +176,21 @@ describe("AgentQuotaService Codex reset credits", () => {
   });
 });
 
+describe("AgentQuotaService subscription tiers", () => {
+  it("attaches adapter-reported subscription tiers to agent summaries", async () => {
+    await withStore(async (store) => {
+      const service = new AgentQuotaService(
+        createRegistry(codexManifest, "Pro Lite"),
+        store
+      );
+      await service.refresh();
+      const agents = service.listAgents();
+
+      assert.equal(agents[0]?.subscriptionTier, "Pro Lite");
+    });
+  });
+});
+
 async function withStore(
   callback: (store: SqliteStore) => Promise<void>
 ): Promise<void> {
@@ -191,13 +206,15 @@ async function withStore(
 }
 
 function createRegistry(
-  adapterManifest: AgentManifest = manifest
+  adapterManifest: AgentManifest = manifest,
+  subscriptionTier?: string
 ): AdapterRegistry {
   const adapter: AgentAdapter = {
     manifest: adapterManifest,
     async scan() {
       return {
         snapshots: [],
+        ...(subscriptionTier ? { subscriptionTier } : {}),
         usageEvents: [],
         doctorChecks: []
       };
