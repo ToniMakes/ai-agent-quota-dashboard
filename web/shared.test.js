@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  agentSubscriptionTier,
   availableCodexResetCredits,
   buildDisplayAgents,
   codexResetCreditReminderState,
@@ -481,6 +482,36 @@ describe("Codex reset credit helpers", () => {
     assert.equal(reminder.count, 2);
     assert.equal(reminder.daysUntilNext, 1);
     assert.equal(reminder.withinReminder, true);
+  });
+});
+
+describe("agentSubscriptionTier", () => {
+  it("extracts a compact tier label from Codex plan labels", () => {
+    assert.equal(
+      agentSubscriptionTier({
+        primarySnapshot: {
+          planLabel: "codex prolite"
+        },
+        snapshots: []
+      }),
+      "Pro Lite"
+    );
+  });
+
+  it("does not treat generic source labels as subscription tiers", () => {
+    assert.equal(
+      agentSubscriptionTier({
+        primarySnapshot: {
+          planLabel: "Claude Desktop usage history"
+        },
+        snapshots: [
+          {
+            planLabel: "Codex weekly quota"
+          }
+        ]
+      }),
+      undefined
+    );
   });
 });
 

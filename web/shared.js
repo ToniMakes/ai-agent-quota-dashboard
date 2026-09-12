@@ -327,6 +327,59 @@ export function codexResetCreditReminderState(
   };
 }
 
+export function agentSubscriptionTier(agent) {
+  const snapshots = [
+    agent?.primarySnapshot,
+    ...(Array.isArray(agent?.snapshots) ? agent.snapshots : [])
+  ].filter(Boolean);
+
+  for (const snapshot of snapshots) {
+    const tier = subscriptionTierFromPlanLabel(snapshot?.planLabel);
+
+    if (tier) {
+      return tier;
+    }
+  }
+
+  return undefined;
+}
+
+function subscriptionTierFromPlanLabel(planLabel) {
+  if (typeof planLabel !== "string" || !planLabel.trim()) {
+    return undefined;
+  }
+
+  const normalized = planLabel
+    .trim()
+    .toLowerCase()
+    .replaceAll("_", " ")
+    .replaceAll("-", " ");
+  const compact = normalized.replace(/\s+/g, "");
+
+  if (compact.includes("prolite")) {
+    return "Pro Lite";
+  }
+
+  const knownTiers = [
+    ["enterprise", "Enterprise"],
+    ["business", "Business"],
+    ["team", "Team"],
+    ["premium", "Premium"],
+    ["max", "Max"],
+    ["plus", "Plus"],
+    ["pro", "Pro"],
+    ["free", "Free"]
+  ];
+
+  for (const [token, label] of knownTiers) {
+    if (new RegExp(`(^|[^a-z])${token}([^a-z]|$)`).test(normalized)) {
+      return label;
+    }
+  }
+
+  return undefined;
+}
+
 export function readinessDisplayName(check, language) {
   if (!check?.displayName || language !== "zh") {
     return check?.displayName;

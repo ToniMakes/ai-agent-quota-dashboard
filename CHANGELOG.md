@@ -8,6 +8,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ### Added
 
+- Added subscription-tier metadata in the main agent card header when local quota data exposes a reliable plan label
 - Added read-only Codex reset credit parsing, storage, dashboard details, mini-panel summary, and in-app expiry reminders
 
 ### Changed

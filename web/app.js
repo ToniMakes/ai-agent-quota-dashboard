@@ -1,5 +1,6 @@
 import {
   buildDisplayAgents as sharedBuildDisplayAgents,
+  agentSubscriptionTier,
   claudeCodeAgentId,
   claudeDesktopAgentId,
   clamp,
@@ -1341,6 +1342,7 @@ function buildDisplayAgents(agents) {
 function renderAgentCard(agent) {
   const primary = agent.primarySnapshot;
   const status = agent.status ?? "unknown";
+  const subscriptionTier = agentSubscriptionTier(agent);
   const source = primary
     ? sourceLabel(primary.source)
     : tx("Unavailable", "不可用");
@@ -1354,6 +1356,15 @@ function renderAgentCard(agent) {
         <div>
           <h3 class="agent-name">${escapeHtml(agent.displayName)}</h3>
           <p class="agent-provider">${escapeHtml(agent.provider)}</p>
+          ${
+            subscriptionTier
+              ? `<p class="agent-plan">${escapeHtml(
+                  tx("Subscription: {tier}", "订阅：{tier}", {
+                    tier: subscriptionTier
+                  })
+                )}</p>`
+              : ""
+          }
         </div>
         <span class="badge ${status}">${escapeHtml(statusLabel(status))}</span>
       </div>

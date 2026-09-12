@@ -347,6 +347,14 @@ h2 {
   font-size: 0.88rem;
 }
 
+.agent-plan {
+  margin-top: 4px;
+  margin-bottom: 0;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 720;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
