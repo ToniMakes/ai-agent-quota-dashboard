@@ -57,9 +57,9 @@ button {
 }
 
 .shell {
-  width: min(1180px, calc(100vw - 32px));
+  width: min(1180px, calc(100vw - 64px));
   margin: 0 auto;
-  padding: 28px 0 40px;
+  padding: 32px 0 40px;
 }
 
 .app-footer-note {
