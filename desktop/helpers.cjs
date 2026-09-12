@@ -95,7 +95,7 @@ function buildTrayMenuTemplate(input) {
     },
     { type: "separator" },
     { label: "Open Dashboard", click: actions.openDashboardWindow },
-    { label: "Open Doctor", click: actions.openDoctorWindow },
+    { label: "Open Diagnostics", click: actions.openDoctorWindow },
     { label: "Open Settings", click: actions.openSettingsWindow },
     { type: "separator" },
     { label: "Quit", click: actions.quit }

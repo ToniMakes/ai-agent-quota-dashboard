@@ -15,7 +15,7 @@ Last updated: 2026-08-26
 - Codex structured quota parser and automatic local CLI `rate_limits` detection
 - Manual Codex visible-status fallback with expiry at reported reset time
 - SQLite snapshot, reset event, and refresh run storage
-- Localhost Web Dashboard, Doctor, Settings, reset timeline, and refresh history
+- Localhost Web Dashboard, Diagnostics, Settings, reset timeline, and refresh history
 - Source confidence, stale state, low quota state, and reported-reset labels
 - JSON and CSV export with private identifiers and raw source references excluded
 - Strict real-data readiness shared by CLI, Settings, tray, and mini surfaces
@@ -24,11 +24,11 @@ Last updated: 2026-08-26
 - Packaged desktop smoke checks that run without requiring system Node.js
 - Opt-in packaged launch-at-login with installer checkbox, Settings toggle, background tray startup, and uninstall cleanup
 - Safe AIQD-only global shortcuts for mini panel, refresh, and widget
-- One-time first-run desktop guide with deep links to exact setup or Doctor sections
+- One-time first-run desktop guide with deep links to exact setup or Diagnostics sections
 - English-by-default Chinese/English language switching in the main dashboard and mini surfaces
 - Collapsible first-run Settings details behind the Codex and Claude setup buttons
 - Dashboard and mini quota cards hide duplicate primary-window rows and use separate progress rows for extra windows such as Claude Code's 5-hour quota
-- Demo release screenshots refreshed for the dashboard, Doctor, Settings setup flow with Claude Desktop, mini panel, and widget surfaces
+- Demo release screenshots refreshed for the dashboard, Diagnostics, Settings setup flow with Claude Desktop, mini panel, and widget surfaces
 - Beginner Claude Code setup flow that separates `Install Claude Code CLI` from `Connect Claude data`
 - Technical Claude statusline commands hidden behind advanced details in the normal setup flow
 - Claude Desktop local `plan-usage-history.json` adapter, an alternative Claude source that needs no CLI install

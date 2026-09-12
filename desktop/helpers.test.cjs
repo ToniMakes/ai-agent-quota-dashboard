@@ -64,7 +64,7 @@ describe("desktop helpers", () => {
       "Toggle Desktop Widget",
       "Refresh Now",
       "Open Dashboard",
-      "Open Doctor",
+      "Open Diagnostics",
       "Open Settings",
       "Quit"
     ]);

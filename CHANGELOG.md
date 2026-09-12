@@ -8,6 +8,16 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ### Changed
 
+- Renamed the Doctor tab to Diagnostics and rewrote its checklist and Settings setup copy for non-technical users
+- Restructured Settings and Diagnostics: one status row per app (Codex/Claude) instead of several stacked panels repeating the same connection state, with a single collapsed "technical details" layer per app for raw per-source data
+- Merged the separate Claude Code CLI and Claude Desktop panels into one Claude status row; deep-linking into a collapsed section now auto-expands it
+- Removed the CLI commands and environment-variable reference from Advanced Settings > Local Data Paths/Desktop Shortcuts that a packaged desktop install has no way to run
+- Replaced remaining internal jargon shown directly to users ("rate_limits", "statusline", "/status", generic "setup 1/2" labels) with plain language in the main window and the tray mini panel
+- Reset history and recent-changes lists now show the unified "Claude" name instead of the raw "Claude Code" source label
+- Reworked the Desktop Preferences panel: its two settings rows now sit inside a bordered group visually distinct from the section heading, and wide-window rows no longer stretch labels and controls far apart
+- Increased the page's outer margin so content doesn't sit flush against the window edge on typical (non-maximized) window widths
+- Replaced the standalone Feedback panel/button with a small footer contact line (hello@tonimakes.com) shown on every tab
+- Fixed the packaged Windows exe's publisher metadata (Toni Liu -> ToniMakes), which electron-builder pulls from `package.json`'s `author` field
 - Deduplicated onboarding-preference, quota-meter formatting, and Claude-source-selection logic between the main dashboard and the mini panel into `web/shared.js`, so both surfaces render from one implementation instead of two
 - Extracted Claude CLI detection and install-command resolution out of the statusline setup-status module into `src/setup/claude-cli-environment.ts`, replacing a string-matched winget detection with an explicit install-method field
 - Consolidated the Codex/Claude Code/Claude Desktop adapter list into a single provider manifest shared by adapter registration and the local-paths Settings view
@@ -15,6 +25,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ### Fixed
 
+- Tray context menu said "Open Doctor" after the tab was renamed to Diagnostics; it now says "Open Diagnostics"
 - Mini panel now honors the user's selected Claude source (CLI vs Desktop) when picking which quota card to show, matching the main dashboard instead of always picking by recency
 - Fixed a duplicated "window" word in the 5-hour quota window tooltip
 - Fixed several Chinese translations that had drifted out of sync between the main dashboard and mini panel for the same English source string (stale-data wording, quota-source terminology, Claude Code labels)

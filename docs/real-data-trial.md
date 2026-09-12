@@ -85,7 +85,7 @@ Expected:
 
 - Settings shows `Launch at startup` as on.
 - The Windows startup command launches the packaged AIQD executable with `--background`.
-- If setup is still missing, first-run guidance may open Settings or Doctor. After setup is complete and the guide has already been shown, sign-in should start only the tray shell and local backend.
+- If setup is still missing, first-run guidance may open Settings or Diagnostics. After setup is complete and the guide has already been shown, sign-in should start only the tray shell and local backend.
 
 Optional PowerShell confirmation:
 
@@ -154,10 +154,10 @@ Expected first launch behavior:
 
 - If Codex has no usable local CLI quota data, the app opens Settings at `Codex Quota Source`.
 - If Claude Code setup or data is missing, the app opens Settings at `Claude Code Statusline`.
-- If an adapter has a blocking error, the app opens Doctor.
+- If an adapter has a blocking error, the app opens Diagnostics.
 - If primary sources are ready, the app opens the mini panel.
 
-The guide is one-time per desktop user data directory. After that, use the tray menu or mini panel actions to open Settings, Doctor, Dashboard, or the always-on-top widget.
+The guide is one-time per desktop user data directory. After that, use the tray menu or mini panel actions to open Settings, Diagnostics, Dashboard, or the always-on-top widget.
 
 If the desktop app does not open, run:
 
@@ -204,7 +204,7 @@ Normal-user path from the desktop app:
 3. If the file exists and has a recent sample, it shows as `Done` immediately — nothing to install or connect.
 4. If it shows `Waiting`, open Claude Desktop so it records a new usage sample, then click `Refresh Claude Desktop`.
 
-Expected: AIQD shows Claude Desktop five-hour and weekly usage from local plan usage samples and labels the source clearly (`Local snapshot`); see [Privacy](privacy.md) for the data boundary this respects. Claude readiness in Doctor and the real-data overview shows ready as soon as this source is fresh, even if Claude Code CLI is never set up.
+Expected: AIQD shows Claude Desktop five-hour and weekly usage from local plan usage samples and labels the source clearly (`Local snapshot`); see [Privacy](privacy.md) for the data boundary this respects. Claude readiness in Diagnostics and the real-data overview shows ready as soon as this source is fresh, even if Claude Code CLI is never set up.
 
 ## 6. Connect Claude Code
 
@@ -257,7 +257,7 @@ In the desktop app, check:
 - Dashboard shows Codex, Claude Code, and/or Claude Desktop quota rows.
 - Mini panel shows the most constrained remaining quota and reported reset.
 - Mini panel and always-on-top widget can switch between Chinese and English with the shared language preference.
-- Doctor first-run checklist shows quota sources ready or gives a specific next action.
+- Diagnostics first-run checklist shows quota sources ready or gives a specific next action.
 - Refresh History has a recent run with snapshot and check counts.
 
 `npm run trial:preflight` gives the shortest next action for Codex, Claude Code, and blocking Doctor issues. `npm run trial:ready` uses strict Doctor mode. It fails until every configured agent has a fresh non-demo quota snapshot, which is useful right before deciding whether the app is ready for a real-data experience.

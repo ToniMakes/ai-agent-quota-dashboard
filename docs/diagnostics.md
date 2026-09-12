@@ -2,7 +2,7 @@
 
 Use the Doctor CLI when the dashboard has no quota data, shows stale data, or behaves differently from what an agent reports.
 
-For Claude Code, Doctor and Settings report the same statusline readiness checks: Claude settings, the managed shim, the latest sanitized snapshot, and whether supported `rate_limits` windows have been received recently.
+For Claude Code, the Diagnostics tab and Settings report the same statusline readiness checks: Claude settings, the managed shim, the latest sanitized snapshot, and whether supported `rate_limits` windows have been received recently.
 
 Before opening Claude Code, you can run `node dist/index.js claude-statusline-sink --self-test` to verify the local sink with temporary files and fake `rate_limits`. The self-test does not read real Claude Code data and does not write to the normal statusline snapshot path.
 

@@ -95,7 +95,7 @@ npm run trial:preflight
 npm run desktop:local
 ```
 
-Expected result: `trial:preflight` either reports ready or prints the next source-specific action. The desktop first-run guide then opens the exact Settings or Doctor section needed for real data setup.
+Expected result: `trial:preflight` either reports ready or prints the next source-specific action. The desktop first-run guide then opens the exact Settings or Diagnostics section needed for real data setup.
 
 If Windows PowerShell blocks `npm` with `running scripts is disabled`, run the same commands with `npm.cmd`, for example `npm.cmd test` and `npm.cmd run desktop:local`.
 
@@ -139,15 +139,15 @@ It starts the local backend, adds an AI Agent Quota tray icon, and provides:
 - an optional always-on-top desktop widget
 - a tray tooltip and menu summary for the current quota state
 - strict readiness status in the tray when real-data setup is not reliable yet
-- tray menu shortcuts for Refresh, Doctor, Settings, and Dashboard
-- a one-time first-run guide that uses strict trial readiness to open the exact Settings or Doctor section when real data is not ready, or shows the mini panel when it is ready
+- tray menu shortcuts for Refresh, Diagnostics, Settings, and Dashboard
+- a one-time first-run guide that uses strict trial readiness to open the exact Settings or Diagnostics section when real data is not ready, or shows the mini panel when it is ready
 - safe global shortcuts for AIQD itself: `Ctrl+Alt+Q` toggles the mini panel, `Ctrl+Alt+R` refreshes quota data, and `Ctrl+Alt+W` toggles the desktop widget
 - compact secondary-window quota rows and manual refresh in mini surfaces
 - single-instance behavior: launching the desktop app again opens the existing main dashboard window, while the tray remains available for the mini panel
 - automatic tray refresh when Claude Code sends the first statusline snapshot
 - remembered desktop widget position
 - `Esc` to hide the active mini surface
-- a normal full dashboard window for setup, Doctor, and exports
+- a normal full dashboard window for setup, Diagnostics, and exports
 
 The mini surfaces reuse the same normalized `/api/agents`, `/api/trial-readiness`, and setup endpoints as the main dashboard. They do not read extra files, collect prompts, or call hidden provider APIs.
 

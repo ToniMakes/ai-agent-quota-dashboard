@@ -14,7 +14,7 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The local dashboard
 - Claude Desktop quota ingestion from local `plan-usage-history.json`, an alternative to Claude Code so the CLI is not required
 - Real-data readiness passes the `anthropic` provider group when either Claude Code or Claude Desktop is fresh
 - Beginner Claude setup flow with explicit install and connect actions
-- Dashboard, Doctor, Settings, reset timeline, refresh history, and local export views
+- Dashboard, Diagnostics, Settings, reset timeline, refresh history, and local export views
 - Strict real-data readiness checks shared by CLI, Settings, tray, and mini surfaces
 - Electron desktop shell with tray mini panel, always-on-top widget, safe AIQD-only shortcuts, and first-run deep links
 - Dashboard and mini quota cards hide duplicate primary-window rows while keeping extra windows, such as Claude Code's 5-hour quota, visible as progress rows
@@ -70,7 +70,7 @@ The latest local readiness run reports Codex ready from `official_cli`, Claude D
 
 The beginner real-data trial docs now call out expected command results, Windows PowerShell `npm.cmd` fallbacks, Codex automatic-versus-manual detection, and Claude Code stale-snapshot recovery.
 
-Demo release screenshots have been refreshed for the dashboard, Doctor, Settings setup flow with Claude Desktop, mini panel, and widget surfaces under `docs/assets/screenshots`.
+Demo release screenshots have been refreshed for the dashboard, Diagnostics, Settings setup flow with Claude Desktop, mini panel, and widget surfaces under `docs/assets/screenshots`.
 
 The first public preview distribution shape is installer-first desktop preview. The Windows x64 NSIS artifact is generated at `release/AI Agent Quota Dashboard-0.1.0-win-x64.exe`; `release/` is ignored and the artifact should be uploaded to a GitHub Release rather than committed. The v0.1.0 artifact is intentionally unsigned while SignPath review is pending. `docs/release-notes-v0.1.0.md` is the GitHub Release text.
 
