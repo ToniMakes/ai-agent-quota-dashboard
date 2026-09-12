@@ -30,11 +30,7 @@ export function parseCodexQuotaSnapshots(
   text: string,
   options: ParseCodexQuotaSnapshotOptions
 ): QuotaSnapshot[] {
-  return parseJsonDocuments(text).flatMap((document) => {
-    if (!isRecord(document)) {
-      return [];
-    }
-
+  return parseCodexDocuments(text).flatMap((document) => {
     return extractCodexQuotaCandidates(document)
       .flatMap((candidate) => normalizeCodexQuotaCandidate(candidate, options));
   });
@@ -44,15 +40,92 @@ export function parseCodexResetCredits(
   text: string,
   options: ParseCodexQuotaSnapshotOptions
 ): CodexResetCredit[] {
+  return parseCodexDocuments(text).flatMap((document) => {
+    return extractCodexResetCreditContainers(document).flatMap((container) =>
+      normalizeCodexResetCreditContainer(container, document, options)
+    );
+  });
+}
+
+function parseCodexDocuments(text: string): Record<string, unknown>[] {
   return parseJsonDocuments(text).flatMap((document) => {
     if (!isRecord(document)) {
       return [];
     }
 
-    return extractCodexResetCreditContainers(document).flatMap((container) =>
-      normalizeCodexResetCreditContainer(container, document, options)
-    );
+    return [
+      document,
+      ...extractTrustedCodexUsageLimitDocuments(document)
+    ];
   });
+}
+
+function extractTrustedCodexUsageLimitDocuments(
+  document: Record<string, unknown>
+): Record<string, unknown>[] {
+  const payload = readRecord(document, ["payload"]);
+
+  if (!payload || readString(payload, ["type"]) !== "item_completed") {
+    return [];
+  }
+
+  const item = readRecord(payload, ["item"]);
+
+  if (
+    !item ||
+    readString(item, ["type"]) !== "McpToolCall" ||
+    readString(item, ["server"]) !== "codex_app" ||
+    readString(item, ["tool"]) !== "get_usage_limits"
+  ) {
+    return [];
+  }
+
+  const result = readRecord(item, ["result"]);
+  const inheritedObservedAt = readResetAt(document, [
+    "timestamp",
+    "observed_at",
+    "observedAt"
+  ]);
+
+  return readTextContentItems(result?.content)
+    .flatMap((content) => parseJsonDocuments(content))
+    .flatMap((embeddedDocument) => {
+      if (!isRecord(embeddedDocument)) {
+        return [];
+      }
+
+      if (!inheritedObservedAt || hasObservedAt(embeddedDocument)) {
+        return [embeddedDocument];
+      }
+
+      return [
+        {
+          ...embeddedDocument,
+          timestamp: inheritedObservedAt
+        }
+      ];
+    });
+}
+
+function readTextContentItems(content: unknown): string[] {
+  if (!Array.isArray(content)) {
+    return [];
+  }
+
+  return content.flatMap((item) => {
+    if (!isRecord(item) || readString(item, ["type"]) !== "text") {
+      return [];
+    }
+
+    const text = readString(item, ["text"]);
+    return text ? [text] : [];
+  });
+}
+
+function hasObservedAt(document: Record<string, unknown>): boolean {
+  return Boolean(
+    readResetAt(document, ["timestamp", "observed_at", "observedAt"])
+  );
 }
 
 function extractCodexQuotaCandidates(document: Record<string, unknown>) {

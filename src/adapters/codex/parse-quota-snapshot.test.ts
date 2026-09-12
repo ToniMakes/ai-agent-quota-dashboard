@@ -200,6 +200,88 @@ describe("parseCodexResetCredits", () => {
     assert.equal(Object.hasOwn(credits[0] ?? {}, "id"), false);
   });
 
+  it("parses reset credits from trusted Codex usage-limit tool results", () => {
+    const credits = parseCodexResetCredits(
+      JSON.stringify({
+        timestamp: "2026-09-12T12:22:09.368Z",
+        type: "event_msg",
+        payload: {
+          type: "item_completed",
+          item: {
+            type: "McpToolCall",
+            server: "codex_app",
+            tool: "get_usage_limits",
+            result: {
+              content: [
+                {
+                  type: "text",
+                  text: JSON.stringify({
+                    rateLimitResetCredits: {
+                      availableCount: 3,
+                      credits: [
+                        {
+                          id: "RateLimitResetCredit_private",
+                          resetType: "codexRateLimits",
+                          status: "available",
+                          grantedAt: 1787357865,
+                          expiresAt: 1789949865,
+                          title: "Full reset",
+                          description: "private"
+                        }
+                      ]
+                    },
+                    accountId: "private"
+                  })
+                }
+              ]
+            }
+          }
+        }
+      }),
+      { observedAt }
+    );
+
+    assert.equal(credits.length, 1);
+    assert.equal(credits[0]?.expiresAt, "2026-09-21T00:17:45.000Z");
+    assert.equal(credits[0]?.observedAt, "2026-09-12T12:22:09.368Z");
+    assert.equal(Object.hasOwn(credits[0] ?? {}, "id"), false);
+    assert.equal(Object.hasOwn(credits[0] ?? {}, "accountId"), false);
+    assert.equal(Object.hasOwn(credits[0] ?? {}, "description"), false);
+  });
+
+  it("does not parse arbitrary transcript text as reset credits", () => {
+    const credits = parseCodexResetCredits(
+      JSON.stringify({
+        timestamp: "2026-09-12T12:22:09.368Z",
+        type: "response_item",
+        payload: {
+          type: "message",
+          role: "assistant",
+          content: [
+            {
+              type: "output_text",
+              text: JSON.stringify({
+                rateLimitResetCredits: {
+                  credits: [
+                    {
+                      resetType: "codexRateLimits",
+                      status: "available",
+                      expiresAt: "2026-09-21T00:17:45.000Z",
+                      title: "Full reset"
+                    }
+                  ]
+                }
+              })
+            }
+          ]
+        }
+      }),
+      { observedAt }
+    );
+
+    assert.deepEqual(credits, []);
+  });
+
   it("ignores non-Codex reset credit records", () => {
     const credits = parseCodexResetCredits(
       JSON.stringify({

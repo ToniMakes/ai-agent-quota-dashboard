@@ -250,4 +250,77 @@ describe("Codex adapter paths", () => {
       await rm(directory, { force: true, recursive: true });
     }
   });
+
+  it("parses Codex usage-limit tool results from recent session logs", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-codex-tool-"));
+
+    try {
+      const sessionPath = join(
+        directory,
+        "sessions",
+        "2026",
+        "09",
+        "12",
+        "rollout-2026-09-12T12-22-09-test.jsonl"
+      );
+      await mkdir(join(directory, "sessions", "2026", "09", "12"), {
+        recursive: true
+      });
+      await writeFile(
+        sessionPath,
+        JSON.stringify({
+          timestamp: "2026-09-12T12:22:09.368Z",
+          type: "event_msg",
+          payload: {
+            type: "item_completed",
+            item: {
+              type: "McpToolCall",
+              server: "codex_app",
+              tool: "get_usage_limits",
+              result: {
+                content: [
+                  {
+                    type: "text",
+                    text: JSON.stringify({
+                      rateLimitResetCredits: {
+                        availableCount: 1,
+                        credits: [
+                          {
+                            id: "RateLimitResetCredit_private",
+                            resetType: "codexRateLimits",
+                            status: "available",
+                            grantedAt: 1787357865,
+                            expiresAt: 1789949865,
+                            title: "Full reset",
+                            description: "private"
+                          }
+                        ]
+                      },
+                      accountId: "private"
+                    })
+                  }
+                ]
+              }
+            }
+          }
+        })
+      );
+
+      const adapter = createCodexAdapter({
+        configuredDataPaths: [directory],
+        demoMode: false,
+        includeDefaultDataPaths: false
+      });
+      const result = await adapter.scan({
+        now: new Date("2026-09-12T12:25:00.000Z")
+      });
+
+      assert.equal(result.resetCredits?.length, 1);
+      assert.equal(result.resetCredits?.[0]?.expiresAt, "2026-09-21T00:17:45.000Z");
+      assert.equal(result.resetCredits?.[0]?.observedAt, "2026-09-12T12:22:09.368Z");
+      assert.equal(Object.hasOwn(result.resetCredits?.[0] ?? {}, "id"), false);
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
 });

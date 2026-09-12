@@ -1488,12 +1488,12 @@ function renderCodexResetCreditPanel(agent) {
   const statusClass = reminder.withinReminder ? "warning" : "healthy";
   const summary = credits.length > 0
     ? tx("{count} available", "可用 {count} 次", { count: credits.length })
-    : tx("None available", "当前没有可用额度");
+    : tx("No local data", "本地未发现数据");
   const next = reminder.nextCredit
     ? tx("Next expires {time}", "最近到期：{time}", {
         time: formatTimestamp(reminder.nextCredit.expiresAt)
       })
-    : tx("No current reset credits", "当前没有重置额度");
+    : tx("No local reset-credit source", "本地未发现重置额度来源");
 
   return `
     <section class="reset-credit-panel ${escapeHtml(statusClass)}">
@@ -1526,7 +1526,10 @@ function renderCodexResetCreditPanel(agent) {
               .map(renderCodexResetCreditRow)
               .join("")}</div>`
           : `<p class="reset-credit-empty">${escapeHtml(
-              tx("AIQD found no currently available Codex reset credits.", "AIQD 当前没有找到可用的 Codex 重置额度。")
+              tx(
+                "AIQD has not found local Codex reset-credit data yet. Open or refresh a Codex task that can read usage limits, then refresh AIQD.",
+                "AIQD 还没有找到本地 Codex 重置额度数据。打开或刷新一次能读取使用限额的 Codex 任务后，再刷新 AIQD。"
+              )
             )}</p>`
       }
     </section>

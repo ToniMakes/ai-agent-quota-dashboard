@@ -1,6 +1,8 @@
-import { open, readdir, stat } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { readdir, stat } from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
+import { createInterface } from "node:readline";
 import type {
   AgentAdapter,
   AdapterScanContext,
@@ -46,7 +48,7 @@ type CodexScanData = {
 
 const maxCodexSessionDepth = 5;
 const maxCodexSessionLogs = 24;
-const maxCodexSessionTailBytes = 512 * 1024;
+const maxCodexSessionFilteredBytes = 1024 * 1024;
 
 export function createCodexAdapter(options: CodexAdapterOptions): AgentAdapter {
   const defaultDataPaths =
@@ -186,7 +188,7 @@ async function findCodexSessionLogCandidates(
       .slice(0, maxCodexSessionLogs)
       .map(async (candidate) => ({
         path: candidate.path,
-        content: await readFileTail(candidate.path, candidate.size)
+        content: await readRelevantSessionLogLines(candidate.path)
       }))
   );
 }
@@ -261,18 +263,46 @@ function isCodexSessionLogName(name: string): boolean {
   return /^rollout-.+\.jsonl$/i.test(name);
 }
 
-async function readFileTail(path: string, size: number): Promise<string> {
-  const bytesToRead = Math.min(size, maxCodexSessionTailBytes);
-  const position = Math.max(0, size - bytesToRead);
-  const buffer = Buffer.alloc(bytesToRead);
-  const file = await open(path, "r");
+async function readRelevantSessionLogLines(path: string): Promise<string> {
+  const lines: string[] = [];
+  let bytes = 0;
+  const reader = createInterface({
+    crlfDelay: Infinity,
+    input: createReadStream(path, {
+      encoding: "utf8"
+    })
+  });
 
-  try {
-    const result = await file.read(buffer, 0, bytesToRead, position);
-    return buffer.subarray(0, result.bytesRead).toString("utf8");
-  } finally {
-    await file.close();
+  for await (const line of reader) {
+    if (!isRelevantCodexSessionLogLine(line)) {
+      continue;
+    }
+
+    bytes += Buffer.byteLength(line, "utf8") + 1;
+
+    if (bytes > maxCodexSessionFilteredBytes) {
+      break;
+    }
+
+    lines.push(line);
   }
+
+  return lines.join("\n");
+}
+
+function isRelevantCodexSessionLogLine(line: string): boolean {
+  return (
+    line.includes('"rate_limits"') ||
+    line.includes('"rateLimits"') ||
+    line.includes('"rateLimitsByLimitId"') ||
+    line.includes('"rateLimitResetCredits"') ||
+    line.includes('"rate_limit_reset_credits"') ||
+    (
+      line.includes('"type":"McpToolCall"') &&
+      line.includes('"server":"codex_app"') &&
+      line.includes('"tool":"get_usage_limits"')
+    )
+  );
 }
 
 function dedupeCandidates(candidates: CodexCandidateFile[]): CodexCandidateFile[] {

@@ -9,7 +9,7 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The local dashboard
 - Local Node.js service bound to `127.0.0.1`
 - SQLite persistence for normalized quota snapshots, reset events, and refresh runs
 - Codex quota detection from local CLI `rate_limits` events, with a manual visible-status fallback
-- Codex reset-credit detection from structured local app-server records, with read-only dashboard details, mini-panel summary, and optional in-app expiry reminders
+- Codex reset-credit detection from structured local app-server records and trusted Codex usage-limit tool results, with read-only dashboard details, mini-panel summary, and optional in-app expiry reminders
 - Codex display/export surfaces hide unsupported monthly buckets and expose only the adapter-supported 5-hour and weekly windows
 - Claude Code quota ingestion from official statusline `rate_limits`
 - Claude Desktop quota ingestion from local `plan-usage-history.json`, an alternative to Claude Code so the CLI is not required
@@ -61,7 +61,7 @@ The current maintainer checkout has passed:
 - Maintainer-profile desktop and Start menu entries were refreshed again on 2026-08-21 after the Codex monthly-window hiding and desktop `EPIPE` fix; a hidden-window installed-app smoke exited `0`
 - Clean-copy trial from `.tmp/fresh-trial-v0.1.0-rc.1`: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, `npm run trial:ready`, and browser/API smoke
 - 2026-08-26 internal-quality pass (dashboard/mini-panel dedup into `web/shared.js`, Claude CLI environment and provider-manifest extraction): `npm run typecheck`, `npm test` (173 tests), and `npm run desktop:smoke`
-- 2026-09-12 Codex reset-credit pass: `npm test` (180 tests), `node --check web/app.js`, `node --check web/mini.js`, `git diff --check`, `npm run package:win`, installed packaged-exe smoke, and refreshed desktop/Start menu entries to the latest installed executable
+- 2026-09-12 Codex reset-credit pass: `npm test` (183 tests), `node --check web/app.js`, `node --check web/mini.js`, `git diff --check`, real Codex reset-credit smoke found 3 current credits from local session logs, `npm run package:win`, installed packaged-exe smoke, and refreshed desktop/Start menu entries to the latest installed executable
 - GitHub Actions CI on `main`
 
 ## Latest Clean Trial Notes

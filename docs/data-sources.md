@@ -142,8 +142,8 @@ src/adapters/codex/__fixtures__/usage-limits-nested.json
 Current boundary:
 
 - Parse explicit `quota_snapshot`, `quotaSnapshot`, `usage_limits`, local Codex CLI `rate_limits`, and Codex app-server `rateLimits` / `rateLimitsByLimitId` structured records.
-- Parse Codex app-server `rateLimitResetCredits` / `rate_limit_reset_credits` structured records for read-only reset credit display. AIQD stores only currently available Codex reset credits with title, reset type, granted time, expiry time, observed time, source, and confidence; it does not store the raw credit id, account id, raw response, or description text.
-- AIQD scans recent local Codex `rollout-*.jsonl` session logs by tailing bounded bytes and extracting only supported `rate_limits` fields.
+- Parse Codex app-server `rateLimitResetCredits` / `rate_limit_reset_credits` structured records, including trusted `codex_app.get_usage_limits` MCP tool results from local Codex session logs, for read-only reset credit display. AIQD stores only currently available Codex reset credits with title, reset type, granted time, expiry time, observed time, source, and confidence; it does not store the raw credit id, account id, raw response, or description text.
+- AIQD scans recent local Codex `rollout-*.jsonl` session logs by streaming only relevant structured JSON lines and extracting supported quota/reset-credit fields.
 - The Codex adapter exposes only its supported visible windows, currently `session_5h` and `weekly`; unsupported monthly or billing-cycle buckets are hidden from agent summaries, exports, and reset timelines until a reliable user-visible Codex source confirms them.
 - Users can write a structured manual fallback from a visible `/status` or Codex Settings > Usage value with `node dist/index.js codex snapshot --remaining-percent <0-100> --reset-at <iso-time>` or the Settings view form.
 - The manual fallback snapshot is stored at `~/.ai-agent-quota-dashboard/codex/codex-quota-snapshot.json`.
