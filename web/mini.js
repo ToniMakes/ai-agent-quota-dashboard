@@ -633,13 +633,15 @@ function renderMiniResetCreditSummary(agent) {
   }
 
   const statusClass = reminder.withinReminder ? "warning" : "healthy";
-  const text = reminder.withinReminder
-    ? tx("Resets x{count} - expires in {days}d", "重置额度 {count} 次 · {days} 天后到期", {
+  const countText = tx("Resets x{count}", "重置额度 {count} 次", {
+    count: reminder.count
+  });
+  const expiryText = reminder.withinReminder
+    ? tx("Next expires in {days}d", "最近 {days} 天后到期", {
         count: reminder.count,
         days: reminder.daysUntilNext
       })
-    : tx("Resets x{count} - {time}", "重置额度 {count} 次 · {time}", {
-        count: reminder.count,
+    : tx("Next {time}", "最近 {time}", {
         time: formatTimestamp(reminder.nextCredit?.expiresAt)
       });
 
@@ -647,7 +649,10 @@ function renderMiniResetCreditSummary(agent) {
     <div
       class="mini-reset-credit ${escapeHtml(statusClass)}"
       title="${escapeHtml(miniResetCreditTitle(reminder))}"
-    >${escapeHtml(text)}</div>
+    >
+      <span class="mini-reset-credit-count">${escapeHtml(countText)}</span>
+      <span class="mini-reset-credit-expiry">${escapeHtml(expiryText)}</span>
+    </div>
   `;
 }
 

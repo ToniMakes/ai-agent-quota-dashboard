@@ -29,6 +29,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ### Fixed
 
+- Mini panel reset-credit summaries now split the count and nearest expiry onto separate lines so narrow cards do not truncate the important text
 - Codex reset credits are now discovered from trusted local `codex_app.get_usage_limits` tool results in recent session logs, and the empty state now says when no local reset-credit source was found instead of implying the account has no credits
 - Tray context menu said "Open Doctor" after the tab was renamed to Diagnostics; it now says "Open Diagnostics"
 - Mini panel now honors the user's selected Claude source (CLI vs Desktop) when picking which quota card to show, matching the main dashboard instead of always picking by recency
