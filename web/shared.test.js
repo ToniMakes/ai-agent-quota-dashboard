@@ -463,7 +463,14 @@ describe("Codex reset credit helpers", () => {
         enabled: true,
         daysBefore: 99
       }),
-      { enabled: true, daysBefore: 30 }
+      { enabled: true, daysBefore: [30] }
+    );
+    assert.deepEqual(
+      normalizeCodexResetCreditReminderPreferences({
+        enabled: true,
+        daysBefore: [3, "1", 3, 99]
+      }),
+      { enabled: true, daysBefore: [1, 3, 30] }
     );
   });
 
@@ -477,13 +484,23 @@ describe("Codex reset credit helpers", () => {
   it("reports when the next reset credit is inside the reminder window", () => {
     const reminder = codexResetCreditReminderState(
       credits,
-      { enabled: true, daysBefore: 1 },
+      { enabled: true, daysBefore: [1, 3] },
       now
     );
 
     assert.equal(reminder.count, 2);
     assert.equal(reminder.daysUntilNext, 1);
     assert.equal(reminder.withinReminder, true);
+  });
+
+  it("does not warn for reset credits outside all selected reminder windows", () => {
+    const reminder = codexResetCreditReminderState(
+      credits,
+      { enabled: true, daysBefore: [1] },
+      Date.parse("2026-09-11T00:00:00.000Z")
+    );
+
+    assert.equal(reminder.withinReminder, false);
   });
 });
 

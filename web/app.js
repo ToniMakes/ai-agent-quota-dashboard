@@ -196,9 +196,22 @@ document.addEventListener("change", (event) => {
     target instanceof HTMLInputElement &&
     target.matches("[data-reset-credit-reminder-days]")
   ) {
+    const selectedDays = new Set(
+      normalizeCodexResetCreditReminderPreferences(
+        state.codexResetCreditReminderPreferences
+      ).daysBefore
+    );
+    const day = Number(target.value);
+
+    if (target.checked) {
+      selectedDays.add(day);
+    } else {
+      selectedDays.delete(day);
+    }
+
     setCodexResetCreditReminderPreferences({
       ...state.codexResetCreditReminderPreferences,
-      daysBefore: target.valueAsNumber
+      daysBefore: [...selectedDays]
     });
     return;
   }
@@ -1517,12 +1530,10 @@ function renderCodexResetCreditPanel(agent) {
         reminder.withinReminder
           ? `<div class="reset-credit-warning">${escapeHtml(
               tx(
-                "{count} reset credit{plural} expire within {days} day{daysPlural}.",
-                "{count} 个重置额度将在 {days} 天内到期。",
+                "{count} reset credit{plural} expire soon.",
+                "{count} 个重置额度即将到期。",
                 {
                   count: countCreditsWithinReminder(reminder),
-                  days: reminder.preferences.daysBefore,
-                  daysPlural: reminder.preferences.daysBefore === 1 ? "" : "s",
                   plural: countCreditsWithinReminder(reminder) === 1 ? "" : "s"
                 }
               )
@@ -4871,10 +4882,7 @@ function setCodexResetCreditReminderPreferences(preferences) {
     codexResetCreditReminderStorageKey,
     JSON.stringify(normalized)
   );
-  state.codexResetCreditReminderSaveStatus = {
-    kind: "healthy",
-    message: tx("Reminder preference saved.", "提醒偏好已保存。")
-  };
+  state.codexResetCreditReminderSaveStatus = undefined;
   render();
 }
 
@@ -4888,7 +4896,6 @@ function renderCodexResetCreditReminderSettings() {
     findCodexAgent()?.resetCredits,
     preferences
   );
-  const status = state.codexResetCreditReminderSaveStatus;
   const summary = reminder.count > 0
     ? tx(
         "{count} available. Next expires {time}.",
@@ -4899,6 +4906,9 @@ function renderCodexResetCreditReminderSettings() {
         }
       )
     : tx("No available Codex reset credits found.", "当前没有可用的 Codex 重置额度。");
+  const reminderDays = normalizeCodexResetCreditReminderPreferences(preferences)
+    .daysBefore;
+  const options = [1, 3, 7, 14];
 
   elements.resetCreditReminderContent.innerHTML = `
     <div class="preference-row">
@@ -4919,46 +4929,59 @@ function renderCodexResetCreditReminderSettings() {
         <span class="toggle-switch" aria-hidden="true"></span>
       </label>
     </div>
-    <label class="preference-row reset-credit-days-row ${preferences.enabled ? "" : "is-disabled"}">
+    <div class="preference-row reset-credit-days-row ${preferences.enabled ? "" : "is-disabled"}">
       <span class="preference-copy">
-        <strong>${escapeHtml(tx("Remind before", "提前提醒"))}</strong>
-        <span class="settings-detail">${escapeHtml(
-          tx("AIQD shows the warning only while the app is open.", "只在 AIQD 打开时显示提醒。")
-        )}</span>
+        <strong>${escapeHtml(tx("Reminder timing", "提醒时间"))}</strong>
       </span>
-      <span class="preference-control">
-        <input
-          class="reset-credit-days-input"
-          type="number"
-          min="1"
-          max="30"
-          step="1"
-          data-reset-credit-reminder-days
-          value="${escapeHtml(preferences.daysBefore)}"
-          aria-label="${escapeHtml(tx("Days before expiry", "到期前天数"))}"
-          ${preferences.enabled ? "" : "disabled"}
-        />
-        <span class="settings-detail">${escapeHtml(tx("days", "天"))}</span>
-      </span>
-    </label>
+      <div class="preference-control reset-credit-day-options">
+        ${options
+          .map((days) =>
+            renderResetCreditReminderDayOption(
+              days,
+              reminderDays.includes(days),
+              preferences.enabled
+            )
+          )
+          .join("")}
+      </div>
+    </div>
     ${
       reminder.withinReminder
         ? renderPreferenceMessage({
             kind: "warning",
             message: tx(
-              "{count} Codex reset credit{plural} expire within {days} day{daysPlural}.",
-              "{count} 个 Codex 重置额度将在 {days} 天内到期。",
+              "{count} Codex reset credit{plural} expire soon.",
+              "{count} 个 Codex 重置额度即将到期。",
               {
                 count: countCreditsWithinReminder(reminder),
-                days: preferences.daysBefore,
-                daysPlural: preferences.daysBefore === 1 ? "" : "s",
                 plural: countCreditsWithinReminder(reminder) === 1 ? "" : "s"
               }
             )
           })
         : ""
     }
-    ${renderPreferenceMessage(status, status?.kind)}
+  `;
+}
+
+function renderResetCreditReminderDayOption(days, checked, enabled) {
+  const label =
+    days === 1
+      ? tx("1 day", "1 天")
+      : tx("{days} days", "{days} 天", { days });
+
+  return `
+    <label class="reset-credit-day-option ${checked ? "is-selected" : ""} ${
+      enabled ? "" : "is-disabled"
+    }">
+      <input
+        type="checkbox"
+        data-reset-credit-reminder-days
+        value="${days}"
+        ${checked ? "checked" : ""}
+        ${enabled ? "" : "disabled"}
+      />
+      <span>${escapeHtml(label)}</span>
+    </label>
   `;
 }
 
@@ -4969,7 +4992,8 @@ function findCodexAgent() {
 }
 
 function countCreditsWithinReminder(reminder) {
-  const deadline = Date.now() + reminder.preferences.daysBefore * 86_400_000;
+  const maxDays = Math.max(...reminder.preferences.daysBefore);
+  const deadline = Date.now() + maxDays * 86_400_000;
 
   return reminder.credits.filter(
     (credit) => Date.parse(credit.expiresAt) <= deadline

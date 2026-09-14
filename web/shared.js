@@ -265,21 +265,28 @@ export function staleReasonLabel(snapshot, tx) {
 export function defaultCodexResetCreditReminderPreferences() {
   return {
     enabled: false,
-    daysBefore: 3
+    daysBefore: [1, 3]
   };
 }
 
 export function normalizeCodexResetCreditReminderPreferences(value) {
   const fallback = defaultCodexResetCreditReminderPreferences();
   const preferences = value && typeof value === "object" ? value : {};
-  const rawDays = Number(preferences.daysBefore);
-  const daysBefore = Number.isFinite(rawDays)
-    ? Math.round(clamp(rawDays, 1, 30))
-    : fallback.daysBefore;
+  const rawDays = Array.isArray(preferences.daysBefore)
+    ? preferences.daysBefore
+    : [preferences.daysBefore];
+  const daysBefore = [
+    ...new Set(
+      rawDays
+        .map((days) => Number(days))
+        .filter((days) => Number.isFinite(days))
+        .map((days) => Math.round(clamp(days, 1, 30)))
+    )
+  ].sort((left, right) => left - right);
 
   return {
     enabled: preferences.enabled === true,
-    daysBefore
+    daysBefore: daysBefore.length > 0 ? daysBefore : fallback.daysBefore
   };
 }
 
@@ -312,10 +319,11 @@ export function codexResetCreditReminderState(
     typeof nextExpiresAtMs === "number"
       ? Math.max(0, Math.ceil((nextExpiresAtMs - nowMs) / 86_400_000))
       : undefined;
+  const reminderDays = normalized.daysBefore;
   const withinReminder =
     normalized.enabled &&
     typeof daysUntilNext === "number" &&
-    daysUntilNext <= normalized.daysBefore;
+    reminderDays.some((days) => daysUntilNext <= days);
 
   return {
     count: activeCredits.length,
@@ -323,6 +331,7 @@ export function codexResetCreditReminderState(
     daysUntilNext,
     nextCredit,
     preferences: normalized,
+    reminderDays,
     withinReminder
   };
 }

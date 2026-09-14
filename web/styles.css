@@ -638,21 +638,41 @@ h2 {
   white-space: nowrap;
 }
 
-.reset-credit-days-row .preference-control {
-  display: inline-flex;
+.reset-credit-day-options {
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+  justify-content: flex-end;
 }
 
-.reset-credit-days-input {
-  width: 72px;
+.reset-credit-day-option {
+  display: inline-flex;
+  align-items: center;
   min-height: 34px;
-  padding: 0 9px;
-  border: 1px solid var(--border-strong);
+  padding: 0 12px;
+  border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
   color: var(--text);
-  font: inherit;
+  cursor: pointer;
   font-weight: 720;
+}
+
+.reset-credit-day-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.reset-credit-day-option.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 54%, var(--border));
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface));
+  color: var(--accent-strong);
+}
+
+.reset-credit-day-option.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.54;
 }
 
 .toggle-row {
