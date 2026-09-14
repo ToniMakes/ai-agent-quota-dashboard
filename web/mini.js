@@ -1050,9 +1050,14 @@ function snapshotTimingDetail(snapshot, options = {}) {
     : "";
 
   if (snapshot?.resetAt) {
+    const time =
+      snapshot.windowType === "session_5h"
+        ? formatResetClock(snapshot.resetAt)
+        : formatResetDistance(snapshot.resetAt);
+
     return tx("{window}reset {time}", "{window}{time}重置", {
       window: prefix,
-      time: formatResetDistance(snapshot.resetAt)
+      time
     });
   }
 
@@ -1144,6 +1149,23 @@ function formatResetDistance(value) {
   return deltaSeconds < 0
     ? tx("{amount} ago", "{amount} 前", { amount })
     : tx("in {amount}", "{amount} 后", { amount });
+}
+
+function formatResetClock(value) {
+  if (!value) {
+    return "--";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "--";
+  }
+
+  return new Intl.DateTimeFormat(locale(), {
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(date);
 }
 
 function formatTimestamp(value, options = {}) {
