@@ -147,6 +147,8 @@ src/adapters/codex/__fixtures__/usage-limits-nested.json
 Current boundary:
 
 - Parse explicit `quota_snapshot`, `quotaSnapshot`, `usage_limits`, local Codex CLI `rate_limits`, and Codex app-server `rateLimits` / `rateLimitsByLimitId` structured records.
+- Map Codex app-server `primary.windowDurationMins = 300` to `session_5h` and `secondary.windowDurationMins = 10080` to `weekly`, matching the visible Codex Settings usage menu.
+- Codex plans can expose different visible usage windows; AIQD displays only the supported windows actually present in local structured data and does not invent a missing 5-hour or weekly window.
 - Parse Codex app-server `rateLimitResetCredits` / `rate_limit_reset_credits` structured records, including trusted `codex_app.get_usage_limits` MCP tool results from local Codex session logs, for read-only reset credit display. AIQD stores only currently available Codex reset credits with title, reset type, granted time, expiry time, observed time, source, and confidence; it does not store the raw credit id, account id, raw response, or description text.
 - AIQD scans recent local Codex `rollout-*.jsonl` session logs by streaming only relevant structured JSON lines and extracting supported quota/reset-credit fields.
 - The Codex adapter exposes only its supported visible windows, currently `session_5h` and `weekly`; unsupported monthly or billing-cycle buckets are hidden from agent summaries, exports, and reset timelines until a reliable user-visible Codex source confirms them.

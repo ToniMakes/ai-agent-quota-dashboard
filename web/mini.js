@@ -1171,8 +1171,8 @@ function windowLabel(windowType) {
     credits: tx("Credits", "点数"),
     daily: tx("Daily", "每日"),
     monthly: tx("Monthly", "每月"),
-    session_5h: tx("5h", "5 小时"),
-    weekly: tx("Weekly", "每周")
+    session_5h: tx("5 hours", "5 小时"),
+    weekly: tx("1 week", "1 周")
   };
 
   return labels[windowType] ?? windowType;

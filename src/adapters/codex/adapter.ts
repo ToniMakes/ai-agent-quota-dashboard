@@ -465,8 +465,21 @@ function normalizeSubscriptionTier(value: string | undefined): string | undefine
     return "Pro Lite";
   }
 
-  if (/(^|[^a-z])pro([^a-z]|$)/.test(normalized)) {
-    return "Pro";
+  const knownTiers: Array<[string, string]> = [
+    ["enterprise", "Enterprise"],
+    ["business", "Business"],
+    ["team", "Team"],
+    ["premium", "Premium"],
+    ["max", "Max"],
+    ["plus", "Plus"],
+    ["pro", "Pro"],
+    ["free", "Free"]
+  ];
+
+  for (const [token, label] of knownTiers) {
+    if (new RegExp(`(^|[^a-z])${token}([^a-z]|$)`).test(normalized)) {
+      return label;
+    }
   }
 
   return undefined;

@@ -101,6 +101,63 @@ describe("parseCodexQuotaSnapshots", () => {
     assert.equal(snapshots[0]?.source, "official_cli");
   });
 
+  it("parses Codex 5-hour and weekly app usage limit response shapes", () => {
+    const snapshots = parseCodexQuotaSnapshots(
+      JSON.stringify({
+        rateLimits: {
+          limitId: "codex",
+          limitName: null,
+          planType: "plus",
+          primary: {
+            usedPercent: 65,
+            windowDurationMins: 300,
+            resetsAt: 1789395715
+          },
+          secondary: {
+            usedPercent: 10,
+            windowDurationMins: 10080,
+            resetsAt: 1789982515
+          }
+        }
+      }),
+      { observedAt }
+    );
+
+    assert.equal(snapshots.length, 2);
+    assert.equal(snapshots[0]?.windowType, "session_5h");
+    assert.equal(snapshots[0]?.usedPercent, 65);
+    assert.equal(snapshots[0]?.remainingPercent, 35);
+    assert.equal(snapshots[0]?.resetAt, "2026-09-14T14:21:55.000Z");
+    assert.equal(snapshots[0]?.planLabel, "codex plus");
+    assert.equal(snapshots[1]?.windowType, "weekly");
+    assert.equal(snapshots[1]?.usedPercent, 10);
+    assert.equal(snapshots[1]?.remainingPercent, 90);
+    assert.equal(snapshots[1]?.resetAt, "2026-09-21T09:21:55.000Z");
+  });
+
+  it("does not invent a Codex 5-hour window when a plan only reports weekly usage", () => {
+    const snapshots = parseCodexQuotaSnapshots(
+      JSON.stringify({
+        rateLimits: {
+          limitId: "codex",
+          limitName: null,
+          planType: "pro",
+          primary: null,
+          secondary: {
+            usedPercent: 10,
+            windowDurationMins: 10080,
+            resetsAt: 1789982515
+          }
+        }
+      }),
+      { observedAt }
+    );
+
+    assert.equal(snapshots.length, 1);
+    assert.equal(snapshots[0]?.windowType, "weekly");
+    assert.equal(snapshots[0]?.remainingPercent, 90);
+  });
+
   it("ignores model-specific Codex rate limit buckets", () => {
     const snapshots = parseCodexQuotaSnapshots(
       [

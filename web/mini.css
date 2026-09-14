@@ -20,6 +20,7 @@
 
 html,
 body {
+  height: 100%;
   width: 100%;
   min-width: 300px;
   min-height: 100%;
@@ -39,7 +40,10 @@ button {
 }
 
 .mini-shell {
+  display: flex;
+  flex-direction: column;
   width: 100vw;
+  height: 100vh;
   min-height: 100vh;
   padding: 12px;
   border: 1px solid var(--panel-border);
@@ -211,8 +215,10 @@ button {
 
 .mini-grid {
   display: grid;
+  flex: 1 1 auto;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+  min-height: 0;
 }
 
 .mini-agent {
@@ -485,6 +491,7 @@ button {
 }
 
 .mini-footer {
+  flex: 0 0 auto;
   margin-top: 8px;
   overflow: hidden;
   color: var(--muted);

@@ -1368,10 +1368,10 @@ function renderAgentCard(agent) {
       </div>
 
       ${quotaSummary}
-      ${renderCodexResetCreditPanel(agent)}
 
       <div class="quota-lines">
         ${renderSnapshotLines(agent)}
+        ${renderCodexResetCreditPanel(agent)}
         <div class="quota-line">
           <span class="label">${escapeHtml(tx("Source", "来源"))}</span>
           <span class="value">${escapeHtml(source)}</span>
@@ -5881,9 +5881,9 @@ function toTimeLocalValue(value) {
 
 function windowLabel(windowType) {
   const labels = {
-    session_5h: tx("5h", "5 小时"),
+    session_5h: tx("5 hours", "5 小时"),
     daily: tx("Daily", "每日"),
-    weekly: tx("Weekly", "每周"),
+    weekly: tx("1 week", "1 周"),
     monthly: tx("Monthly", "每月"),
     billing_cycle: tx("Billing", "计费"),
     credits: tx("Credits", "点数")

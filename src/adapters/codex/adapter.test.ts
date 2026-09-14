@@ -323,4 +323,87 @@ describe("Codex adapter paths", () => {
       await rm(directory, { force: true, recursive: true });
     }
   });
+
+  it("parses Codex 5-hour usage-limit windows from recent session logs", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-codex-5h-tool-"));
+
+    try {
+      const sessionPath = join(
+        directory,
+        "sessions",
+        "2026",
+        "09",
+        "14",
+        "rollout-2026-09-14T14-02-26-test.jsonl"
+      );
+      await mkdir(join(directory, "sessions", "2026", "09", "14"), {
+        recursive: true
+      });
+      await writeFile(
+        sessionPath,
+        JSON.stringify({
+          timestamp: "2026-09-14T14:02:26.532Z",
+          type: "event_msg",
+          payload: {
+            type: "item_completed",
+            item: {
+              type: "McpToolCall",
+              server: "codex_app",
+              tool: "get_usage_limits",
+              result: {
+                content: [
+                  {
+                    type: "text",
+                    text: JSON.stringify({
+                      rateLimits: {
+                        limitId: "codex",
+                        limitName: null,
+                        planType: "plus",
+                        primary: {
+                          usedPercent: 65,
+                          windowDurationMins: 300,
+                          resetsAt: 1789395715
+                        },
+                        secondary: {
+                          usedPercent: 10,
+                          windowDurationMins: 10080,
+                          resetsAt: 1789982515
+                        }
+                      },
+                      accountId: "private"
+                    })
+                  }
+                ]
+              }
+            }
+          }
+        })
+      );
+
+      const adapter = createCodexAdapter({
+        configuredDataPaths: [directory],
+        demoMode: false,
+        includeDefaultDataPaths: false
+      });
+      const result = await adapter.scan({
+        now: new Date("2026-09-14T14:05:00.000Z")
+      });
+      const sessionWindow = result.snapshots.find(
+        (snapshot) => snapshot.windowType === "session_5h"
+      );
+      const weeklyWindow = result.snapshots.find(
+        (snapshot) => snapshot.windowType === "weekly"
+      );
+
+      assert.equal(result.subscriptionTier, "Plus");
+      assert.equal(result.snapshots.length, 2);
+      assert.equal(sessionWindow?.remainingPercent, 35);
+      assert.equal(sessionWindow?.resetAt, "2026-09-14T14:21:55.000Z");
+      assert.equal(weeklyWindow?.remainingPercent, 90);
+      assert.equal(weeklyWindow?.resetAt, "2026-09-21T09:21:55.000Z");
+      assert.equal(JSON.stringify(result).includes("private"), false);
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
 });
