@@ -306,8 +306,8 @@ function renderAgent(agent) {
         ></div>
       </div>
       <div class="mini-window-list">${renderWindowRows(agent, primary)}</div>
-      ${renderMiniResetCreditSummary(agent)}
       <div class="mini-detail">${escapeHtml(detail)}</div>
+      ${renderMiniResetCreditSummary(agent)}
     </article>
   `;
 }
@@ -595,7 +595,7 @@ function renderWindowRows(agent, primary) {
   }
 
   const secondarySnapshots = snapshots.filter(
-    (snapshot) => !isSameSnapshot(snapshot, agent.primarySnapshot)
+    (snapshot) => !isSameSnapshot(snapshot, primary)
   );
 
   if (secondarySnapshots.length === 0) {
@@ -693,7 +693,7 @@ function renderWindowRow(snapshot) {
       </div>
       ${renderWindowMeter(snapshot)}
       <div class="mini-window-meta">
-        <span>${escapeHtml(detailParts.join(" / "))}</span>
+        <span>${escapeHtml(detailParts.join(" • "))}</span>
       </div>
     </div>
   `;
@@ -719,11 +719,21 @@ function prioritizeSnapshots(snapshots, primary) {
     return snapshots;
   }
 
+  const windowOrder = new Map([
+    ["session_5h", 0],
+    ["weekly", 1],
+    ["daily", 2]
+  ]);
+
   return [
     primary,
-    ...snapshots.filter(
-      (snapshot) => !isSameSnapshot(snapshot, primary)
-    )
+    ...snapshots
+      .filter((snapshot) => !isSameSnapshot(snapshot, primary))
+      .sort(
+        (left, right) =>
+          (windowOrder.get(left.windowType) ?? 3) -
+          (windowOrder.get(right.windowType) ?? 3)
+      )
   ];
 }
 
