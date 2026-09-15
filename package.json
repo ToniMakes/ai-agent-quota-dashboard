@@ -98,7 +98,7 @@
     "@types/node": "^24.0.0",
     "electron": "^43.3.0",
     "electron-builder": "^26.15.3",
-    "tsx": "^4.20.0",
+    "tsx": "^4.23.13",
     "typescript": "^5.9.0"
   }
 }
