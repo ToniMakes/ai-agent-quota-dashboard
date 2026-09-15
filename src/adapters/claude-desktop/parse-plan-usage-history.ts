@@ -12,9 +12,10 @@ const planUsageHistorySnapshotMaxAgeMs = 40 * 60 * 1000;
 const planUsageHistoryWindows: Array<{
   key: string;
   windowType: QuotaWindowType;
+  windowMs: number;
 }> = [
-  { key: "fh", windowType: "session_5h" },
-  { key: "sd", windowType: "weekly" }
+  { key: "fh", windowType: "session_5h", windowMs: 5 * 60 * 60 * 1000 },
+  { key: "sd", windowType: "weekly", windowMs: 7 * 24 * 60 * 60 * 1000 }
 ];
 
 export function parsePlanUsageHistory(
@@ -58,12 +59,13 @@ export function parsePlanUsageHistory(
     return [];
   }
 
-  const observedAt = new Date(latestSample.t).toISOString();
+  const observedAtMs = latestSample.t;
+  const observedAt = new Date(observedAtMs).toISOString();
   const expiresAt = new Date(
-    latestSample.t + planUsageHistorySnapshotMaxAgeMs
+    observedAtMs + planUsageHistorySnapshotMaxAgeMs
   ).toISOString();
 
-  return planUsageHistoryWindows.flatMap(({ key, windowType }) => {
+  return planUsageHistoryWindows.flatMap(({ key, windowType, windowMs }) => {
     const usedPercent = clampPercent(readNumber(usage, [key]));
 
     if (typeof usedPercent !== "number") {
@@ -80,6 +82,7 @@ export function parsePlanUsageHistory(
       usedPercent,
       remaining: 100 - usedPercent,
       remainingPercent: 100 - usedPercent,
+      resetAt: new Date(observedAtMs + windowMs).toISOString(),
       observedAt,
       expiresAt,
       source: "local_quota_snapshot",

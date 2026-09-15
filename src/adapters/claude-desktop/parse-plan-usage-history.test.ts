@@ -35,8 +35,10 @@ describe("parsePlanUsageHistory", () => {
     assert.equal(snapshots[0]?.usedPercent, 35);
     assert.equal(snapshots[0]?.remainingPercent, 65);
     assert.equal(snapshots[0]?.observedAt, latestSampleAt);
+    assert.equal(snapshots[0]?.resetAt, "2026-07-19T11:19:48.388Z");
     assert.equal(snapshots[1]?.usedPercent, 33);
     assert.equal(snapshots[1]?.remainingPercent, 67);
+    assert.equal(snapshots[1]?.resetAt, "2026-07-26T06:19:48.388Z");
     assert.equal(snapshots[1]?.rawSourceRef, "fixture");
   });
 

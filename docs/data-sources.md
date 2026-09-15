@@ -52,6 +52,7 @@ Mapping:
 
 - `u.fh` -> `session_5h`, `u.sd` -> `weekly`
 - `t` (epoch ms) -> `observedAt`
+- `resetAt` -> inferred from `t` plus the local window length (5 hours or 7 days), because Claude Desktop does not store a separate reset timestamp
 - source -> `local_quota_snapshot`, confidence -> `high`
 - `expiresAt` -> `observedAt` plus a fixed max-age window (a local freshness deadline only — see the boundary notes below)
 
@@ -60,7 +61,7 @@ Implementation boundary:
 - Parse only usage percentages and observation timestamps.
 - Convert used percentages into remaining percentages for AIQD cards.
 - Label the source as local Claude Desktop plan usage history, not as an official API.
-- Treat reset timing as unknown; this source never reports a reset time, and `expiresAt` must not be shown as quota reset timing.
+- Treat reset timing as inferred from the local usage-history sample time and window length; `expiresAt` remains only a local freshness deadline and must not be shown as quota reset timing.
 - Do not scrape the desktop UI.
 - Do not import cookies, session tokens, or browser storage.
 - Do not call hidden Claude endpoints.
