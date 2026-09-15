@@ -37,6 +37,8 @@ const doctorSeverity: Record<DoctorStatus, number> = {
   pass: 1
 };
 
+const sessionSnapshotMaxAgeMs = 15 * 60 * 1000;
+
 export function isSnapshotExpired(
   snapshot: QuotaSnapshot,
   now = new Date()
@@ -68,6 +70,14 @@ export function describeSnapshotFreshness(
     };
   }
 
+  if (isSnapshotTooOld(snapshot, now)) {
+    return {
+      status: "stale",
+      reason: "too_old",
+      label: "needs refresh"
+    };
+  }
+
   return {
     status: "fresh",
     reason: "fresh",
@@ -93,7 +103,11 @@ export function resolveQuotaStatus(
     return "unknown";
   }
 
-  if (snapshot.stale || isSnapshotExpired(snapshot, now)) {
+  if (
+    snapshot.stale ||
+    isSnapshotExpired(snapshot, now) ||
+    isSnapshotTooOld(snapshot, now)
+  ) {
     return "stale";
   }
 
@@ -110,6 +124,24 @@ export function resolveQuotaStatus(
   }
 
   return "healthy";
+}
+
+function isSnapshotTooOld(snapshot: QuotaSnapshot, now: Date): boolean {
+  if (
+    snapshot.provider !== "openai" ||
+    snapshot.agent !== "codex" ||
+    snapshot.windowType !== "session_5h" ||
+    snapshot.source === "demo"
+  ) {
+    return false;
+  }
+
+  const observedAtMs = Date.parse(snapshot.observedAt);
+
+  return (
+    Number.isFinite(observedAtMs) &&
+    now.getTime() - observedAtMs > sessionSnapshotMaxAgeMs
+  );
 }
 
 export function choosePrimarySnapshot<TSnapshot extends QuotaSnapshot>(

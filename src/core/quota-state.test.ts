@@ -79,6 +79,23 @@ describe("quota state", () => {
     );
   });
 
+  it("marks old 5h quota snapshots as stale before they hit the reset time", () => {
+    assert.equal(
+      resolveQuotaStatus(
+        {
+          ...baseSnapshot,
+          windowType: "session_5h",
+          remainingPercent: 4,
+          observedAt: "2026-08-09T00:00:00.000Z",
+          expiresAt: "2026-08-09T05:00:00.000Z",
+          resetAt: "2026-08-09T05:00:00.000Z"
+        },
+        new Date("2026-08-09T00:16:00.000Z")
+      ),
+      "stale"
+    );
+  });
+
   it("describes source-marked stale snapshots", () => {
     const freshness = describeSnapshotFreshness({
       ...baseSnapshot,
@@ -105,6 +122,25 @@ describe("quota state", () => {
       status: "stale",
       reason: "expired",
       label: "expired observation"
+    });
+  });
+
+  it("describes old 5h snapshots as needing refresh", () => {
+    const freshness = describeSnapshotFreshness(
+      {
+        ...baseSnapshot,
+        windowType: "session_5h",
+        observedAt: "2026-08-09T00:00:00.000Z",
+        expiresAt: "2026-08-09T05:00:00.000Z",
+        resetAt: "2026-08-09T05:00:00.000Z"
+      },
+      new Date("2026-08-09T00:16:00.000Z")
+    );
+
+    assert.deepEqual(freshness, {
+      status: "stale",
+      reason: "too_old",
+      label: "needs refresh"
     });
   });
 

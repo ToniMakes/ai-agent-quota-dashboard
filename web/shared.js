@@ -255,6 +255,10 @@ export function staleReasonLabel(snapshot, tx) {
     return tx("past the reported reset time", "已超过报告的重置时间");
   }
 
+  if (snapshot?.freshness?.reason === "too_old") {
+    return tx("needs refresh", "需要刷新");
+  }
+
   if (snapshot?.freshness?.reason === "source_marked_stale" || snapshot?.stale) {
     return tx("marked stale by source", "额度来源标记为过期");
   }

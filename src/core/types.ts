@@ -48,7 +48,8 @@ export type SnapshotFreshnessStatus = "fresh" | "stale";
 export type SnapshotFreshnessReason =
   | "fresh"
   | "source_marked_stale"
-  | "expired";
+  | "expired"
+  | "too_old";
 
 export type SnapshotFreshness = {
   status: SnapshotFreshnessStatus;
