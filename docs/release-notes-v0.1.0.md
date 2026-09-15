@@ -29,12 +29,12 @@ On Windows PowerShell, if `npm` is blocked by the local execution policy, use `n
 
 Launch-at-login is not a hidden side effect. The installer checkbox is off by default, and the same startup entry can be enabled or disabled later from Settings > Desktop Preferences.
 
-Signature status: **unsigned Windows installer**. SignPath Foundation open-source signing is still pending as of 2026-08-25, and the maintainer has explicitly approved publishing v0.1.0 as an unsigned desktop preview instead of blocking the release. Windows may show an unknown-publisher or SmartScreen warning.
+Signature status: **unsigned Windows installer**. SignPath Foundation open-source signing is still pending as of 2026-09-16, and the maintainer has explicitly approved publishing v0.1.0 as an unsigned desktop preview instead of blocking the release. Windows may show an unknown-publisher or SmartScreen warning.
 
 SHA256:
 
 ```text
-4509C5C426CA92604FFD5B7EF14728645B02EA3010BFA88FB9A03E4335E83EDA
+B50901B8AF4F9A07CAF9085143B229E3FC3FE76D63F3F600F1CDE6290DD5721C
 ```
 
 Code signing policy: [docs/code-signing.md](https://github.com/ToniMakes/ai-agent-quota-dashboard/blob/main/docs/code-signing.md).

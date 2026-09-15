@@ -70,11 +70,11 @@ The current maintainer checkout has passed:
 - Clean-copy trial from `.tmp/fresh-trial-v0.1.0-rc.1`: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, `npm run trial:ready`, and browser/API smoke
 - 2026-08-26 internal-quality pass (dashboard/mini-panel dedup into `web/shared.js`, Claude CLI environment and provider-manifest extraction): `npm run typecheck`, `npm test` (173 tests), and `npm run desktop:smoke`
 - 2026-09-15 Codex dashboard and reminder UX pass: `npm test` (195 tests), `node --check web/app.js`, `node --check web/mini.js`, and `git diff --check`; dashboard and mini surfaces now prefer the supported 5-hour quota window and support custom reset-credit reminder intervals from 1 to 30 days
-- 2026-09-16 release-hardening pass: enabled Electron ASAR packaging, added local HTTP security headers, coalesced concurrent refreshes, and sanitized unexpected HTTP 500 responses; `npm test`, desktop smoke, packaged smoke, `npm run package:win:dir`, and `npm run package:win` completed successfully. The final local installer is unsigned and has SHA256 `4509C5C426CA92604FFD5B7EF14728645B02EA3010BFA88FB9A03E4335E83EDA`.
+- 2026-09-16 release-hardening pass: enabled Electron ASAR packaging, added local HTTP security headers, coalesced concurrent refreshes, and sanitized unexpected HTTP 500 responses; `npm test`, desktop smoke, packaged smoke, `npm run package:win:dir`, and `npm run package:win` completed successfully.
 - 2026-09-16 P1 product-quality pass: added bounded local-file scan coverage, provider compatibility/data-quality documentation, and edge-case tests for oversized files and global filename patterns.
 - 2026-09-16 P1 open-source engineering pass: added action SHA pinning, dynamic packaging version resolution, CI production audit/SBOM generation, and dependency supply-chain documentation. Automated Dependabot and CODEOWNERS configuration was removed after causing excessive review notifications.
 - 2026-09-16 desktop UX pass: removed manual Codex entry from packaged Settings, added realistic native notification test copy, and aligned desktop action rows using runtime measurement
-- 2026-09-16 v0.1.0 unsigned Windows preview is being republished from tag `v0.1.0`; the release workflow validates tests, desktop smoke, installer packaging, packaged smoke, signature state, and asset upload.
+- 2026-09-16 v0.1.0 unsigned Windows preview was published from tag `v0.1.0`; the release workflow passed tests, desktop smoke, installer packaging, packaged smoke, signature-state validation, and asset upload. The published installer SHA256 is `B50901B8AF4F9A07CAF9085143B229E3FC3FE76D63F3F600F1CDE6290DD5721C`.
 - GitHub Actions CI on `main`
 - Tag-driven Windows release automation now validates package version, creates
   installer SHA256 files, and publishes the installer plus checksum as release
@@ -125,7 +125,7 @@ The fix uses the full product name for Electron app data, enables NSIS app-data 
 
 The mini panel now shows `reset` / `重置` only for real reset timestamps, uses `refresh` / `刷新` for local freshness deadlines, and shows both 5h and weekly timing on the merged Claude card. The clean Windows uninstall retest remains relevant and should now use the latest RC installer.
 
-`v0.1.0` is approved for an unsigned desktop preview because SignPath Foundation review is still pending after the application submitted on 2026-08-14. The final local installer artifact built on 2026-08-25 is unsigned (`Get-AuthenticodeSignature` reports `NotSigned`) and has SHA256 `7DDE28E8FE424268C752480889DBBEABFD5578D9D20D5EE77DAE117ADE867F6D`.
+`v0.1.0` is approved for an unsigned desktop preview because SignPath Foundation review is still pending after the application submitted on 2026-08-14. The published installer artifact built on 2026-09-16 is unsigned (`Get-AuthenticodeSignature` reports `NotSigned`) and has SHA256 `B50901B8AF4F9A07CAF9085143B229E3FC3FE76D63F3F600F1CDE6290DD5721C`.
 
 ## Current Product State
 
