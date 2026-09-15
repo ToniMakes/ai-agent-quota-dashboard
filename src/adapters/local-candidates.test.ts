@@ -24,4 +24,41 @@ describe("findReadableCandidateFiles", () => {
       await rm(directory, { force: true, recursive: true });
     }
   });
+
+  it("skips oversized files and respects the candidate limit", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-candidates-"));
+
+    try {
+      await writeFile(join(directory, "first.json"), "12345");
+      await writeFile(join(directory, "second.json"), "67890");
+
+      const candidates = await findReadableCandidateFiles([directory], {
+        maxBytes: 5,
+        maxFiles: 1,
+        namePattern: /\.json$/i
+      });
+
+      assert.equal(candidates.length, 1);
+      assert.equal(candidates[0]?.content, "12345");
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
+
+  it("supports global name patterns without skipping alternating files", async () => {
+    const directory = await mkdtemp(join(tmpdir(), "aiqd-candidates-"));
+
+    try {
+      await writeFile(join(directory, "first.json"), "first");
+      await writeFile(join(directory, "second.json"), "second");
+
+      const candidates = await findReadableCandidateFiles([directory], {
+        namePattern: /\.json$/gi
+      });
+
+      assert.equal(candidates.length, 2);
+    } finally {
+      await rm(directory, { force: true, recursive: true });
+    }
+  });
 });

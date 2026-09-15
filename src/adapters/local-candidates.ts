@@ -96,14 +96,23 @@ export async function findReadableCandidateFiles(
       return;
     }
 
+    options.namePattern.lastIndex = 0;
     if (size > maxBytes || !options.namePattern.test(name)) {
       return;
     }
 
     try {
+      const content = await readFile(path, "utf8");
+
+      // The file may grow between stat() and readFile(). Keep the same memory
+      // boundary even when a provider is actively writing its log.
+      if (Buffer.byteLength(content, "utf8") > maxBytes) {
+        return;
+      }
+
       candidates.push({
         path,
-        content: await readFile(path, "utf8")
+        content
       });
     } catch {
       return;

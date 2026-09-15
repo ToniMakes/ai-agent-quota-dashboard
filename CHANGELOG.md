@@ -12,6 +12,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Added read-only Codex reset credit parsing, storage, dashboard details, mini-panel summary, and multi-select in-app expiry reminders
 - Added a custom Codex reset-credit reminder interval from 1 to 30 days
 - Added security headers for the local dashboard and API responses
+- Added compatibility and data-quality notes for supported local provider sources
 - Added a Windows-native notification bridge and a Settings action for previewing a realistic Codex reset-credit reminder
 
 ### Changed
@@ -32,6 +33,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Trimmed the README's Status section from a long feature-bullet list to a short summary linking to `docs/status.md`, and removed repeated privacy/setup caveats from the README and Claude Desktop docs section
 - Reorganized the dashboard refresh controls so the primary actions remain grouped while refresh timing information stays separate on narrow windows
 - Coalesced concurrent refresh requests so repeated local refresh triggers share one backend scan
+- Hardened bounded local-file discovery against provider logs that grow during a scan and global regular-expression patterns
 - Updated dashboard and mini quota surfaces to keep 5-hour windows above weekly windows and align equivalent rows across Codex and Claude
 - Removed the Codex manual-entry form from packaged Settings; automatic detection now explains that Codex must be used once before refreshing
 - Made the startup control match the measured EN + Refresh button-row width and keep the action rows aligned on narrow windows

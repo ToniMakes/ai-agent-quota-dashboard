@@ -2,6 +2,7 @@
 
 - [Architecture](architecture.md)
 - [Data sources](data-sources.md)
+- [Compatibility and data quality](compatibility.md)
 - [Diagnostics](diagnostics.md)
 - [Distribution and startup](distribution.md)
 - [Code signing policy](code-signing.md)
