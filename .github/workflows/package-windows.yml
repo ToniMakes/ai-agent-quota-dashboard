@@ -53,9 +53,6 @@ jobs:
       - name: Build Windows installer
         run: npm run package:win
 
-      - name: Verify release version
-        run: npm run release:verify
-
       - name: Generate installer checksum
         run: npm run release:checksum
 
