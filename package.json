@@ -55,7 +55,7 @@
     "appId": "com.istoniliu.ai-agent-quota-dashboard",
     "productName": "AI Agent Quota Dashboard",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
-    "asar": false,
+    "asar": true,
     "npmRebuild": false,
     "directories": {
       "output": "release"

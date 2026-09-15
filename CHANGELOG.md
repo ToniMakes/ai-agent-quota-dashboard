@@ -11,6 +11,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Added inline subscription-tier metadata in the main agent card header when local data exposes a reliable tier, including Codex `planType` and Claude local credentials `subscriptionType`
 - Added read-only Codex reset credit parsing, storage, dashboard details, mini-panel summary, and multi-select in-app expiry reminders
 - Added a custom Codex reset-credit reminder interval from 1 to 30 days
+- Added security headers for the local dashboard and API responses
 - Added a Windows-native notification bridge and a Settings action for previewing a realistic Codex reset-credit reminder
 
 ### Changed
@@ -30,6 +31,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Consolidated the Codex/Claude Code/Claude Desktop adapter list into a single provider manifest shared by adapter registration and the local-paths Settings view
 - Trimmed the README's Status section from a long feature-bullet list to a short summary linking to `docs/status.md`, and removed repeated privacy/setup caveats from the README and Claude Desktop docs section
 - Reorganized the dashboard refresh controls so the primary actions remain grouped while refresh timing information stays separate on narrow windows
+- Coalesced concurrent refresh requests so repeated local refresh triggers share one backend scan
 - Updated dashboard and mini quota surfaces to keep 5-hour windows above weekly windows and align equivalent rows across Codex and Claude
 - Removed the Codex manual-entry form from packaged Settings; automatic detection now explains that Codex must be used once before refreshing
 - Made the startup control match the measured EN + Refresh button-row width and keep the action rows aligned on narrow windows
@@ -48,6 +50,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Fixed a handful of untranslated hardcoded English strings in the Settings view
 - Fixed dashboard and mini-panel primary quota selection to prefer the supported 5-hour window, then weekly quota, instead of relying on adapter ordering
 - Added Codex-specific guidance when the latest local CLI quota observation is stale
+- Prevented unexpected HTTP errors from exposing raw internal exception details to local API clients
 
 ## [0.1.0] - 2026-08-25
 

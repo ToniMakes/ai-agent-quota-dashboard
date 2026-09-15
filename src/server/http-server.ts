@@ -41,6 +41,18 @@ const mimeTypes: Record<string, string> = {
 };
 
 export function createHttpServer(context: ServerContext) {
+  let refreshInFlight: Promise<unknown> | undefined;
+
+  const refresh = () => {
+    if (!refreshInFlight) {
+      refreshInFlight = context.service.refresh().finally(() => {
+        refreshInFlight = undefined;
+      });
+    }
+
+    return refreshInFlight;
+  };
+
   return createServer(async (request, response) => {
     try {
       const url = new URL(
@@ -49,15 +61,14 @@ export function createHttpServer(context: ServerContext) {
       );
 
       if (url.pathname.startsWith("/api/")) {
-        await handleApiRequest(context, request, response, url);
+        await handleApiRequest(context, request, response, url, refresh);
         return;
       }
 
       await serveStaticFile(context.staticDir, url.pathname, response);
     } catch (error) {
-      sendJson(response, 500, {
-        error: error instanceof Error ? error.message : String(error)
-      });
+      console.error("AIQD HTTP request failed", error);
+      sendJson(response, 500, { error: "Internal server error" });
     }
   });
 }
@@ -93,7 +104,8 @@ async function handleApiRequest(
   context: ServerContext,
   request: IncomingMessage,
   response: ServerResponse,
-  url: URL
+  url: URL,
+  refresh: () => Promise<unknown>
 ): Promise<void> {
   if (!isAllowedOrigin(request.headers.origin, context.config.port)) {
     sendJson(response, 403, { error: "Origin not allowed" });
@@ -219,7 +231,7 @@ async function handleApiRequest(
       entryPointUrl: context.entryPointUrl,
       installIfMissing: body.installIfMissing === true
     });
-    const refreshResult = await context.service.refresh();
+    const refreshResult = await refresh();
 
     sendJson(response, 200, {
       generatedAt: new Date().toISOString(),
@@ -268,7 +280,7 @@ async function handleApiRequest(
     }
 
     const result = await writeCodexManualSnapshot(snapshotOptions, now);
-    const refreshResult = await context.service.refresh();
+    const refreshResult = await refresh();
     const snapshot = result.snapshot.quota_snapshot;
 
     sendJson(response, 200, {
@@ -303,7 +315,7 @@ async function handleApiRequest(
   }
 
   if (request.method === "POST" && url.pathname === "/api/refresh") {
-    const result = await context.service.refresh();
+    const result = await refresh();
     sendJson(response, 200, result);
     return;
   }
@@ -428,7 +440,8 @@ async function serveStaticFile(
     response.writeHead(200, {
       "Cache-Control": "no-store",
       "Content-Length": fileStats.size,
-      "Content-Type": mimeTypes[extension] ?? "application/octet-stream"
+      "Content-Type": mimeTypes[extension] ?? "application/octet-stream",
+      ...securityHeaders()
     });
     createReadStream(filePath).pipe(response);
   } catch {
@@ -444,7 +457,8 @@ function sendJson(
 ): void {
   response.writeHead(statusCode, {
     "Cache-Control": "no-store",
-    "Content-Type": "application/json; charset=utf-8"
+    "Content-Type": "application/json; charset=utf-8",
+    ...securityHeaders()
   });
   response.end(JSON.stringify(payload, null, 2));
 }
@@ -460,7 +474,17 @@ function sendDownload(
     "Cache-Control": "no-store",
     "Content-Disposition": `attachment; filename="${filename}"`,
     "Content-Length": Buffer.byteLength(body),
-    "Content-Type": contentType
+    "Content-Type": contentType,
+    ...securityHeaders()
   });
   response.end(body);
+}
+
+function securityHeaders(): Record<string, string> {
+  return {
+    "Content-Security-Policy":
+      "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer"
+  };
 }

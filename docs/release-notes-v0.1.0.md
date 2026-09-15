@@ -34,7 +34,7 @@ Signature status: **unsigned Windows installer**. SignPath Foundation open-sourc
 SHA256:
 
 ```text
-7DDE28E8FE424268C752480889DBBEABFD5578D9D20D5EE77DAE117ADE867F6D
+4509C5C426CA92604FFD5B7EF14728645B02EA3010BFA88FB9A03E4335E83EDA
 ```
 
 Code signing policy: [docs/code-signing.md](https://github.com/ToniMakes/ai-agent-quota-dashboard/blob/main/docs/code-signing.md).

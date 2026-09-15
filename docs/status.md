@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-09-15
+Last updated: 2026-09-16
 
 AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The local dashboard, desktop tray shell, real-data setup flow, and strict trial readiness checks are implemented and passing CI. The first public preview target is installer-first for normal users, with source mode retained as a developer fallback.
 
@@ -11,6 +11,8 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The local dashboard
 - Codex quota detection from local CLI `rate_limits` events; the packaged Settings flow is automatic-only and directs users to use Codex once, then refresh
 - Codex reset-credit detection from structured local app-server records and trusted Codex usage-limit tool results, with read-only dashboard details, mini-panel summary, and optional in-app expiry reminders
 - Codex reset-credit reminders support both preset intervals and a custom 1–30 day interval
+- Local HTTP responses include a restrictive Content Security Policy and standard browser hardening headers
+- Concurrent refresh requests are coalesced, and unexpected HTTP errors return a generic production-safe message
 - Packaged desktop builds can show a real Windows notification through the Electron bridge, with a Settings test action; scheduled reminder delivery remains future work
 - Subscription-tier labels in the main agent card header when local data exposes a reliable tier, including Codex `planType` and Claude local credentials `subscriptionType`
 - Codex display/export surfaces hide unsupported monthly buckets and expose only the adapter-supported 5-hour and weekly windows
@@ -65,6 +67,7 @@ The current maintainer checkout has passed:
 - Clean-copy trial from `.tmp/fresh-trial-v0.1.0-rc.1`: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, `npm run trial:ready`, and browser/API smoke
 - 2026-08-26 internal-quality pass (dashboard/mini-panel dedup into `web/shared.js`, Claude CLI environment and provider-manifest extraction): `npm run typecheck`, `npm test` (173 tests), and `npm run desktop:smoke`
 - 2026-09-15 Codex dashboard and reminder UX pass: `npm test` (195 tests), `node --check web/app.js`, `node --check web/mini.js`, and `git diff --check`; dashboard and mini surfaces now prefer the supported 5-hour quota window and support custom reset-credit reminder intervals from 1 to 30 days
+- 2026-09-16 release-hardening pass: enabled Electron ASAR packaging, added local HTTP security headers, coalesced concurrent refreshes, and sanitized unexpected HTTP 500 responses; `npm test`, desktop smoke, packaged smoke, `npm run package:win:dir`, and `npm run package:win` completed successfully. The final local installer is unsigned and has SHA256 `4509C5C426CA92604FFD5B7EF14728645B02EA3010BFA88FB9A03E4335E83EDA`.
 - 2026-09-16 desktop UX pass: removed manual Codex entry from packaged Settings, added realistic native notification test copy, and aligned desktop action rows using runtime measurement
 - GitHub Actions CI on `main`
 
