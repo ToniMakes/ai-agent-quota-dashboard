@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-16
 
-AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The local dashboard, desktop tray shell, real-data setup flow, and strict trial readiness checks are implemented and passing CI. The first public preview target is installer-first for normal users, with source mode retained as a developer fallback.
+AI Agent Quota Dashboard is in the v0.1.0 desktop-preview stage. The first public Windows x64 preview is published as an installer-first release for normal users, with source mode retained as a developer fallback.
 
 ## Current Capability
 
@@ -65,9 +65,9 @@ The current maintainer checkout has passed:
 - Browser interaction smoke for the decluttered dashboard and mini quota-window layouts
 - Browser/API smoke against demo mode for `/`, `/mini.html`, `/api/health`, `/api/agents`, `/api/trial-readiness`, and `/api/export?format=json`
 - Maintainer-profile installer trial: silent NSIS install exited `0`, desktop and Start menu shortcuts target the installed packaged executable, the desktop shortcut opens the installed app backend on `127.0.0.1:4317`, `/api/trial-readiness` reports `ok: true`, and browser smoke passes for the installed dashboard and mini panel
-- Maintainer-profile desktop and Start menu entries were refreshed to the latest installed packaged executable after the `v0.1.0-rc.3` build
+- Maintainer-profile desktop and Start menu entries were refreshed to the latest installed packaged executable after the v0.1.0 build
 - Maintainer-profile desktop and Start menu entries were refreshed again on 2026-08-21 after the Codex monthly-window hiding and desktop `EPIPE` fix; a hidden-window installed-app smoke exited `0`
-- Clean-copy trial from `.tmp/fresh-trial-v0.1.0-rc.1`: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, `npm run trial:ready`, and browser/API smoke
+- Clean-copy trial from an isolated temporary checkout: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, `npm run trial:ready`, and browser/API smoke
 - 2026-08-26 internal-quality pass (dashboard/mini-panel dedup into `web/shared.js`, Claude CLI environment and provider-manifest extraction): `npm run typecheck`, `npm test` (173 tests), and `npm run desktop:smoke`
 - 2026-09-15 Codex dashboard and reminder UX pass: `npm test` (195 tests), `node --check web/app.js`, `node --check web/mini.js`, and `git diff --check`; dashboard and mini surfaces now prefer the supported 5-hour quota window and support custom reset-credit reminder intervals from 1 to 30 days
 - 2026-09-16 release-hardening pass: enabled Electron ASAR packaging, added local HTTP security headers, coalesced concurrent refreshes, and sanitized unexpected HTTP 500 responses; `npm test`, desktop smoke, packaged smoke, `npm run package:win:dir`, and `npm run package:win` completed successfully.
@@ -88,16 +88,9 @@ The latest local readiness run reports Codex ready from `official_cli`, Claude D
 
 The beginner real-data trial docs now call out expected command results, Windows PowerShell `npm.cmd` fallbacks, Codex automatic-versus-manual detection, and Claude Code stale-snapshot recovery.
 
-Demo release screenshots have been refreshed for the dashboard, Diagnostics, Settings setup flow with Claude Desktop, mini panel, and widget surfaces under `docs/assets/screenshots`.
+Public demo screenshots were regenerated from the current dashboard, Diagnostics, Settings, mini panel, and widget surfaces under `docs/assets/screenshots`.
 
 The first public preview distribution shape is installer-first desktop preview. The Windows x64 NSIS artifact is generated at `release/AI Agent Quota Dashboard-0.1.0-win-x64.exe`; `release/` is ignored and the artifact is published to the [v0.1.0 GitHub Release](https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/tag/v0.1.0) rather than committed. The v0.1.0 artifact is intentionally unsigned while SignPath review is pending. `docs/release-notes-v0.1.0.md` is the release-notes source.
-
-The unsigned `v0.1.0-rc.1` GitHub Pre-release has been created for clean-machine testing and SignPath Foundation review. A copy-paste application draft is available in [docs/signpath-application.md](signpath-application.md).
-
-- Release page: https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.1
-- Workflow run: https://github.com/ToniMakes/ai-agent-quota-dashboard/actions/runs/31796488211
-- Asset SHA256: `D938A30F4289EE676FD181AC804B5DE0F372EEF502706FFE43142B85F26A0F72`
-- SignPath Foundation OSS application: submitted, awaiting review
 
 The latest installed-app trial used the maintainer's existing Windows profile and preserved existing AIQD, Codex, and Claude Code state. It validates the packaged installer and normal desktop entry path, but a true clean Windows user or VM first-run remains useful before broad distribution.
 
@@ -105,31 +98,11 @@ The clean Windows VM first-run protocol is now spelled out in [docs/real-data-tr
 
 Clean Windows VM trial tracking issue: https://github.com/ToniMakes/ai-agent-quota-dashboard/issues/1
 
-Friend clean-Windows testing of `v0.1.0-rc.1` found leftover Electron app data at `%APPDATA%\AI Agent Quota` after uninstall. `v0.1.0-rc.2` was published to retest that uninstall cleanup:
-
-- Release page: https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.2
-- Workflow run: https://github.com/ToniMakes/ai-agent-quota-dashboard/actions/runs/31805252401
-- Asset SHA256: `3F0BC6183A7A435E3181A006CEEF9BC21DF35AF1D607F639496AD014527C545B`
-
-The fix uses the full product name for Electron app data, enables NSIS app-data cleanup, and explicitly removes the old RC1 short-name app data directory during uninstall. This still needs a clean Windows uninstall retest against `v0.1.0-rc.2`.
-
-`v0.1.0-rc.3` was prepared to retest the tray mini panel timing copy after tester feedback that source labels were less useful in the compact surface:
-
-- Release page: https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.3
-- Asset SHA256: `1F8D300E6A30E54426A1751770EF77278C53D334C94BAB0F468B2A2F2C12BEAF`
-
-`v0.1.0-rc.4` replaces `v0.1.0-rc.3` for mini timing retest after feedback that the `expires` / `过期` wording was unclear and that Claude should expose both 5h and weekly timing:
-
-- Release page: https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/tag/v0.1.0-rc.4
-- Asset SHA256: `4FEE3E936DAD393C885257A0F8E5AEB58116F125045047935BDB9439FF40C347`
-
-The mini panel now shows `reset` / `重置` only for real reset timestamps, uses `refresh` / `刷新` for local freshness deadlines, and shows both 5h and weekly timing on the merged Claude card. The clean Windows uninstall retest remains relevant and should now use the latest RC installer.
-
-`v0.1.0` is approved for an unsigned desktop preview because SignPath Foundation review is still pending after the application submitted on 2026-08-14. The published installer artifact built on 2026-09-16 is unsigned (`Get-AuthenticodeSignature` reports `NotSigned`) and has SHA256 `B50901B8AF4F9A07CAF9085143B229E3FC3FE76D63F3F600F1CDE6290DD5721C`.
+The published v0.1.0 installer artifact built on 2026-09-16 is unsigned while SignPath Foundation review is pending. Its SHA256 is `B50901B8AF4F9A07CAF9085143B229E3FC3FE76D63F3F600F1CDE6290DD5721C`.
 
 ## Current Product State
 
-The app is suitable for local real-data dogfooding by the maintainer and technically curious early testers. For the first public preview, normal users should install a packaged desktop build and finish setup from Settings. Source checkout remains the developer fallback path.
+The app is suitable for local real-data use by early testers. Normal users should install the packaged desktop build and finish setup from Settings. Source checkout remains the developer fallback path.
 
 Launch-at-login is implemented for packaged desktop builds and documented in [docs/distribution.md](distribution.md): startup is explicit, reversible, off by default, and uses a background tray launch instead of opening the full dashboard unless setup or recovery needs attention.
 

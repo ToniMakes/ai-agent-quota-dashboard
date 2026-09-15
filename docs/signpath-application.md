@@ -2,7 +2,7 @@
 
 Last updated: 2026-08-26
 
-**Status: submitted 2026-08-14, awaiting review.** This was the draft used for that submission; see [docs/status.md](status.md) for the current review status. The artifact/date/commit fields below have been refreshed to the current `v0.1.0` release so this draft stays usable if a follow-up submission or status update is needed — https://signpath.org/apply.html
+**Status: submitted 2026-08-14, awaiting review.** This was the draft used for that submission. See [docs/status.md](status.md) for the current review status. The artifact, date, and commit fields below have been refreshed to the current `v0.1.0` release so this draft stays usable if a follow-up submission or status update is needed: https://signpath.org/apply.html
 
 ## Project
 

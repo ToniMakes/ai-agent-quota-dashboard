@@ -185,7 +185,7 @@ If not ready: automatic detection may be unavailable on this machine or Codex ve
 - `Reported reset`
 - Optional label
 
-Then click `Save snapshot`, or use the CLI equivalent — see [Codex Quota Detection](../README.md#codex-quota-detection) for the command and how manual fallback snapshots expire.
+Then click `Save snapshot`, or use the CLI equivalent. See [Codex Quota Detection](../README.md#codex-quota-detection) for the command and how manual fallback snapshots expire.
 
 ## 5. Verify Claude Desktop Coverage
 
@@ -201,7 +201,7 @@ Normal-user path from the desktop app:
 
 1. Open Settings.
 2. In the first-run setup area, click `Check Claude Desktop` to expand the Claude Desktop details.
-3. If the file exists and has a recent sample, it shows as `Done` immediately — nothing to install or connect.
+3. If the file exists and has a recent sample, it shows as `Done` immediately. Nothing needs to be installed or connected.
 4. If it shows `Waiting`, open Claude Desktop so it records a new usage sample, then click `Refresh Claude Desktop`.
 
 Expected: AIQD shows Claude Desktop five-hour and weekly usage from local plan usage samples and labels the source clearly (`Local snapshot`); see [Privacy](privacy.md) for the data boundary this respects. Claude readiness in Diagnostics and the real-data overview shows ready as soon as this source is fresh, even if Claude Code CLI is never set up.
@@ -221,7 +221,7 @@ Normal-user path from the desktop app:
 
 Expected: Claude Code is marked ready after AIQD receives supported `rate_limits` fields. If Claude opens but AIQD still says it is waiting, send one short message in Claude and wait for the response to finish.
 
-Developer source-mode fallback — see [Claude Code Statusline](../README.md#claude-code-statusline) for the full build/preview/install walkthrough and `PATH` troubleshooting. For this trial, run the self-test first:
+Developer source-mode fallback: see [Claude Code Statusline](../README.md#claude-code-statusline) for the full build/preview/install walkthrough and `PATH` troubleshooting. For this trial, run the self-test first:
 
 ```bash
 npm run claude:self-test

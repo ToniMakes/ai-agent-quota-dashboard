@@ -15,9 +15,9 @@ AIQD only reads local files written by desktop apps or CLIs (Codex CLI, Claude C
 
 ## Status
 
-This repository publishes the v0.1 desktop preview as an installer-first build for normal users: install the app, open the desktop shortcut, then finish setup from Settings. Source mode remains available as a developer fallback.
+This repository publishes v0.1.0, the first public Windows x64 desktop preview. The supported public path is installer first: install the app, open the desktop shortcut, then finish setup from Settings. Source mode remains available as a developer fallback. The current release is [v0.1.0](https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/tag/v0.1.0).
 
-The app covers Codex (via local CLI `rate_limits` events) and Claude (via the Claude Code statusline or Claude Desktop's local `plan-usage-history.json` — see [Claude Desktop And Claude Code](#claude-desktop-and-claude-code) for how those two sources work as alternatives). When structured local Codex data exposes reset credits, AIQD also shows the current read-only reset-credit count and expiry times, with optional in-app reminders and a Windows notification preview from Settings. It ships as a Windows desktop app with a main dashboard, a tray mini panel, and an always-on-top widget, alongside `doctor` and `export` CLI commands for local diagnostics. The v0.1.0 installer is an unsigned preview while SignPath Foundation open-source signing remains pending; see [docs/code-signing.md](docs/code-signing.md).
+The app covers Codex through local CLI `rate_limits` events and Claude through either the Claude Code statusline or Claude Desktop's local `plan-usage-history.json`. See [Claude Desktop And Claude Code](#claude-desktop-and-claude-code) for how these sources work as alternatives. When structured local Codex data exposes reset credits, AIQD also shows the current read-only reset-credit count and expiry times, with optional in-app reminders and a Windows notification preview from Settings. It ships as a Windows desktop app with a main dashboard, a tray mini panel, and an always-on-top widget, alongside `doctor` and `export` CLI commands for local diagnostics. The v0.1.0 installer is unsigned while SignPath Foundation open-source signing remains pending; see [docs/code-signing.md](docs/code-signing.md).
 
 If reliable quota data cannot be obtained from an official or local user-visible source, the app shows `unavailable` rather than guessing.
 
@@ -25,19 +25,29 @@ See [docs/status.md](docs/status.md) for the full capability list and current en
 
 ## Screenshots
 
-Demo dashboard:
+These images use sanitized demo data from the current application. They do not contain account names, credentials, private paths, raw logs, prompts, source code, or real quota records.
+
+Dashboard:
 
 ![AI Agent Quota dashboard](docs/assets/screenshots/dashboard-demo.png)
 
-First-run setup flow:
+Diagnostics:
 
-![AI Agent Quota setup flow](docs/assets/screenshots/settings-demo.png)
+![AI Agent Quota diagnostics](docs/assets/screenshots/doctor-demo.png)
 
-Mini panel:
+Settings and first-run setup:
 
-![AI Agent Quota mini panel](docs/assets/screenshots/mini-panel-demo.png)
+![AI Agent Quota settings](docs/assets/screenshots/settings-demo.png)
 
-More release screenshot notes are in [docs/assets/screenshots](docs/assets/screenshots).
+Tray mini panel:
+
+![AI Agent Quota tray mini panel](docs/assets/screenshots/mini-panel-demo.png)
+
+Always-on-top widget:
+
+![AI Agent Quota desktop widget](docs/assets/screenshots/widget-demo.png)
+
+Screenshot safety notes are in [docs/assets/screenshots](docs/assets/screenshots).
 
 ## Non-goals
 
@@ -53,10 +63,10 @@ This project does not:
 
 ## Quick Start
 
-Normal-user release target:
+Current public release:
 
 1. Download the installer from the GitHub Release assets.
-   The Windows x64 artifact is named `AI Agent Quota Dashboard-0.1.0-win-x64.exe`.
+   The Windows x64 artifact is named `AI.Agent.Quota.Dashboard-0.1.0-win-x64.exe`.
 2. Run the installer. The optional `Start AIQD when I sign in` checkbox defaults to off.
 3. Open the AIQD desktop shortcut.
 4. The first-launch guide asks which agents you use. If you choose Claude, pick either Claude Desktop or Claude Code CLI.
@@ -281,9 +291,9 @@ The Settings view shows the same config path, whether configured scan roots are 
 
 AIQD reads Claude quota from two independent local sources and treats them as alternatives, not a chain: Claude Code statusline and Claude Desktop's local `plan-usage-history.json`. Either one being fresh is enough for Claude to count as ready; the Claude Code CLI is not required.
 
-On Windows, Claude Desktop maintains a local `%APPDATA%\Claude\plan-usage-history.json` file with plan usage samples. The adapter parses only narrow usage fields — 5-hour and weekly used percentages plus observation timestamps — and does not scrape the app UI (see [Non-goals](#non-goals) for the project's broader data-access guarantees). Reset time is not reported by this file, so AIQD shows percentage and observed time only for this source.
+On Windows, Claude Desktop maintains a local `%APPDATA%\Claude\plan-usage-history.json` file with plan usage samples. The adapter parses only narrow usage fields, including 5-hour and weekly used percentages plus observation timestamps, and does not scrape the app UI. See [Non-goals](#non-goals) for the project's broader data-access guarantees. Reset time is not reported by this file, so AIQD shows percentage and observed time only for this source.
 
-Note the name: "Claude Desktop" here means the installed desktop app, not claude.ai opened in a regular web browser — see the intro above for why a browser-only account can't be monitored.
+Here, "Claude Desktop" means the installed desktop app, not claude.ai opened in a regular web browser. See the intro above for why a browser-only account cannot be monitored.
 
 ## Claude Code Statusline
 

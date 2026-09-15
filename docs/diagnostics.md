@@ -22,7 +22,7 @@ npm run build
 node dist/index.js doctor --json
 ```
 
-The JSON report is intended for bug reports and data-source issues. It excludes or redacts account identifiers, raw source references, raw local file content, and local filesystem paths — see [Privacy](privacy.md) for the full data boundary. It also includes per-snapshot freshness reasons, such as whether a snapshot is fresh, source-marked stale, or expired.
+The JSON report is intended for bug reports and data-source issues. It excludes or redacts account identifiers, raw source references, raw local file content, and local filesystem paths. See [Privacy](privacy.md) for the full data boundary. It also includes per-snapshot freshness reasons, such as whether a snapshot is fresh, source-marked stale, or expired.
 
 Always review the output before posting it publicly.
 

@@ -1,8 +1,8 @@
 # Data Sources
 
-The project only parses data that is explicit, local, or official — structured CLI/API/UI-documented fields. See [Privacy](privacy.md) for what it never reads.
+The project only parses data that is explicit, local, or official, using structured CLI/API/UI-documented fields. See [Privacy](privacy.md) for what it never reads.
 
-Every source below depends on a local file or CLI output written by a desktop app or CLI (Codex CLI, Claude Code CLI, Claude Desktop). None of them can see usage for an account that only uses a browser-based product (claude.ai or chatgpt.com in a plain web browser, with no desktop app or CLI installed) — there is no local file for AIQD to read in that case.
+Every source below depends on a local file or CLI output written by a desktop app or CLI (Codex CLI, Claude Code CLI, Claude Desktop). None of them can see usage for an account that only uses a browser-based product (claude.ai or chatgpt.com in a plain web browser, with no desktop app or CLI installed). There is no local file for AIQD to read in that case.
 
 ## Local Path Configuration
 
@@ -54,7 +54,7 @@ Mapping:
 - `t` (epoch ms) -> `observedAt`
 - `resetAt` -> inferred from `t` plus the local window length (5 hours or 7 days), because Claude Desktop does not store a separate reset timestamp
 - source -> `local_quota_snapshot`, confidence -> `high`
-- `expiresAt` -> `observedAt` plus a fixed max-age window (a local freshness deadline only — see the boundary notes below)
+- `expiresAt` -> `observedAt` plus a fixed max-age window (a local freshness deadline only; see the boundary notes below)
 
 Implementation boundary:
 

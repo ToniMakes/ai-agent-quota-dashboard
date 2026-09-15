@@ -76,7 +76,7 @@ npm run trial:preflight
 npm run trial:ready
 ```
 
-`trial:preflight` gives the shortest next action for Codex, Claude Code, Claude Desktop, or blocking Doctor issues. `trial:ready` requires fresh non-demo quota data for Codex, plus at least one fresh non-demo Claude source (Claude Code or Claude Desktop) — it does not require both Claude sources.
+`trial:preflight` gives the shortest next action for Codex, Claude Code, Claude Desktop, or blocking Doctor issues. `trial:ready` requires fresh non-demo quota data for Codex, plus at least one fresh non-demo Claude source (Claude Code or Claude Desktop). It does not require both Claude sources.
 
 Codex support is automatic when supported local `rate_limits` events are available. Otherwise, use the Settings fallback form or:
 
