@@ -1,6 +1,6 @@
 {
   "name": "ai-agent-quota-dashboard",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local-first quota dashboard for AI coding agents.",
   "type": "module",
   "main": "desktop/main.cjs",

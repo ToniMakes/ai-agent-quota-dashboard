@@ -6,6 +6,11 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-16
+
+Unsigned Windows preview release containing the release-hardening, product-quality,
+and release automation improvements documented below.
+
 ### Added
 
 - Added inline subscription-tier metadata in the main agent card header when local data exposes a reliable tier, including Codex `planType` and Claude local credentials `subscriptionType`

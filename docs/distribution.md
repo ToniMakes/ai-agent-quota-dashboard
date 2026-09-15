@@ -4,12 +4,12 @@ Last updated: 2026-08-25
 
 ## Current Release Shape
 
-The v0.1.0 preview target is installer-first. Normal users should download a packaged desktop installer, run it, and open AIQD from the desktop or Start menu entry. Source mode remains a developer fallback, not the primary public path.
+The v0.1.1 preview target is installer-first. Normal users should download a packaged desktop installer, run it, and open AIQD from the desktop or Start menu entry. Source mode remains a developer fallback, not the primary public path.
 
 ## Release automation
 
 Windows releases run only when a maintainer pushes a version tag such as
-`v0.1.0`. The workflow checks that the tag matches `package.json`, runs the
+`v0.1.1`. The workflow checks that the tag matches `package.json`, runs the
 release test and desktop smoke gates, builds the x64 NSIS installer, creates a
 SHA256 sidecar file, verifies the artifact, and publishes both files to the
 GitHub Release. The preview path accepts an unsigned installer; signing remains
@@ -18,10 +18,10 @@ the separate SignPath workflow.
 The Windows x64 installer artifact is:
 
 ```text
-release/AI Agent Quota Dashboard-0.1.0-win-x64.exe
+release/AI Agent Quota Dashboard-0.1.1-win-x64.exe
 ```
 
-The v0.1.0 desktop preview artifact is published unsigned while SignPath Foundation approval is pending; see [Code Signing Policy](code-signing.md) for the signing rationale and process.
+The v0.1.1 desktop preview artifact is published unsigned while SignPath Foundation approval is pending; see [Code Signing Policy](code-signing.md) for the signing rationale and process.
 
 Build commands:
 

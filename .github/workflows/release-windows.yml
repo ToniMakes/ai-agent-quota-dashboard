@@ -67,4 +67,4 @@ jobs:
           $installer = Get-ChildItem release -Filter "AI Agent Quota Dashboard-*.exe" | Where-Object { $_.Name -notlike "*uninstaller*" } | Select-Object -First 1
           $checksum = Get-ChildItem release -Filter "AI Agent Quota Dashboard-*.exe.sha256" | Select-Object -First 1
           if (-not $installer -or -not $checksum) { throw "Release assets are missing" }
-          gh release create "${{ github.ref_name }}" $installer.FullName $checksum.FullName --verify-tag --generate-notes --title "${{ github.ref_name }}"
+          gh release create "${{ github.ref_name }}" $installer.FullName $checksum.FullName --verify-tag --generate-notes --prerelease --title "${{ github.ref_name }}" --notes "Unsigned Windows preview. Verify the SHA256 checksum asset before running the installer."
