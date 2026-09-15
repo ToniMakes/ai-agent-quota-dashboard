@@ -13,8 +13,9 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Added a custom Codex reset-credit reminder interval from 1 to 30 days
 - Added security headers for the local dashboard and API responses
 - Added compatibility and data-quality notes for supported local provider sources
-- Added Dependabot, CODEOWNERS, pinned GitHub Actions, production dependency audit, and CycloneDX SBOM generation in CI
+- Added pinned GitHub Actions, production dependency audit, and CycloneDX SBOM generation in CI
 - Added repeatable `audit:production` and `sbom` npm scripts for local supply-chain checks
+- Added tag-driven Windows release automation with package-version validation and SHA256 asset publishing
 - Added a Windows-native notification bridge and a Settings action for previewing a realistic Codex reset-credit reminder
 
 ### Changed

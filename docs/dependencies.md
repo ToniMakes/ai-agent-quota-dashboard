@@ -6,18 +6,19 @@ Electron runtime for packaged Windows builds.
 
 ## Maintenance policy
 
-- Dependabot checks npm and GitHub Actions dependencies weekly.
 - CI runs `npm audit --audit-level=high --omit=dev` for production dependencies.
 - CI publishes a short-lived CycloneDX SBOM for each supported test runner.
 - GitHub Actions are pinned to full commit SHAs; the trailing version comment
   identifies the intended upstream release.
 - Dependency updates must preserve the local-first privacy boundary and pass the
   normal build, test, and desktop smoke checks.
+- Release workflows validate that a `vX.Y.Z` tag exactly matches the version in
+  `package.json` before building an installer.
 
 The development toolchain includes Electron, TypeScript, and test/build tools.
 They are not imported by the local dashboard service at runtime, but they still
 remain part of the build and release supply chain and are therefore covered by
-the lockfile, Dependabot, and CI checks.
+the lockfile and CI checks.
 
 ## Local checks
 
