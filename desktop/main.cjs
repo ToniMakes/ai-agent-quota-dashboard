@@ -182,7 +182,7 @@ async function startDesktopApp() {
   const port = await findFreePort(4317, 4399);
   baseUrl = `http://127.0.0.1:${port}`;
   backend = spawn(backendCommand(), backendArgs(port), {
-    cwd: projectRoot,
+    cwd: backendWorkingDirectory(),
     env: backendEnv(),
     stdio: ["ignore", "pipe", "pipe"],
     windowsHide: true
@@ -339,6 +339,10 @@ function backendCommand() {
   }
 
   return app.isPackaged ? process.execPath : "node";
+}
+
+function backendWorkingDirectory() {
+  return app.isPackaged ? process.resourcesPath : projectRoot;
 }
 
 function backendEnv() {
