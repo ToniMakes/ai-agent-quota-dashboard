@@ -15,7 +15,6 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Added compatibility and data-quality notes for supported local provider sources
 - Added pinned GitHub Actions, production dependency audit, and CycloneDX SBOM generation in CI
 - Added repeatable `audit:production` and `sbom` npm scripts for local supply-chain checks
-- Added tag-driven Windows release automation with package-version validation and SHA256 asset publishing
 - Added a Windows-native notification bridge and a Settings action for previewing a realistic Codex reset-credit reminder
 
 ### Changed
