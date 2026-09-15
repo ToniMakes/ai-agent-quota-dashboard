@@ -10,7 +10,6 @@
 - [Privacy](privacy.md)
 - [Real data trial](real-data-trial.md)
 - [v0.1.0 release notes](release-notes-v0.1.0.md)
-- [v0.1.1 preview release notes](release-notes-v0.1.1.md)
 - [SignPath application draft](signpath-application.md)
 - [Roadmap](roadmap.md)
 - [Release checklist](release-checklist.md)

@@ -15,7 +15,7 @@ AIQD only reads local files written by desktop apps or CLIs (Codex CLI, Claude C
 
 This repository publishes the v0.1 desktop preview as an installer-first build for normal users: install the app, open the desktop shortcut, then finish setup from Settings. Source mode remains available as a developer fallback.
 
-The app covers Codex (via local CLI `rate_limits` events) and Claude (via the Claude Code statusline or Claude Desktop's local `plan-usage-history.json` — see [Claude Desktop And Claude Code](#claude-desktop-and-claude-code) for how those two sources work as alternatives). When structured local Codex data exposes reset credits, AIQD also shows the current read-only reset-credit count and expiry times, with optional in-app reminders and a Windows notification preview from Settings. It ships as a Windows desktop app with a main dashboard, a tray mini panel, and an always-on-top widget, alongside `doctor` and `export` CLI commands for local diagnostics. The v0.1.1 installer is an unsigned preview while SignPath Foundation open-source signing remains pending; see [docs/code-signing.md](docs/code-signing.md).
+The app covers Codex (via local CLI `rate_limits` events) and Claude (via the Claude Code statusline or Claude Desktop's local `plan-usage-history.json` — see [Claude Desktop And Claude Code](#claude-desktop-and-claude-code) for how those two sources work as alternatives). When structured local Codex data exposes reset credits, AIQD also shows the current read-only reset-credit count and expiry times, with optional in-app reminders and a Windows notification preview from Settings. It ships as a Windows desktop app with a main dashboard, a tray mini panel, and an always-on-top widget, alongside `doctor` and `export` CLI commands for local diagnostics. The v0.1.0 installer is an unsigned preview while SignPath Foundation open-source signing remains pending; see [docs/code-signing.md](docs/code-signing.md).
 
 If reliable quota data cannot be obtained from an official or local user-visible source, the app shows `unavailable` rather than guessing.
 
@@ -54,7 +54,7 @@ This project does not:
 Normal-user release target:
 
 1. Download the installer from the GitHub Release assets.
-   The Windows x64 artifact is named `AI Agent Quota Dashboard-0.1.1-win-x64.exe`.
+   The Windows x64 artifact is named `AI Agent Quota Dashboard-0.1.0-win-x64.exe`.
 2. Run the installer. The optional `Start AIQD when I sign in` checkbox defaults to off.
 3. Open the AIQD desktop shortcut.
 4. The first-launch guide asks which agents you use. If you choose Claude, pick either Claude Desktop or Claude Code CLI.
@@ -172,7 +172,7 @@ npm run package:win
 The generated installer is written to:
 
 ```text
-release/AI Agent Quota Dashboard-0.1.1-win-x64.exe
+release/AI Agent Quota Dashboard-0.1.0-win-x64.exe
 ```
 
 For a faster packaged-app smoke test without running the installer:
@@ -192,7 +192,7 @@ The packaged app starts its local backend through Electron's bundled Node runtim
 
 The installer includes an optional `Start AIQD when I sign in` checkbox. It is off by default; the same setting can be enabled or disabled later from Settings > Desktop Preferences.
 
-The v0.1.1 desktop preview installer is unsigned because SignPath Foundation approval is still pending. Windows may show an unknown-publisher or SmartScreen warning. Verify the SHA256 listed on the GitHub Release before running the installer. See [docs/code-signing.md](docs/code-signing.md).
+The v0.1.0 desktop preview installer is unsigned because SignPath Foundation approval is still pending. Windows may show an unknown-publisher or SmartScreen warning. Verify the SHA256 listed on the GitHub Release before running the installer. See [docs/code-signing.md](docs/code-signing.md).
 
 ### Code Signing Policy
 

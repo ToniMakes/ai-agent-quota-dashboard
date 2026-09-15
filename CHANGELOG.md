@@ -6,7 +6,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ## [Unreleased]
 
-## [0.1.1] - 2026-09-16
+## [0.1.0] - 2026-09-16
 
 Unsigned Windows preview release containing the release-hardening, product-quality,
 and release automation improvements documented below.
@@ -63,7 +63,7 @@ and release automation improvements documented below.
 - Added Codex-specific guidance when the latest local CLI quota observation is stale
 - Prevented unexpected HTTP errors from exposing raw internal exception details to local API clients
 
-## [0.1.0] - 2026-08-25
+## Earlier development notes (2026-08-25)
 
 First installer-first desktop preview. This release is published with an unsigned Windows x64 NSIS installer while SignPath Foundation open-source signing review is pending. The GitHub Release notes must label the artifact as unsigned and include the final SHA256.
 
