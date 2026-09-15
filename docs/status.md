@@ -14,6 +14,7 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The local dashboard
 - Local HTTP responses include a restrictive Content Security Policy and standard browser hardening headers
 - Concurrent refresh requests are coalesced, and unexpected HTTP errors return a generic production-safe message
 - Local candidate discovery keeps memory bounded when provider files grow during a scan and handles global filename patterns safely
+- Open-source maintenance now includes weekly Dependabot updates, pinned GitHub Actions, production dependency auditing, SBOM artifacts, and CODEOWNERS review ownership
 - Packaged desktop builds can show a real Windows notification through the Electron bridge, with a Settings test action; scheduled reminder delivery remains future work
 - Subscription-tier labels in the main agent card header when local data exposes a reliable tier, including Codex `planType` and Claude local credentials `subscriptionType`
 - Codex display/export surfaces hide unsupported monthly buckets and expose only the adapter-supported 5-hour and weekly windows
@@ -70,6 +71,7 @@ The current maintainer checkout has passed:
 - 2026-09-15 Codex dashboard and reminder UX pass: `npm test` (195 tests), `node --check web/app.js`, `node --check web/mini.js`, and `git diff --check`; dashboard and mini surfaces now prefer the supported 5-hour quota window and support custom reset-credit reminder intervals from 1 to 30 days
 - 2026-09-16 release-hardening pass: enabled Electron ASAR packaging, added local HTTP security headers, coalesced concurrent refreshes, and sanitized unexpected HTTP 500 responses; `npm test`, desktop smoke, packaged smoke, `npm run package:win:dir`, and `npm run package:win` completed successfully. The final local installer is unsigned and has SHA256 `4509C5C426CA92604FFD5B7EF14728645B02EA3010BFA88FB9A03E4335E83EDA`.
 - 2026-09-16 P1 product-quality pass: added bounded local-file scan coverage, provider compatibility/data-quality documentation, and edge-case tests for oversized files and global filename patterns.
+- 2026-09-16 P1 open-source engineering pass: added dependency maintenance automation, action SHA pinning, dynamic packaging version resolution, CI production audit/SBOM generation, CODEOWNERS, and dependency supply-chain documentation.
 - 2026-09-16 desktop UX pass: removed manual Codex entry from packaged Settings, added realistic native notification test copy, and aligned desktop action rows using runtime measurement
 - GitHub Actions CI on `main`
 

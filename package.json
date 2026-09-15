@@ -35,6 +35,8 @@
     "trial:ready": "npm run build && node dist/index.js doctor --strict",
     "claude:self-test": "npm run build && node dist/index.js claude-statusline-sink --self-test",
     "build": "tsc -p tsconfig.json",
+    "audit:production": "npm audit --audit-level=high --omit=dev",
+    "sbom": "npm sbom --omit=dev --sbom-format cyclonedx",
     "start": "node dist/index.js",
     "test": "npm run build && node --test dist/**/*.test.js desktop/**/*.test.cjs web/**/*.test.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"

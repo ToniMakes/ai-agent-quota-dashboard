@@ -13,6 +13,8 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Added a custom Codex reset-credit reminder interval from 1 to 30 days
 - Added security headers for the local dashboard and API responses
 - Added compatibility and data-quality notes for supported local provider sources
+- Added Dependabot, CODEOWNERS, pinned GitHub Actions, production dependency audit, and CycloneDX SBOM generation in CI
+- Added repeatable `audit:production` and `sbom` npm scripts for local supply-chain checks
 - Added a Windows-native notification bridge and a Settings action for previewing a realistic Codex reset-credit reminder
 
 ### Changed
@@ -34,6 +36,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Reorganized the dashboard refresh controls so the primary actions remain grouped while refresh timing information stays separate on narrow windows
 - Coalesced concurrent refresh requests so repeated local refresh triggers share one backend scan
 - Hardened bounded local-file discovery against provider logs that grow during a scan and global regular-expression patterns
+- Windows packaging now derives the installer path from `package.json` instead of hard-coding the version in the workflow
 - Updated dashboard and mini quota surfaces to keep 5-hour windows above weekly windows and align equivalent rows across Codex and Claude
 - Removed the Codex manual-entry form from packaged Settings; automatic detection now explains that Codex must be used once before refreshing
 - Made the startup control match the measured EN + Refresh button-row width and keep the action rows aligned on narrow windows
