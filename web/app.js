@@ -2397,7 +2397,7 @@ function renderInitialSetupFlow(items, readiness) {
         )}</strong>
         <p>${escapeHtml(
           tx(
-            "Complete these steps once. For Claude, either the Claude Code CLI or Claude Desktop is enough — you do not need both.",
+            "Complete these steps once. For Claude, either the Claude Code CLI or Claude Desktop is enough; you do not need both.",
             "按下面步骤做一次。对于 Claude，Claude Code CLI 或 Claude Desktop 任选其一即可，不需要都设置。"
           )
         )}</p>

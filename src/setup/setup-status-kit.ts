@@ -1,6 +1,6 @@
 // Shared shapes for provider setup-status modules (claude-statusline-status.ts,
 // codex-snapshot-status.ts). Each provider's readiness rules and check list
-// are genuinely provider-specific and stay in their own file — this only
+// are genuinely provider-specific and stay in their own file; this only
 // captures the result shapes that were being redeclared identically in each.
 import type { DoctorStatus } from "../core/types.js";
 

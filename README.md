@@ -21,11 +21,11 @@ The app covers Codex through local CLI `rate_limits` events and Claude through e
 
 If reliable quota data cannot be obtained from an official or local user-visible source, the app shows `unavailable` rather than guessing.
 
-See [docs/status.md](docs/status.md) for the full capability list and current engineering verification log.
+See [docs/status.md](docs/status.md) for the public capability summary and current release notes.
 
 ## Screenshots
 
-These images use sanitized demo data from the current application. They do not contain account names, credentials, private paths, raw logs, prompts, source code, or real quota records.
+These images use sanitized demo data. They are illustrative and may lag fixes that have landed after the published release. They do not contain account names, credentials, private paths, raw logs, prompts, source code, or real quota records.
 
 Dashboard:
 
@@ -111,7 +111,7 @@ Expected result: `trial:preflight` either reports ready or prints the next sourc
 
 If Windows PowerShell blocks `npm` with `running scripts is disabled`, run the same commands with `npm.cmd`, for example `npm.cmd test` and `npm.cmd run desktop:local`.
 
-See [docs/real-data-trial.md](docs/real-data-trial.md) for the full Codex and Claude Code checklist.
+See [docs/real-data-trial.md](docs/real-data-trial.md) for the local data setup and verification guide.
 
 ## Scripts
 

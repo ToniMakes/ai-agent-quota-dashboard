@@ -41,7 +41,7 @@ The packaged app uses Electron's bundled Node runtime for the local backend. Nor
 
 ## Code Signing
 
-AIQD's preferred no-cost signing path is SignPath Foundation open-source signing. See [Code Signing Policy](code-signing.md) for the full policy, roles, and verification steps; the SignPath Foundation OSS application was submitted on 2026-08-14 and is awaiting review (see [docs/status.md](status.md)).
+AIQD's preferred no-cost signing path is SignPath Foundation open-source signing. See [Code Signing Policy](code-signing.md) for the public policy and verification steps. The first preview is explicitly labeled unsigned while signing approval is pending.
 
 Required GitHub configuration once SignPath approves the project:
 

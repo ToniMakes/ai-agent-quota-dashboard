@@ -1,10 +1,10 @@
 // Logic that was previously duplicated verbatim between app.js and mini.js.
-// Only genuinely identical, presentation-agnostic functions live here —
+// Only genuinely identical, presentation-agnostic functions live here:
 // anything with legitimate per-surface differences (compact labels, widget
 // date formats) stays local to each file.
 
 // The frontend can't import the backend's provider manifest (src/adapters
-// is Node-only — fs/os/child_process — and has no build step that exposes
+// is Node-only (fs/os/child_process) and has no build step that exposes
 // it to the browser), so these agent ids are named here once instead of
 // being repeated as string literals at every comparison below.
 export const codexAgentId = "codex";

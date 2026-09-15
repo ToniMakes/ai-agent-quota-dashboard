@@ -5,6 +5,7 @@ release/
 .env.*
 !.env.example
 .tmp/
+.tmp-public-audit-*/
 .claude/
 CODEX_HANDOFF.md
 *.db

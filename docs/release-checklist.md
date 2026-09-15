@@ -1,125 +1,37 @@
-# Release Checklist
+# Public Release Checklist
 
-Use this checklist before tagging a release.
+This is a public overview of the release gates. Maintainers should keep provider accounts, signing credentials, private workflow details, and raw test evidence outside the public repository.
 
-## Per-Change Checklist (before merging any feature, not just before release)
+## Product and documentation
 
-Docs drift silently: `docs/status.md`, `README.md`, `docs/data-sources.md`, and `docs/roadmap.md` have previously described a source or milestone as still pending for a full session after it shipped, because nothing prompted an update until the pre-release pass below. Do this check as part of the change itself, not the release:
+- [ ] README, release notes, privacy policy, compatibility notes, and screenshots describe the same version
+- [ ] Public screenshots use demo data and contain no account names, local paths, prompts, logs, or credentials
+- [ ] Known limitations and unsigned or signed status are clearly stated
+- [ ] Installation and uninstall instructions match the current package
+- [ ] Public documents contain no private deployment identifiers or internal planning notes
 
-- [ ] If this change adds/changes a data source, adapter, or readiness rule: `docs/data-sources.md` and `docs/architecture.md` describe the current behavior, not the pre-change one
-- [ ] If this change is the thing a roadmap/status entry was waiting on: that entry is updated to reflect it shipped, in the same commit or PR
-- [x] `CHANGELOG.md`'s `[Unreleased]` section has an entry
+## Software quality
 
-## Required
+- [ ] `npm test` passes
+- [ ] Desktop smoke checks pass
+- [ ] Windows packaging completes for the intended architecture
+- [ ] The packaged application starts from the installed desktop or Start menu entry
+- [ ] The local service remains bound to loopback
+- [ ] Export and diagnostics output exclude private source references and account identifiers
+- [ ] Security-sensitive changes have a focused regression test
 
-- [x] `docs/code-signing.md` is current and linked from the README/docs index
-- [x] For the formal Windows release: the installer is signed, or maintainers have explicitly approved an unsigned formal preview with prominent warnings
-- [x] `npm test` passes locally
-- [x] `npm run desktop:smoke` passes locally
-- [x] `npm run desktop:first-run-smoke` passes locally and uses isolated provider data paths
-- [x] `npm run package:win:dir` passes locally
-- [x] Packaged exe smoke passes: `& ".\release\win-unpacked\AI Agent Quota Dashboard.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process --smoke`
-- [x] Installed packaged exe hidden-window smoke passes from the desktop-entry target without a GUI `EPIPE` crash
-- [x] Packaged first-run smoke passes: `& ".\release\win-unpacked\AI Agent Quota Dashboard.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process --smoke-first-run-guide`
-- [x] `npm run package:win` produces `release/AI Agent Quota Dashboard-0.1.0-win-x64.exe`
-- [x] `npm run trial:preflight` gives source-specific next actions or reports ready
-- [x] `npm run trial:ready` passes for a real-data dogfood build, or the release notes clearly say which source still needs setup
-- [x] Packaged desktop installer or release artifact exists for the first public preview
-- [x] Installed app entry opens the main dashboard window
-- [x] Normal-user first run can reach Settings without typing `npm`, `node`, or PowerShell commands
-- [x] Claude Desktop local plan usage adapter is implemented, tested, and clearly labeled for desktop-only users, as an alternative to Claude Code CLI
-- [x] Claude setup offers an explicit install action when Claude Code CLI is missing and a separate connect action for local quota capture
-- [x] CI is green on `main`
-- [x] `CHANGELOG.md` has a release entry
-- [x] README describes current capabilities accurately
-- [x] README explains the installer path for normal users and labels source mode as a developer fallback
-- [x] Release notes say whether the Windows installer is signed or unsigned
-- [x] `docs/status.md` and `docs/roadmap.md` describe the current milestone accurately
-- [x] Parser changes include sanitized fixtures, or no parser changes were made
-- [x] `docs/data-sources.md` documents source and confidence mapping
-- [x] UI copy labels estimates and reported reset times conservatively
-- [ ] Bilingual UI copy still fits the main dashboard and mini surfaces
-- [x] Desktop tray, main window, and shortcut use the intended app icon
-- [x] No unintended generated files, local databases, raw logs, prompts, responses, source code, or credentials are staged
+## Release artifact
 
-## First Preview Work Plan
+- [ ] The package version matches the tag and release notes
+- [ ] The installer is built by the intended GitHub Actions workflow
+- [ ] The installer checksum is generated from the final artifact
+- [ ] The release notes identify the exact installer filename and checksum
+- [ ] The release is marked as a preview or stable release intentionally
+- [ ] Signed status is verified before calling an artifact signed
 
-1. Prepare SignPath application materials: code signing policy, privacy link, public repository metadata, and a clearly labeled unsigned RC/download artifact if needed.
-2. Verify deterministic validation: desktop smoke data paths are isolated and any first-run smoke assertion failure returns a non-zero process exit.
-3. Verify the local test gate: `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, packaged smoke checks, and `git diff --check`.
-4. Build the packaged desktop artifact and verify the installed entry opens the main dashboard.
-5. Claude Desktop local plan usage history ingestion is implemented; verify it end-to-end on the installed packaged app for desktop-only users.
-6. Run a fresh-machine real-data trial from installer through Codex, Claude Desktop, and Claude Code readiness.
-7. Run a clean-clone developer fallback trial.
-8. Tighten beginner onboarding copy for Windows, macOS, and Linux, especially the visible next action, expected result, and recovery path.
-9. Capture release screenshots or short GIFs for Dashboard, tray mini panel, widget, and setup flow.
-10. Confirm README and release notes describe the installer path first and source mode as a developer fallback.
-11. If SignPath approval is available, run `.github/workflows/package-windows.yml` with signing enabled and verify the signed artifact.
-12. Update release notes from `CHANGELOG.md`, complete this checklist, verify CI on `main`, tag the preview, and create the GitHub Release.
+## Post-release review
 
-## SignPath Release Path
-
-- [x] GitHub repository is public, MIT-licensed, documented, and has a visible download/release page
-- [ ] GitHub account MFA is enabled for maintainers with repository or SignPath access
-- [x] Code signing roles in `docs/code-signing.md` match the actual maintainers
-- [x] A clearly labeled unsigned RC/pre-release exists if SignPath needs a downloadable release artifact before approval
-- [x] SignPath Foundation OSS application submitted
-- [ ] SignPath Foundation OSS application approved
-- [ ] SignPath project, signing policy, and default artifact configuration are configured for the NSIS installer
-- [ ] GitHub secret `SIGNPATH_API_TOKEN` is configured
-- [ ] GitHub variables `SIGNPATH_ORGANIZATION_ID`, `SIGNPATH_PROJECT_SLUG`, and `SIGNPATH_SIGNING_POLICY_SLUG` are configured
-- [x] `.github/workflows/package-windows.yml` produces the unsigned installer artifact
-- [ ] `.github/workflows/package-windows.yml` submits the artifact to SignPath and downloads the signed installer
-- [ ] `Get-AuthenticodeSignature` reports `Valid` for the final installer
-- [x] GitHub Release uploads the signed installer for the formal release, or explicitly documents an approved unsigned fallback
-
-## Maintainer Installed-App Trial
-
-- [x] Silent NSIS installer run exits `0`
-- [x] Desktop shortcut points to the installed packaged executable
-- [x] Start menu shortcut points to the installed packaged executable
-- [x] Desktop shortcut launches the installed packaged app, not source mode
-- [x] Installed backend serves on `127.0.0.1:4317`
-- [x] Installed `/api/trial-readiness` reports Codex and Claude Code ready from real local data
-- [x] Installed dashboard browser smoke shows Codex and Claude Code quota cards
-- [x] Installed mini panel browser smoke shows compact secondary-window rows
-- [x] True clean Windows user or VM trial protocol is documented in `docs/real-data-trial.md`
-- [x] True clean Windows user or VM trial tracking issue created: https://github.com/ToniMakes/ai-agent-quota-dashboard/issues/1
-- [x] `v0.1.0-rc.2` published for uninstall cleanup retest after RC1 left `%APPDATA%\AI Agent Quota`
-- [x] `v0.1.0-rc.3` prepared for mini panel timing-copy retest
-- [x] `v0.1.0-rc.4` prepared for Claude 5h/weekly mini timing retest
-- [ ] True clean Windows user or VM trial without pre-existing AIQD, Codex, or Claude Code state
-
-## Installer Releases
-
-- [x] Installer startup option is explicit and defaults to off for the first packaged release
-- [x] Settings includes a reversible `Launch at startup` toggle
-- [x] Dashboard topbar exposes the same startup toggle prominently
-- [x] First-launch onboarding asks which agents the user uses and whether Claude data should come from Desktop or Claude Code CLI
-- [x] First main-window close asks whether to quit or keep AIQD in the tray
-- [x] Settings can restore or bypass the main-window close prompt
-- [ ] Settings includes automatic refresh interval presets and explains that actual observed times depend on provider data updates
-- [ ] Settings includes a safe `Restore default settings` action for AIQD-owned preferences only
-- [ ] Any destructive reset, local history deletion, or external Claude/Codex disconnect action is separate from restore defaults and requires explicit confirmation
-- [x] Startup launches only the tray shell and local backend unless setup or recovery needs attention
-- [x] Disabling startup removes AIQD's OS startup entry
-- [x] Uninstall or app removal does not leave an orphaned startup entry
-- [x] Uninstall removes AIQD-owned Electron app data such as `%APPDATA%\AI Agent Quota`
-- [x] Startup behavior preserves the same local-first privacy boundary as manual launch
-
-## Optional
-
-- [x] Browser smoke test of the local dashboard
-- [x] Fresh clone developer fallback trial
-- [ ] Fresh machine real-data trial
-- [x] GitHub release notes drafted from `CHANGELOG.md`
-- [x] Screenshots refreshed when the UI changes materially
-
-## Tagging
-
-```bash
-git tag -a v0.1.0 -m "v0.1.0"
-git push origin v0.1.0
-```
-
-For the signed release path, run the Windows package workflow from the tag or release commit after SignPath approval, then upload the verified signed installer artifact to the GitHub Release.
+- [ ] Download links point to the intended release
+- [ ] The installed release is checked once on a clean user profile when practical
+- [ ] The public website and README point to the same current release
+- [ ] Any follow-up fix is either included in a new artifact or clearly identified as unreleased

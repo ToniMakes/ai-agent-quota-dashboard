@@ -1,271 +1,59 @@
-# Real Data Trial
+# Local Data Trial
 
-This guide is for a local desktop trial with real Codex and Claude (Claude Code or Claude Desktop) quota signals. It uses only visible or official local data sources.
+This guide is for developers and early testers who want to verify AIQD with their own local quota data. It contains no account-specific setup values. Do not paste prompts, responses, credentials, cookies, or raw logs into public issues or pull requests.
 
-## 1. Clean Windows VM Release Gate
+## Before you start
 
-This is the required first-public-preview gate. It must be run on a clean Windows user profile or VM, not on the maintainer development machine, because the development machine already has AIQD, Codex, Claude Code, and Claude Desktop state.
+Use the packaged Windows preview for the normal user path, or run the source checkout for development. AIQD does not log in to providers and cannot monitor browser-only usage.
 
-Record the trial in the release notes or issue used for the release:
-
-```text
-Windows version:
-VM or clean user profile:
-AIQD installer filename:
-Installer checksum, if recorded:
-Startup checkbox trial: off / on / both
-Codex source result:
-Claude Desktop source result:
-Claude Code source result:
-Final readiness result:
-Confusing copy or recovery notes:
-```
-
-### Clean-State Checks
-
-Before installing AIQD, confirm the profile has no AIQD state:
-
-```powershell
-Test-Path "$env:USERPROFILE\.ai-agent-quota-dashboard"
-Test-Path "$env:APPDATA\AI Agent Quota"
-Test-Path "$env:APPDATA\AI Agent Quota Dashboard"
-Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -ErrorAction SilentlyContinue |
-  Select-Object "AI Agent Quota Dashboard", "com.isToniLiu.ai-agent-quota-dashboard", "com.istoniliu.ai-agent-quota-dashboard"
-```
-
-Expected:
-
-- The path checks return `False`.
-- The startup registry query does not show an AIQD value.
-- Codex, Claude Desktop, and Claude Code may be absent at the start of the trial. If they are installed, they must not already contain usable local quota state for this Windows profile.
-
-### Installer Startup Off
-
-1. Run `AI Agent Quota Dashboard-0.1.0-win-x64.exe`.
-2. Leave `Start AIQD when I sign in` unchecked.
-3. Launch AIQD from the desktop or Start menu entry.
-4. Confirm the main dashboard window opens, not only the mini panel.
-5. Open Settings > Desktop Preferences.
-
-Expected:
-
-- Settings shows `Launch at startup` as off.
-- The UI can reach Settings without `npm`, `node`, or PowerShell.
-- No AIQD startup entry is created.
-
-Optional PowerShell confirmation:
-
-```powershell
-Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -ErrorAction SilentlyContinue |
-  Select-Object "AI Agent Quota Dashboard", "com.isToniLiu.ai-agent-quota-dashboard", "com.istoniliu.ai-agent-quota-dashboard"
-```
-
-### Settings Startup Toggle
-
-1. In Settings > Desktop Preferences, turn `Launch at startup` on.
-2. Confirm the setting changes to on.
-3. Turn it off again.
-4. Confirm the setting changes to off.
-
-Expected:
-
-- Enabling creates only an AIQD-managed login item for the packaged executable.
-- Disabling removes the AIQD-managed login item.
-- The app does not approve global shortcuts, configure Codex or Claude, add data sources, or read extra files as part of startup changes.
-
-### Installer Startup On
-
-Run this as a second pass after uninstalling AIQD, or from a clean VM snapshot:
-
-1. Install AIQD again.
-2. Check `Start AIQD when I sign in`.
-3. Open Settings > Desktop Preferences.
-
-Expected:
-
-- Settings shows `Launch at startup` as on.
-- The Windows startup command launches the packaged AIQD executable with `--background`.
-- If setup is still missing, first-run guidance may open Settings or Diagnostics. After setup is complete and the guide has already been shown, sign-in should start only the tray shell and local backend.
-
-Optional PowerShell confirmation:
-
-```powershell
-Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -ErrorAction SilentlyContinue |
-  Select-Object "AI Agent Quota Dashboard"
-```
-
-### Uninstall Cleanup
-
-1. Quit AIQD from the tray menu.
-2. Uninstall AIQD from Windows Settings or Control Panel.
-3. Check startup entries again.
-
-Expected:
-
-- AIQD is removed.
-- No AIQD startup entry remains.
-- `%APPDATA%\AI Agent Quota` and `%APPDATA%\AI Agent Quota Dashboard` do not remain after uninstall.
-- AIQD does not delete provider-owned Codex, Claude Desktop, or Claude Code files.
-
-## 2. Normal-User First Run
-
-Normal-user installer trial:
-
-1. Install AIQD from the release artifact: `AI Agent Quota Dashboard-0.1.0-win-x64.exe`.
-2. Open AIQD from the installed desktop or Start menu entry.
-3. Confirm the main dashboard window opens.
-4. Open Settings if the first-run guide does not take you there automatically.
-
-PowerShell checks in this document are maintainer verification aids only, not something a normal user should ever need to run.
-
-Developer source-mode trial:
+For a source checkout:
 
 ```bash
 npm install
 npm test
 npm run trial:preflight
-npm run desktop:first-run-smoke
 ```
 
-Expected:
+On Windows PowerShell, use `npm.cmd` if the execution policy blocks `npm`.
 
-- `npm test` passes.
-- `trial:preflight` either reports `Overall: ready` or prints the next action for Codex, Claude Code, or Doctor.
-- `desktop:first-run-smoke` reports the expected Settings deep link using isolated temporary provider paths.
+## Verify Codex
 
-If Windows PowerShell blocks `npm` with `running scripts is disabled`, use `npm.cmd` for the same commands:
+1. Use Codex once so a supported local rate-limit event can be produced.
+2. Refresh AIQD.
+3. Check the Codex card and Diagnostics view.
 
-```powershell
-npm.cmd install
-npm.cmd test
-npm.cmd run trial:preflight
-npm.cmd run desktop:first-run-smoke
-```
+If automatic local data is not available, AIQD may offer an explicitly labeled manual fallback. Manual values are local observations and expire at their reported reset time.
 
-The first-run smoke uses temporary paths. It does not read your real Codex or Claude Code data.
+## Verify Claude Desktop
 
-## 3. Launch The Desktop App
+1. Select Claude Desktop in the first-run setup when that is your source.
+2. Open Claude Desktop once so it can record a recent local usage sample.
+3. Refresh AIQD and check the Claude card.
 
-```bash
-npm run desktop:local
-```
+AIQD reads only the supported local plan usage history source. It does not read browser cookies or Claude conversation content. Claude Desktop and Claude Code are alternative sources, so both are not required.
 
-Expected first launch behavior:
+## Verify Claude Code
 
-- If Codex has no usable local CLI quota data, the app opens Settings at `Codex Quota Source`.
-- If Claude Code setup or data is missing, the app opens Settings at `Claude Code Statusline`.
-- If an adapter has a blocking error, the app opens Diagnostics.
-- If primary sources are ready, the app opens the mini panel.
+1. Select Claude Code CLI in the first-run setup.
+2. Use the setup action to connect the local statusline receiver when offered.
+3. Open Claude Code, complete its own setup, and produce one fresh statusline observation.
+4. Refresh AIQD and check Diagnostics.
 
-The guide is one-time per desktop user data directory. After that, use the tray menu or mini panel actions to open Settings, Diagnostics, Dashboard, or the always-on-top widget.
+If the data is stale, use the recovery guidance shown by AIQD and refresh after a new observation is available.
 
-If the desktop app does not open, run:
-
-```bash
-npm run desktop:smoke
-npm run trial:preflight
-npm run doctor
-```
-
-Startup failures should show recovery guidance with the backend error tail. The smoke command checks whether the desktop shell can launch its local backend without touching real Codex or Claude Code data.
-
-## 4. Detect Codex
-
-First action: use Codex once, then click `Refresh` in AIQD or run:
+## Readiness commands
 
 ```bash
 npm run trial:preflight
-```
-
-Expected: Codex is marked ready from `official_cli` when AIQD finds supported local `rate_limits` events.
-
-If not ready: automatic detection may be unavailable on this machine or Codex version. Use the manual fallback in AIQD Settings and fill:
-
-- `Remaining %`
-- `Reported reset`
-- Optional label
-
-Then click `Save snapshot`, or use the CLI equivalent. See [Codex Quota Detection](../README.md#codex-quota-detection) for the command and how manual fallback snapshots expire.
-
-## 5. Verify Claude Desktop Coverage
-
-Normal Claude users should not need to open Claude Code CLI just to make AIQD useful. If you use Claude Desktop, AIQD reads it automatically with nothing to install.
-
-Verify the app can read the local Claude Desktop plan usage history source:
-
-```text
-%APPDATA%\Claude\plan-usage-history.json
-```
-
-Normal-user path from the desktop app:
-
-1. Open Settings.
-2. In the first-run setup area, click `Check Claude Desktop` to expand the Claude Desktop details.
-3. If the file exists and has a recent sample, it shows as `Done` immediately. Nothing needs to be installed or connected.
-4. If it shows `Waiting`, open Claude Desktop so it records a new usage sample, then click `Refresh Claude Desktop`.
-
-Expected: AIQD shows Claude Desktop five-hour and weekly usage from local plan usage samples and labels the source clearly (`Local snapshot`); see [Privacy](privacy.md) for the data boundary this respects. Claude readiness in Diagnostics and the real-data overview shows ready as soon as this source is fresh, even if Claude Code CLI is never set up.
-
-## 6. Connect Claude Code
-
-For product readiness, Claude Code CLI is an alternative source and is not required when Claude Desktop is fresh. For the clean Windows VM release gate, still run this section once so both Claude paths are verified on a fresh profile.
-
-Normal-user path from the desktop app:
-
-1. Open Settings.
-2. In the first-run setup area, click `Set up Claude Code CLI` to expand the Claude Code setup details. Click it again to collapse, or click `Set up Codex` to switch to the Codex details.
-3. If Claude Code CLI is missing, click `Install Claude Code CLI`.
-4. If AIQD still needs the local capture setting, click `Connect Claude data`.
-5. Open Claude Code in a project, finish Claude's own login/trust prompts, send one short message, and wait for the reply.
-6. Return to AIQD and click the check/refresh action.
-
-Expected: Claude Code is marked ready after AIQD receives supported `rate_limits` fields. If Claude opens but AIQD still says it is waiting, send one short message in Claude and wait for the response to finish.
-
-Developer source-mode fallback: see [Claude Code Statusline](../README.md#claude-code-statusline) for the full build/preview/install walkthrough and `PATH` troubleshooting. For this trial, run the self-test first:
-
-```bash
-npm run claude:self-test
-```
-
-Expected: the self-test reports parsed rate-limit windows and does not write to the normal Claude statusline snapshot path.
-
-Then install (`node dist/index.js setup claude-statusline --write`) and open Claude Code once in any project so its statusline renders. AIQD will refresh when supported `rate_limits` fields arrive.
-
-Platform notes:
-
-- Windows: the Settings flow can install Claude Code CLI with the explicit install button when the supported Windows package is available.
-- macOS/Linux: open a terminal in a project and run `claude`; if the command is not found, install or expose the Claude Code CLI first.
-
-If not ready: run `npm run trial:preflight`. A common next action is `Open Claude Code to refresh the statusline snapshot`, which means Claude is configured but has not sent a fresh supported `rate_limits` payload yet.
-
-## 7. Verify
-
-```bash
-npm run trial:preflight
-npm run doctor
 npm run trial:ready
 ```
 
-Expected:
+`trial:preflight` reports the shortest next action. `trial:ready` requires fresh, non-demo Codex data and at least one fresh Claude source. It is intended as a local verification aid, not as a provider guarantee.
 
-- `trial:preflight` gives the shortest next action or says `Overall: ready`.
-- `doctor` shows source checks and any non-blocking warnings.
-- `trial:ready` passes when Codex has fresh non-demo quota data and at least one Claude source (Claude Code or Claude Desktop) has fresh non-demo quota data; it does not require both Claude sources.
+## Clean-environment checks
 
-In the desktop app, check:
+Maintainers may also verify install, uninstall, startup preferences, and first-run behavior on a fresh Windows user profile or virtual machine. The purpose is to catch packaging and onboarding issues that cannot be seen on a development machine. Do not publish the profile name, local paths, screenshots with account data, or raw test logs.
 
-- Dashboard shows Codex, Claude Code, and/or Claude Desktop quota rows.
-- Mini panel shows the most constrained remaining quota and reported reset.
-- Mini panel and always-on-top widget can switch between Chinese and English with the shared language preference.
-- Diagnostics first-run checklist shows quota sources ready or gives a specific next action.
-- Refresh History has a recent run with snapshot and check counts.
+## Reporting a problem
 
-`npm run trial:preflight` gives the shortest next action for Codex, Claude Code, and blocking Doctor issues. `npm run trial:ready` uses strict Doctor mode. It fails until every configured agent has a fresh non-demo quota snapshot, which is useful right before deciding whether the app is ready for a real-data experience.
-
-The Settings > Real Data Setup summary, desktop first-run guide, tray status, and mini footer show the same strict readiness result as `npm run trial:ready`.
-
-## Notes
-
-- Reported reset times are observations from the current source, not guaranteed future reset predictions.
-- If a source cannot be obtained legally and reliably, AIQD should show `unavailable` instead of guessing.
-- See [Privacy](privacy.md) for the full data boundary.
+Before opening an issue, remove private data from screenshots and logs. Include the AIQD version, operating system, selected source type, and a short reproduction. Security reports should follow [SECURITY.md](../SECURITY.md) and should not be posted publicly.

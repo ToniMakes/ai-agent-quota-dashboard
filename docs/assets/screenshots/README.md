@@ -1,6 +1,6 @@
 # Release Screenshots
 
-These screenshots were regenerated from the current application on 2026-09-16 with demo quota data. They are safe for the public README and release notes because they do not include account identifiers, raw local source paths, prompts, responses, source code, credentials, or real quota records.
+These screenshots were reviewed on 2026-09-16 with sanitized demo quota data. They are illustrative and may lag fixes that have landed after the published release. They are safe for the public README and release notes because they do not include account identifiers, raw local source paths, prompts, responses, source code, credentials, or real quota records.
 
 Generated screenshots:
 

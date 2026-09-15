@@ -1,6 +1,6 @@
 # Code Signing Policy
 
-Last updated: 2026-08-25
+Last updated: 2026-09-16
 
 AI Agent Quota Dashboard uses an installer-first release path for Windows preview builds. The preferred signing path for the first formal desktop preview is SignPath Foundation open-source code signing: SignPath.io provides the signing service at no cost, with the certificate issued by SignPath Foundation.
 

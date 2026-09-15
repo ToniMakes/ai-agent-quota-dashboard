@@ -1,6 +1,6 @@
 // Finds the local `claude` command and works out how to install it. Kept
 // separate from claude-statusline-status.ts, which only reads the statusline
-// snapshot and reports readiness — this file is the "what does the local
+// snapshot and reports readiness; this file is the "what does the local
 // environment look like" concern.
 import { constants } from "node:fs";
 import { access } from "node:fs/promises";
@@ -16,7 +16,7 @@ export type ClaudeCliStatus = {
 
 // "winget" is the only install method AIQD can safely run unattended (a
 // known package id, no interactive prompts once the accept flags are
-// passed). "script" covers every other case — AIQD only ever shows the
+// passed). "script" covers every other case; AIQD only ever shows the
 // command for the user to run themselves. Callers that need to decide
 // whether to offer one-click install must check `method`, not guess from
 // `displayCommand`'s text.
