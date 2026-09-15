@@ -284,7 +284,7 @@ function buildDisplayAgents(agents) {
 }
 
 function renderAgent(agent) {
-  const primary = agent.primarySnapshot;
+  const primary = miniPrimarySnapshot(agent);
   const status = agent.status ?? "unknown";
   const stalePrimary = isStaleSnapshot(primary);
   const guidance = primary ? undefined : emptyStateGuidance(agent);
@@ -305,7 +305,7 @@ function renderAgent(agent) {
           style="--value: ${meterValue(primary)}%"
         ></div>
       </div>
-      <div class="mini-window-list">${renderWindowRows(agent)}</div>
+      <div class="mini-window-list">${renderWindowRows(agent, primary)}</div>
       ${renderMiniResetCreditSummary(agent)}
       <div class="mini-detail">${escapeHtml(detail)}</div>
     </article>
@@ -574,8 +574,8 @@ function refreshRunTitle(run) {
   return lines.join("\n");
 }
 
-function renderWindowRows(agent) {
-  const snapshots = prioritizeSnapshots(agent.snapshots ?? [], agent.primarySnapshot);
+function renderWindowRows(agent, primary) {
+  const snapshots = prioritizeSnapshots(agent.snapshots ?? [], primary);
 
   if (snapshots.length === 0) {
     const guidance = emptyStateGuidance(agent);
@@ -616,6 +616,15 @@ function renderWindowRows(agent) {
       : "";
 
   return rows + more;
+}
+
+function miniPrimarySnapshot(agent) {
+  const snapshots = agent.snapshots ?? [];
+  return (
+    snapshots.find((snapshot) => snapshot.windowType === "session_5h") ??
+    snapshots.find((snapshot) => snapshot.windowType === "weekly") ??
+    agent.primarySnapshot
+  );
 }
 
 function renderMiniResetCreditSummary(agent) {

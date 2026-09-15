@@ -218,6 +218,27 @@ document.addEventListener("change", (event) => {
 
   if (
     target instanceof HTMLInputElement &&
+    target.matches("[data-reset-credit-custom-days]")
+  ) {
+    const customDays = Number(target.value);
+    if (Number.isFinite(customDays) && customDays >= 1 && customDays <= 30) {
+      const selectedDays = new Set(
+        normalizeCodexResetCreditReminderPreferences(
+          state.codexResetCreditReminderPreferences
+        ).daysBefore
+      );
+      [1, 3, 7, 14].forEach((days) => selectedDays.delete(days));
+      selectedDays.add(Math.round(customDays));
+      setCodexResetCreditReminderPreferences({
+        ...state.codexResetCreditReminderPreferences,
+        daysBefore: [...selectedDays]
+      });
+    }
+    return;
+  }
+
+  if (
+    target instanceof HTMLInputElement &&
     target.matches("[data-onboarding-agent]")
   ) {
     updateOnboardingAgent(target.dataset.onboardingAgent, target.checked);
@@ -1353,7 +1374,7 @@ function buildDisplayAgents(agents) {
 }
 
 function renderAgentCard(agent) {
-  const primary = agent.primarySnapshot;
+  const primary = dashboardPrimarySnapshot(agent);
   const status = agent.status ?? "unknown";
   const subscriptionTier = agentSubscriptionTier(agent);
   const source = primary
@@ -1383,7 +1404,7 @@ function renderAgentCard(agent) {
       ${quotaSummary}
 
       <div class="quota-lines">
-        ${renderSnapshotLines(agent)}
+        ${renderSnapshotLines(agent, primary)}
         ${renderCodexResetCreditPanel(agent)}
         <div class="quota-line">
           <span class="label">${escapeHtml(tx("Source", "来源"))}</span>
@@ -1393,6 +1414,15 @@ function renderAgentCard(agent) {
       </div>
     </article>
   `;
+}
+
+function dashboardPrimarySnapshot(agent) {
+  const snapshots = agent.snapshots ?? [];
+  return (
+    snapshots.find((snapshot) => snapshot.windowType === "session_5h") ??
+    snapshots.find((snapshot) => snapshot.windowType === "weekly") ??
+    agent.primarySnapshot
+  );
 }
 
 function renderPrimaryQuotaSummary(primary, status) {
@@ -1438,6 +1468,7 @@ function renderStaleQuotaSummary(agent, snapshot) {
   const isClaudeCode = snapshot.source === "official_statusline";
   const isClaudeDesktop =
     agent.provider === "anthropic" && snapshot.source === "local_quota_snapshot";
+  const isCodex = agent.agent === "codex";
   const isMergedClaude = agent.agent === "claude" && agent.provider === "anthropic";
   const detail = isClaudeCode && isMergedClaude
     ? tx(
@@ -1449,6 +1480,11 @@ function renderStaleQuotaSummary(agent, snapshot) {
         "This is not zero quota. AIQD just has old Claude Code data.",
         "这不是额度用完。只是 AIQD 手上的 Claude Code 数据比较旧了。"
       )
+    : isCodex
+      ? tx(
+          "This is not zero quota. The last Codex CLI record is too old to use.",
+          "这不是额度用完。上一条 Codex CLI 记录已经过旧，不能继续使用。"
+        )
     : isClaudeDesktop
       ? tx(
           "This is not zero quota. AIQD only has an old Claude Desktop usage sample.",
@@ -1468,6 +1504,11 @@ function renderStaleQuotaSummary(agent, snapshot) {
         "Open Claude Code once, then refresh AIQD.",
         "打开一次 Claude Code，然后刷新 AIQD。"
       )
+    : isCodex
+      ? tx(
+          "Use Codex once so it records fresh quota data, then click Refresh.",
+          "请先使用一次 Codex，让它记录最新额度数据，然后再点击“刷新”。"
+        )
     : isClaudeDesktop
       ? tx(
           "Open Claude Desktop so it records a new usage sample, then refresh AIQD.",
@@ -1620,7 +1661,7 @@ function staleReasonLabel(snapshot) {
   return sharedStaleReasonLabel(snapshot, tx);
 }
 
-function renderSnapshotLines(agent) {
+function renderSnapshotLines(agent, primary) {
   const snapshots = agent.snapshots;
 
   if (!snapshots || snapshots.length === 0) {
@@ -1642,8 +1683,18 @@ function renderSnapshotLines(agent) {
     `;
   }
 
-  return snapshots
-    .filter((snapshot) => !isSameSnapshot(snapshot, agent.primarySnapshot))
+  const windowOrder = new Map([
+    ["session_5h", 0],
+    ["weekly", 1]
+  ]);
+
+  return [...snapshots]
+    .filter((snapshot) => !isSameSnapshot(snapshot, primary))
+    .sort(
+      (left, right) =>
+        (windowOrder.get(left.windowType) ?? 2) -
+        (windowOrder.get(right.windowType) ?? 2)
+    )
     .map((snapshot) =>
       renderQuotaWindowRow(snapshot, {
         showMeter: !isStaleSnapshot(snapshot)
@@ -4909,6 +4960,7 @@ function renderCodexResetCreditReminderSettings() {
   const reminderDays = normalizeCodexResetCreditReminderPreferences(preferences)
     .daysBefore;
   const options = [1, 3, 7, 14];
+  const customDays = reminderDays.find((days) => !options.includes(days));
 
   elements.resetCreditReminderContent.innerHTML = `
     <div class="preference-row">
@@ -4943,6 +4995,7 @@ function renderCodexResetCreditReminderSettings() {
             )
           )
           .join("")}
+        ${renderResetCreditCustomDayOption(customDays, preferences.enabled)}
       </div>
     </div>
     ${
@@ -4960,6 +5013,27 @@ function renderCodexResetCreditReminderSettings() {
           })
         : ""
     }
+  `;
+}
+
+function renderResetCreditCustomDayOption(days, enabled) {
+  return `
+    <label class="reset-credit-custom-option ${days ? "is-selected" : ""} ${
+      enabled ? "" : "is-disabled"
+    }">
+      <span>${escapeHtml(tx("Custom", "自定义"))}</span>
+      <input
+        type="number"
+        min="1"
+        max="30"
+        step="1"
+        value="${days ?? 15}"
+        data-reset-credit-custom-days
+        aria-label="${escapeHtml(tx("Custom reminder days", "自定义提醒天数"))}"
+        ${enabled ? "" : "disabled"}
+      />
+      <span>${escapeHtml(tx("days", "天"))}</span>
+    </label>
   `;
 }
 

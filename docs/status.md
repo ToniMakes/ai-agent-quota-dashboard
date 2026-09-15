@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-09-12
+Last updated: 2026-09-15
 
 AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The local dashboard, desktop tray shell, real-data setup flow, and strict trial readiness checks are implemented and passing CI. The first public preview target is installer-first for normal users, with source mode retained as a developer fallback.
 
@@ -10,6 +10,7 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The local dashboard
 - SQLite persistence for normalized quota snapshots, reset events, and refresh runs
 - Codex quota detection from local CLI `rate_limits` events, with a manual visible-status fallback
 - Codex reset-credit detection from structured local app-server records and trusted Codex usage-limit tool results, with read-only dashboard details, mini-panel summary, and optional in-app expiry reminders
+- Codex reset-credit reminders support both preset intervals and a custom 1–30 day interval
 - Subscription-tier labels in the main agent card header when local data exposes a reliable tier, including Codex `planType` and Claude local credentials `subscriptionType`
 - Codex display/export surfaces hide unsupported monthly buckets and expose only the adapter-supported 5-hour and weekly windows
 - Claude Code quota ingestion from official statusline `rate_limits`
@@ -62,7 +63,7 @@ The current maintainer checkout has passed:
 - Maintainer-profile desktop and Start menu entries were refreshed again on 2026-08-21 after the Codex monthly-window hiding and desktop `EPIPE` fix; a hidden-window installed-app smoke exited `0`
 - Clean-copy trial from `.tmp/fresh-trial-v0.1.0-rc.1`: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, `npm run trial:ready`, and browser/API smoke
 - 2026-08-26 internal-quality pass (dashboard/mini-panel dedup into `web/shared.js`, Claude CLI environment and provider-manifest extraction): `npm run typecheck`, `npm test` (173 tests), and `npm run desktop:smoke`
-- 2026-09-12 Codex reset-credit pass: `npm test` (183 tests), `node --check web/app.js`, `node --check web/mini.js`, `git diff --check`, real Codex reset-credit smoke found 3 current credits from local session logs, `npm run package:win`, installed packaged-exe smoke, and refreshed desktop/Start menu entries to the latest installed executable
+- 2026-09-15 Codex dashboard and reminder UX pass: `npm test` (195 tests), `node --check web/app.js`, `node --check web/mini.js`, and `git diff --check`; dashboard and mini surfaces now prefer the supported 5-hour quota window and support custom reset-credit reminder intervals from 1 to 30 days
 - GitHub Actions CI on `main`
 
 ## Latest Clean Trial Notes

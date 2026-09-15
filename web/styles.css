@@ -127,11 +127,21 @@ h2 {
 }
 
 .topbar-actions {
+  display: grid;
+  align-items: center;
+  gap: 12px;
+  justify-content: end;
+}
+
+.topbar-primary-actions,
+.topbar-refresh-info {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
-  justify-content: end;
+}
+
+.topbar-refresh-info {
+  justify-content: flex-end;
 }
 
 .topbar-startup-control {
@@ -143,6 +153,8 @@ h2 {
   grid-template-columns: auto 34px;
   gap: 10px;
   align-items: center;
+  width: 188px;
+  box-sizing: border-box;
   min-height: 38px;
   padding: 0 12px;
   border: 1px solid var(--border);
@@ -323,6 +335,7 @@ h2 {
 
 .agent-card {
   display: grid;
+  align-content: start;
   gap: 18px;
   min-height: 256px;
   padding: 18px;
@@ -430,6 +443,7 @@ h2 {
   display: inline-grid;
   gap: 3px;
   margin-bottom: 8px;
+  min-height: 61px;
 }
 
 .remaining {
@@ -544,6 +558,8 @@ h2 {
 .quota-window-row {
   display: grid;
   gap: 8px;
+  min-height: 108px;
+  box-sizing: border-box;
   padding-top: 12px;
   border-top: 1px solid var(--border);
 }
@@ -673,6 +689,41 @@ h2 {
 .reset-credit-day-option.is-disabled {
   cursor: not-allowed;
   opacity: 0.54;
+}
+
+.reset-credit-custom-option {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 720;
+}
+
+.reset-credit-custom-option.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 54%, var(--border));
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface));
+  color: var(--accent-strong);
+}
+
+.reset-credit-custom-option.is-disabled {
+  opacity: 0.54;
+}
+
+.reset-credit-custom-option input {
+  width: 48px;
+  min-height: 26px;
+  padding: 2px 5px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  text-align: center;
 }
 
 .toggle-row {
@@ -2367,8 +2418,13 @@ h2 {
     width: 100%;
   }
 
+  .topbar-primary-actions,
+  .topbar-refresh-info {
+    justify-content: start;
+  }
+
   .topbar-startup-control {
-    width: min(100%, 210px);
+    width: 188px;
   }
 
   .refresh-status {

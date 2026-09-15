@@ -10,6 +10,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 - Added inline subscription-tier metadata in the main agent card header when local data exposes a reliable tier, including Codex `planType` and Claude local credentials `subscriptionType`
 - Added read-only Codex reset credit parsing, storage, dashboard details, mini-panel summary, and multi-select in-app expiry reminders
+- Added a custom Codex reset-credit reminder interval from 1 to 30 days
 
 ### Changed
 
@@ -27,6 +28,7 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Extracted Claude CLI detection and install-command resolution out of the statusline setup-status module into `src/setup/claude-cli-environment.ts`, replacing a string-matched winget detection with an explicit install-method field
 - Consolidated the Codex/Claude Code/Claude Desktop adapter list into a single provider manifest shared by adapter registration and the local-paths Settings view
 - Trimmed the README's Status section from a long feature-bullet list to a short summary linking to `docs/status.md`, and removed repeated privacy/setup caveats from the README and Claude Desktop docs section
+- Reorganized the dashboard refresh controls so the primary actions remain grouped while refresh timing information stays separate on narrow windows
 
 ### Fixed
 
@@ -40,6 +42,8 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 - Fixed a duplicated "window" word in the 5-hour quota window tooltip
 - Fixed several Chinese translations that had drifted out of sync between the main dashboard and mini panel for the same English source string (stale-data wording, quota-source terminology, Claude Code labels)
 - Fixed a handful of untranslated hardcoded English strings in the Settings view
+- Fixed dashboard and mini-panel primary quota selection to prefer the supported 5-hour window, then weekly quota, instead of relying on adapter ordering
+- Added Codex-specific guidance when the latest local CLI quota observation is stale
 
 ## [0.1.0] - 2026-08-25
 

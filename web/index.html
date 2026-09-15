@@ -24,24 +24,28 @@
         </div>
         <div class="topbar-actions">
           <div id="topbar-startup-control" class="topbar-startup-control"></div>
-          <button
-            id="language-toggle"
-            class="button language-toggle"
-            type="button"
-            data-i18n-title-en="Switch language"
-            data-i18n-title-zh="切换语言"
-            data-i18n-aria-label-en="Switch language"
-            data-i18n-aria-label-zh="切换语言"
-          >中文</button>
-          <span id="last-refresh" class="last-refresh">Last refresh: --</span>
-          <span id="refresh-status" class="refresh-status" aria-live="polite"></span>
-          <button
-            id="refresh-button"
-            class="button"
-            type="button"
-            data-i18n-en="Refresh"
-            data-i18n-zh="刷新"
-          >Refresh</button>
+          <div class="topbar-primary-actions">
+            <button
+              id="language-toggle"
+              class="button language-toggle"
+              type="button"
+              data-i18n-title-en="Switch language"
+              data-i18n-title-zh="切换语言"
+              data-i18n-aria-label-en="Switch language"
+              data-i18n-aria-label-zh="切换语言"
+            >中文</button>
+            <button
+              id="refresh-button"
+              class="button"
+              type="button"
+              data-i18n-en="Refresh"
+              data-i18n-zh="刷新"
+            >Refresh</button>
+          </div>
+          <div class="topbar-refresh-info">
+            <span id="last-refresh" class="last-refresh">Last refresh: --</span>
+            <span id="refresh-status" class="refresh-status" aria-live="polite"></span>
+          </div>
         </div>
       </header>
 
