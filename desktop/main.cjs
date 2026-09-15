@@ -3,6 +3,7 @@ const {
   BrowserWindow,
   dialog,
   Menu,
+  Notification,
   Tray,
   globalShortcut,
   ipcMain,
@@ -382,6 +383,14 @@ function registerIpc() {
 
   ipcMain.handle("toggle-widget", () => {
     toggleWidgetWindow();
+  });
+
+  ipcMain.handle("show-notification", (_event, title, body) => {
+    if (!Notification.isSupported()) {
+      return { ok: false, reason: "unsupported" };
+    }
+    new Notification({ title, body }).show();
+    return { ok: true };
   });
 
   ipcMain.handle("hide-current-window", (event) => {

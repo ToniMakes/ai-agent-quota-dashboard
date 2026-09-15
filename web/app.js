@@ -985,6 +985,7 @@ function render() {
   });
   renderRefreshStatus();
   renderTopbarStartupControl();
+  syncTopbarActionWidths();
   renderAgents();
   renderResets();
   renderEvents();
@@ -1004,6 +1005,20 @@ function render() {
   arrangeSettingsPanels();
   scheduleStatuslineWatch();
 }
+
+function syncTopbarActionWidths() {
+  const actions = document.querySelector(".topbar-actions");
+  const primary = document.querySelector(".topbar-primary-actions");
+  const startup = elements.topbarStartupControl;
+
+  if (!actions || !primary || !startup) {
+    return;
+  }
+
+  startup.style.width = `${primary.getBoundingClientRect().width}px`;
+}
+
+window.addEventListener("resize", syncTopbarActionWidths);
 
 function arrangeSettingsPanels() {
   const container = elements.settingsView;
@@ -2263,7 +2278,7 @@ function renderCodexSnapshotSettings() {
   const ready = autoDetected || manualReady;
   const needsAttention =
     status.readiness === "expired" || status.readiness === "needs_attention";
-  const showForm = !ready;
+  const showForm = false;
 
   elements.codexSnapshotContent.innerHTML = `
     ${renderCodexStatusRow({ ready, needsAttention })}
@@ -2279,7 +2294,7 @@ function renderCodexSnapshotSettings() {
                   "You can still enter a value by hand if this ever looks wrong.",
                   "如果这个数值看起来不对，你也可以在这里手动填写覆盖。"
                 )
-              )}</p>${renderCodexSnapshotForm(status)}`
+              )}</p>`
             : ""
         }
         <div class="settings-list">
@@ -2305,9 +2320,6 @@ function renderCodexSnapshotSettings() {
           )}
           ${renderSetupChecks(status.checks)}
         </div>
-
-        ${renderCommandBlock(tx("Fallback command", "兜底命令"), status.writeCommand)}
-        ${renderCommandBlock(tx("Help command", "帮助命令"), status.helpCommand)}
 
         ${renderFieldPills(
           tx("Stored", "已保存"),
@@ -2681,29 +2693,27 @@ function buildInitialSetupModel(items, readiness) {
           "点击刷新，让 AIQD 扫描本地 Codex session rate_limits。"
         ),
         tx(
-          "Use the manual fallback below only if no CLI quota can be detected.",
-          "只有检测不到 CLI 额度时，才使用下方手动兜底。"
+          "Use Codex once, then refresh again if no CLI quota appears.",
+          "请先使用一次 Codex，然后再次刷新；如果仍没有额度数据，请查看诊断信息。"
         )
       ],
       complete: codexComplete,
       detail: tx(
-        "AIQD reads supported rate_limits from local Codex CLI session logs. Manual entry is kept only as a fallback.",
-        "AIQD 会从本地 Codex CLI session 日志读取支持的 rate_limits；手动录入只作为兜底。"
+        "AIQD reads supported rate_limits from local Codex CLI session logs.",
+        "AIQD 会从本地 Codex CLI session 日志自动读取支持的 rate_limits。"
       ),
       id: "codex",
       number: "1",
       outcome: tx(
-        "If rate_limits are found, the dashboard will show Codex as Official CLI. If not, this page will explain the fallback.",
-        "如果读到 rate_limits，仪表盘会把 Codex 显示为官方 CLI；如果没有读到，这里会说明兜底方式。"
+        "If rate_limits are found, the dashboard will show Codex as Official CLI. If not, use Codex once and refresh again.",
+        "如果读到 rate_limits，仪表盘会把 Codex 显示为官方 CLI；如果没有读到，请先使用一次 Codex 再刷新。"
       ),
       progressDetail: codexComplete
         ? buildCodexDoneDetail(codex)
         : tx("Waiting for Codex CLI quota detection.", "等待 Codex CLI 额度检测。"),
       refreshAction: !codexComplete,
-      secondaryActionLabel: codexComplete
-        ? undefined
-        : tx("Manual fallback", "手动兜底"),
-      secondaryTarget: codexComplete ? undefined : "#codex-snapshot-content",
+        secondaryActionLabel: undefined,
+      secondaryTarget: undefined,
       status: codexComplete
         ? tx("Done", "已完成")
         : codex?.status ?? tx("Waiting for Codex data", "等待 Codex 数据"),
@@ -4996,6 +5006,9 @@ function renderCodexResetCreditReminderSettings() {
           )
           .join("")}
         ${renderResetCreditCustomDayOption(customDays, preferences.enabled)}
+        <button class="button reset-credit-test-notification" type="button" data-test-notification>
+          ${escapeHtml(tx("Test notification", "发送测试通知"))}
+        </button>
       </div>
     </div>
     ${
@@ -5015,6 +5028,20 @@ function renderCodexResetCreditReminderSettings() {
     }
   `;
 }
+
+document.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof Element) || !target.closest("[data-test-notification]")) {
+    return;
+  }
+  void window.aiqdDesktop?.showNotification(
+    tx("Codex reset credit reminder", "Codex 重置额度提醒"),
+    tx(
+      "Your Codex reset credit expires in 3 days. Open AIQD to review it.",
+      "你的 Codex 重置额度将在 3 天后到期，请打开 AIQD 查看详情。"
+    )
+  );
+});
 
 function renderResetCreditCustomDayOption(days, enabled) {
   return `

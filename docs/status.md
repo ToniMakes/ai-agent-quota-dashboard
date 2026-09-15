@@ -8,9 +8,10 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The local dashboard
 
 - Local Node.js service bound to `127.0.0.1`
 - SQLite persistence for normalized quota snapshots, reset events, and refresh runs
-- Codex quota detection from local CLI `rate_limits` events, with a manual visible-status fallback
+- Codex quota detection from local CLI `rate_limits` events; the packaged Settings flow is automatic-only and directs users to use Codex once, then refresh
 - Codex reset-credit detection from structured local app-server records and trusted Codex usage-limit tool results, with read-only dashboard details, mini-panel summary, and optional in-app expiry reminders
 - Codex reset-credit reminders support both preset intervals and a custom 1–30 day interval
+- Packaged desktop builds can show a real Windows notification through the Electron bridge, with a Settings test action; scheduled reminder delivery remains future work
 - Subscription-tier labels in the main agent card header when local data exposes a reliable tier, including Codex `planType` and Claude local credentials `subscriptionType`
 - Codex display/export surfaces hide unsupported monthly buckets and expose only the adapter-supported 5-hour and weekly windows
 - Claude Code quota ingestion from official statusline `rate_limits`
@@ -64,6 +65,7 @@ The current maintainer checkout has passed:
 - Clean-copy trial from `.tmp/fresh-trial-v0.1.0-rc.1`: `npm ci`, `npm test`, `npm run desktop:smoke`, `npm run desktop:first-run-smoke`, `npm run trial:preflight`, `npm run trial:ready`, and browser/API smoke
 - 2026-08-26 internal-quality pass (dashboard/mini-panel dedup into `web/shared.js`, Claude CLI environment and provider-manifest extraction): `npm run typecheck`, `npm test` (173 tests), and `npm run desktop:smoke`
 - 2026-09-15 Codex dashboard and reminder UX pass: `npm test` (195 tests), `node --check web/app.js`, `node --check web/mini.js`, and `git diff --check`; dashboard and mini surfaces now prefer the supported 5-hour quota window and support custom reset-credit reminder intervals from 1 to 30 days
+- 2026-09-16 desktop UX pass: removed manual Codex entry from packaged Settings, added realistic native notification test copy, and aligned desktop action rows using runtime measurement
 - GitHub Actions CI on `main`
 
 ## Latest Clean Trial Notes

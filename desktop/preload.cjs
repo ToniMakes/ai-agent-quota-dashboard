@@ -13,5 +13,7 @@ contextBridge.exposeInMainWorld("aiqdDesktop", {
     ipcRenderer.invoke("first-run-onboarding:set", preferences),
   setLaunchAtStartup: (enabled) =>
     ipcRenderer.invoke("launch-at-startup:set", Boolean(enabled)),
+  showNotification: (title, body) =>
+    ipcRenderer.invoke("show-notification", String(title), String(body)),
   toggleWidget: () => ipcRenderer.invoke("toggle-widget")
 });

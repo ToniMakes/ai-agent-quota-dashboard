@@ -130,7 +130,7 @@ h2 {
   display: grid;
   align-items: center;
   gap: 12px;
-  justify-content: end;
+  justify-items: end;
 }
 
 .topbar-primary-actions,
@@ -138,10 +138,19 @@ h2 {
   display: flex;
   align-items: center;
   gap: 12px;
+  width: max-content;
 }
 
 .topbar-refresh-info {
   justify-content: flex-end;
+}
+
+.topbar-primary-actions {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  justify-content: end;
+  min-width: max-content;
+  white-space: nowrap;
 }
 
 .topbar-startup-control {
@@ -153,7 +162,7 @@ h2 {
   grid-template-columns: auto 34px;
   gap: 10px;
   align-items: center;
-  width: 188px;
+  width: 100%;
   box-sizing: border-box;
   min-height: 38px;
   padding: 0 12px;
@@ -724,6 +733,12 @@ h2 {
   color: var(--text);
   font: inherit;
   text-align: center;
+}
+
+.reset-credit-test-notification {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 0.82rem;
 }
 
 .toggle-row {
@@ -2414,17 +2429,17 @@ h2 {
   }
 
   .topbar-actions {
-    justify-content: start;
+    justify-items: end;
     width: 100%;
   }
 
   .topbar-primary-actions,
   .topbar-refresh-info {
-    justify-content: start;
+    justify-content: flex-end;
   }
 
   .topbar-startup-control {
-    width: 188px;
+    width: auto;
   }
 
   .refresh-status {

@@ -15,7 +15,7 @@ AIQD only reads local files written by desktop apps or CLIs (Codex CLI, Claude C
 
 This repository publishes the v0.1 desktop preview as an installer-first build for normal users: install the app, open the desktop shortcut, then finish setup from Settings. Source mode remains available as a developer fallback.
 
-The app covers Codex (via local CLI `rate_limits` events, with a manual fallback for older versions) and Claude (via the Claude Code statusline or Claude Desktop's local `plan-usage-history.json` — see [Claude Desktop And Claude Code](#claude-desktop-and-claude-code) for how those two sources work as alternatives). When structured local Codex data exposes reset credits, AIQD also shows the current read-only reset-credit count and expiry times, with optional in-app reminders. It ships as a Windows desktop app with a main dashboard, a tray mini panel, and an always-on-top widget, alongside `doctor` and `export` CLI commands for local diagnostics. The v0.1.0 installer is unsigned while SignPath Foundation open-source signing remains pending; see [docs/code-signing.md](docs/code-signing.md).
+The app covers Codex (via local CLI `rate_limits` events) and Claude (via the Claude Code statusline or Claude Desktop's local `plan-usage-history.json` — see [Claude Desktop And Claude Code](#claude-desktop-and-claude-code) for how those two sources work as alternatives). When structured local Codex data exposes reset credits, AIQD also shows the current read-only reset-credit count and expiry times, with optional in-app reminders and a Windows notification preview from Settings. It ships as a Windows desktop app with a main dashboard, a tray mini panel, and an always-on-top widget, alongside `doctor` and `export` CLI commands for local diagnostics. The v0.1.0 installer is unsigned while SignPath Foundation open-source signing remains pending; see [docs/code-signing.md](docs/code-signing.md).
 
 If reliable quota data cannot be obtained from an official or local user-visible source, the app shows `unavailable` rather than guessing.
 
@@ -237,13 +237,13 @@ AIQD first scans local Codex CLI session logs for supported `rate_limits` events
 
 First action: use Codex once, then refresh AIQD or run `npm run trial:preflight`.
 
-The manual fallback command remains only for machines or Codex versions that do not expose usable local rate-limit events. To record a value you can visibly confirm:
+The manual fallback command remains available for developer or older-version workflows that do not expose usable local rate-limit events. The packaged Settings flow does not show a manual-entry form; normal users should use Codex once and refresh so AIQD can detect the local record automatically. To record a value from a developer workflow that you can visibly confirm:
 
 ```bash
 node dist/index.js codex snapshot --remaining-percent 72 --reset-at 2026-08-16T03:00:00Z
 ```
 
-You can also save the same visible values from the Settings view. The browser form writes only AIQD's own fallback file and refreshes the local dashboard after saving.
+The packaged Settings view does not provide a manual-entry form; it shows the automatic detection status and the next action instead.
 
 This writes a structured manual fallback snapshot to:
 

@@ -117,7 +117,7 @@ CI runs tests on Windows and Ubuntu with Node 24.
 ## Known Limits
 
 - The v0.1.0 Windows installer is unsigned while SignPath Foundation review is pending; users should verify the SHA256 before running it
-- No system notification support yet
+- Scheduled system reminder delivery is not part of this preview; packaged builds include a native notification bridge and a Settings preview action
 - No update channel yet
 - Launch-at-login is Windows-first for this preview; macOS/Linux distribution polish remains later work
 - Claude Code may report setup warnings until it renders a fresh statusline payload; this no longer blocks Claude readiness when Claude Desktop is available
