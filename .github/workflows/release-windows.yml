@@ -1,0 +1,70 @@
+name: Release Windows
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish Windows release
+    runs-on: windows-latest
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 24.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify tag matches package version
+        run: npm run release:verify
+
+      - name: Run release test gate
+        run: npm test
+
+      - name: Run desktop smoke gates
+        run: |
+          npm run desktop:smoke
+          npm run desktop:first-run-smoke
+
+      - name: Build Windows installer
+        run: npm run package:win
+
+      - name: Generate installer checksum
+        run: npm run release:checksum
+
+      - name: Run packaged smoke gate
+        shell: pwsh
+        run: |
+          & ".\release\win-unpacked\AI Agent Quota Dashboard.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process --smoke
+
+      - name: Verify installer signature state
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem release -Filter "AI Agent Quota Dashboard-*.exe" | Where-Object { $_.Name -notlike "*uninstaller*" } | Select-Object -First 1
+          if (-not $installer) { throw "Installer was not found" }
+          $signature = Get-AuthenticodeSignature $installer.FullName
+          $signature | Format-List Status,StatusMessage
+          if ($signature.Status -notin @("NotSigned", "Valid")) { throw "Unexpected Authenticode state: $($signature.Status)" }
+
+      - name: Publish GitHub release assets
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $installer = Get-ChildItem release -Filter "AI Agent Quota Dashboard-*.exe" | Where-Object { $_.Name -notlike "*uninstaller*" } | Select-Object -First 1
+          $checksum = Get-ChildItem release -Filter "AI Agent Quota Dashboard-*.exe.sha256" | Select-Object -First 1
+          if (-not $installer -or -not $checksum) { throw "Release assets are missing" }
+          gh release create "${{ github.ref_name }}" $installer.FullName $checksum.FullName --verify-tag --generate-notes --title "${{ github.ref_name }}"

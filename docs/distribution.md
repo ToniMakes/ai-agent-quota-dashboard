@@ -6,6 +6,15 @@ Last updated: 2026-08-25
 
 The v0.1.0 preview target is installer-first. Normal users should download a packaged desktop installer, run it, and open AIQD from the desktop or Start menu entry. Source mode remains a developer fallback, not the primary public path.
 
+## Release automation
+
+Windows releases run only when a maintainer pushes a version tag such as
+`v0.1.0`. The workflow checks that the tag matches `package.json`, runs the
+release test and desktop smoke gates, builds the x64 NSIS installer, creates a
+SHA256 sidecar file, verifies the artifact, and publishes both files to the
+GitHub Release. The preview path accepts an unsigned installer; signing remains
+the separate SignPath workflow.
+
 The Windows x64 installer artifact is:
 
 ```text

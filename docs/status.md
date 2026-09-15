@@ -15,6 +15,7 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The local dashboard
 - Concurrent refresh requests are coalesced, and unexpected HTTP errors return a generic production-safe message
 - Local candidate discovery keeps memory bounded when provider files grow during a scan and handles global filename patterns safely
 - Open-source maintenance now includes pinned GitHub Actions, production dependency auditing, and SBOM artifacts
+- Versioned releases now use a tag-only Windows workflow that validates `package.json`, generates installer checksums, and publishes release assets
 - Packaged desktop builds can show a real Windows notification through the Electron bridge, with a Settings test action; scheduled reminder delivery remains future work
 - Subscription-tier labels in the main agent card header when local data exposes a reliable tier, including Codex `planType` and Claude local credentials `subscriptionType`
 - Codex display/export surfaces hide unsupported monthly buckets and expose only the adapter-supported 5-hour and weekly windows

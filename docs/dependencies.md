@@ -12,6 +12,8 @@ Electron runtime for packaged Windows builds.
   identifies the intended upstream release.
 - Dependency updates must preserve the local-first privacy boundary and pass the
   normal build, test, and desktop smoke checks.
+- Release workflows are deliberately tag-only and validate that a `vX.Y.Z` tag
+  exactly matches the version in `package.json`.
 
 The development toolchain includes Electron, TypeScript, and test/build tools.
 They are not imported by the local dashboard service at runtime, but they still

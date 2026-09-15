@@ -53,6 +53,12 @@ jobs:
       - name: Build Windows installer
         run: npm run package:win
 
+      - name: Verify release version
+        run: npm run release:verify
+
+      - name: Generate installer checksum
+        run: npm run release:checksum
+
       - name: Run packaged smoke
         shell: pwsh
         run: |
@@ -71,6 +77,13 @@ jobs:
           }
           Get-Item $env:INSTALLER_PATH | Format-List FullName,Length,LastWriteTime
 
+      - name: Verify checksum file exists
+        shell: pwsh
+        run: |
+          $checksumPath = "$env:INSTALLER_PATH.sha256"
+          if (-not (Test-Path $checksumPath)) { throw "Checksum file was not created at $checksumPath" }
+          Get-Content $checksumPath
+
       - name: Upload unsigned installer artifact
         id: upload-unsigned-installer
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -78,6 +91,14 @@ jobs:
           name: aiqd-windows-installer-unsigned
           path: ${{ env.INSTALLER_PATH }}
           if-no-files-found: error
+
+      - name: Upload installer checksum artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: aiqd-windows-installer-checksum
+          path: ${{ env.INSTALLER_PATH }}.sha256
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Submit signing request to SignPath
         if: ${{ inputs.sign_with_signpath }}
