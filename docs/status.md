@@ -43,7 +43,7 @@ AI Agent Quota Dashboard is in a v0.1 desktop-preview stage. The local dashboard
 
 AIQD only uses official or local user-visible quota sources. It does not read browser cookies, simulate login, call hidden APIs, upload prompts/responses/source code, or automate account switching. If a reliable source is unavailable, the UI should say `unavailable` or use an explicitly labeled manual fallback.
 
-The preferred Windows signing path remains SignPath Foundation open-source signing. SignPath review is still pending, so the maintainer explicitly approved publishing v0.1.0 as an unsigned desktop preview on 2026-08-25 with prominent warning copy and a SHA256 in the GitHub Release.
+The preferred Windows signing path remains SignPath Foundation open-source signing. SignPath review is still pending, so the maintainer explicitly approved publishing v0.1.1 as an unsigned desktop preview on 2026-09-16 with prominent warning copy and a SHA256 in the GitHub Release.
 
 ## Latest Local Verification
 
@@ -74,6 +74,7 @@ The current maintainer checkout has passed:
 - 2026-09-16 P1 product-quality pass: added bounded local-file scan coverage, provider compatibility/data-quality documentation, and edge-case tests for oversized files and global filename patterns.
 - 2026-09-16 P1 open-source engineering pass: added action SHA pinning, dynamic packaging version resolution, CI production audit/SBOM generation, and dependency supply-chain documentation. Automated Dependabot and CODEOWNERS configuration was removed after causing excessive review notifications.
 - 2026-09-16 desktop UX pass: removed manual Codex entry from packaged Settings, added realistic native notification test copy, and aligned desktop action rows using runtime measurement
+- 2026-09-16 v0.1.1 unsigned Windows preview published from tag `v0.1.1`; the release workflow passed tests, desktop smoke, installer packaging, packaged smoke, signature-state validation, and asset upload. The installer SHA256 is `941852D34F0DA8620E044CB11E9A553201CA19136AA4A9D77B8FA4B41BACC572`.
 - GitHub Actions CI on `main`
 - Tag-driven Windows release automation now validates package version, creates
   installer SHA256 files, and publishes the installer plus checksum as release
@@ -89,7 +90,7 @@ The beginner real-data trial docs now call out expected command results, Windows
 
 Demo release screenshots have been refreshed for the dashboard, Diagnostics, Settings setup flow with Claude Desktop, mini panel, and widget surfaces under `docs/assets/screenshots`.
 
-The first public preview distribution shape is installer-first desktop preview. The Windows x64 NSIS artifact is generated at `release/AI Agent Quota Dashboard-0.1.0-win-x64.exe`; `release/` is ignored and the artifact should be uploaded to a GitHub Release rather than committed. The v0.1.0 artifact is intentionally unsigned while SignPath review is pending. `docs/release-notes-v0.1.0.md` is the GitHub Release text.
+The first public preview distribution shape is installer-first desktop preview. The Windows x64 NSIS artifact is generated at `release/AI Agent Quota Dashboard-0.1.1-win-x64.exe`; `release/` is ignored and the artifact is published to the [v0.1.1 GitHub Release](https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/tag/v0.1.1) rather than committed. The v0.1.1 artifact is intentionally unsigned while SignPath review is pending. `docs/release-notes-v0.1.1.md` is the release-notes source.
 
 The unsigned `v0.1.0-rc.1` GitHub Pre-release has been created for clean-machine testing and SignPath Foundation review. A copy-paste application draft is available in [docs/signpath-application.md](signpath-application.md).
 
@@ -138,5 +139,5 @@ Claude Desktop-only coverage was the highest product priority before broad publi
 
 ## Next Focus
 
-1. Run final local release checks, package the unsigned v0.1.0 installer, compute SHA256, and publish the GitHub Release.
-2. After SignPath approval, configure GitHub secrets/variables and rerun the Windows package workflow with signing enabled for a follow-up signed release.
+1. Optional post-release work: run the documented clean Windows profile or VM trial if broader distribution confidence is needed.
+2. After SignPath approval, configure GitHub secrets/variables and publish a separate signed follow-up release; do not silently replace the unsigned v0.1.1 asset.
