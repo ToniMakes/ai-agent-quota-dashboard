@@ -6,6 +6,8 @@ This project follows semantic versioning loosely while it is pre-1.0: minor vers
 
 ## [Unreleased]
 
+- Fixed Claude Desktop quota snapshots incorrectly inventing 5-hour and weekly reset times from the observation timestamp. Claude Desktop now shows no reset time unless a supported source reports one.
+
 ## [0.1.0] - 2026-09-16
 
 Unsigned Windows preview release containing the release-hardening, product-quality,
