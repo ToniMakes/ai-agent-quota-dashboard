@@ -5,7 +5,7 @@
 
 A local-first, quota-first dashboard for AI coding agents.
 
-Project website: [aiqd.tonimakes.com](https://aiqd.tonimakes.com) · [website source repository](https://github.com/ToniMakes/AIQD-Website)
+Project website: [aiqd.tonimakes.com](https://aiqd.tonimakes.com) · [Feedback board (staging)](https://aiqd.board.fp-staging.tonimakes.com/board) · [website source repository](https://github.com/ToniMakes/AIQD-Website)
 
 Open the dashboard and see, within a few seconds, how much quota is left for Codex and Claude, when it resets, and how reliable the source is.
 
