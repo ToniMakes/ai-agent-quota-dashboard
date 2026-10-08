@@ -3,392 +3,93 @@
 [![CI](https://github.com/ToniMakes/ai-agent-quota-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/ToniMakes/ai-agent-quota-dashboard/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-A local-first, quota-first dashboard for AI coding agents.
+**See your remaining AI coding quota and reported reset times in one local Windows app.** AIQD reads supported usage data already available on your device and shows when a source has no recent reading.
 
-Project website: [aiqd.tonimakes.com](https://aiqd.tonimakes.com) · [Feedback board (staging)](https://aiqd.board.fp-staging.tonimakes.com/board) · [website source repository](https://github.com/ToniMakes/AIQD-Website)
+Project website: [aiqd.tonimakes.com](https://aiqd.tonimakes.com) · [Feedback](https://aiqd.board.fp-staging.tonimakes.com/board)
 
-Open the dashboard and see, within a few seconds, how much quota is left for Codex and Claude, when it resets, and how reliable the source is.
+> **Current preview:** AIQD supports Codex and Claude through supported local desktop or CLI data sources. It does not monitor accounts used only in a web browser. Which quota values and reset times appear depends on the data each source provides. The current Windows x64 installer is [v0.1.0](https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/tag/v0.1.0) and is unsigned; review the release page and verify its SHA256 before running it.
 
-Unlike general token or cost trackers, this project is quota-first. It focuses on remaining limits, reported reset times, and source confidence for local AI coding agents.
+## What you can see
 
-AIQD only reads local files written by desktop apps or CLIs (Codex CLI, Claude Code CLI, Claude Desktop). It cannot see usage for an account that only uses a browser-based product, such as claude.ai or chatgpt.com in a web browser with no desktop app or CLI installed, because there is no local file for it to read.
+- Remaining quota and supported usage windows for Codex and Claude
+- Reset times when a supported source reports them
+- When the source last recorded data, and whether that reading needs a refresh
+- Source connection guidance, refresh history, and observed reset changes
+- A tray mini panel and optional always-on-top desktop widget
 
-## Status
-
-This repository publishes v0.1.0, the first public Windows x64 desktop preview. The supported public path is installer first: install the app, open the desktop shortcut, then finish setup from Settings. Source mode remains available as a developer fallback. The current release is [v0.1.0](https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/tag/v0.1.0).
-
-The app covers Codex through local CLI `rate_limits` events and Claude through either the Claude Code statusline or Claude Desktop's local `plan-usage-history.json`. See [Claude Desktop And Claude Code](#claude-desktop-and-claude-code) for how these sources work as alternatives. When structured local Codex data exposes reset credits, AIQD also shows the current read-only reset-credit count and expiry times, with optional in-app reminders and a Windows notification preview from Settings. It ships as a Windows desktop app with a main dashboard, a tray mini panel, and an always-on-top widget, alongside `doctor` and `export` CLI commands for local diagnostics. The v0.1.0 installer is unsigned while SignPath Foundation open-source signing remains pending; see [docs/code-signing.md](docs/code-signing.md).
-
-If reliable quota data cannot be obtained from an official or local user-visible source, the app shows `unavailable` rather than guessing.
-
-See [docs/status.md](docs/status.md) for the public capability summary and current release notes.
+AIQD reports unavailable or stale data instead of guessing. A successful local check does not mean a provider has produced a new usage reading. For example, Claude Code data updates when Claude Code sends a new statusline reading.
 
 ## Screenshots
 
-These images use sanitized demo data. They are illustrative and may lag fixes that have landed after the published release. They do not contain account names, credentials, private paths, raw logs, prompts, source code, or real quota records.
+Screenshots use sanitized demo data. They are illustrative and may differ from the current release. They contain no account names, credentials, private paths, raw logs, prompts, source code, or real quota records.
 
-Dashboard:
+| Dashboard | Connections |
+| --- | --- |
+| ![AIQD dashboard with demo quota data](docs/assets/screenshots/dashboard-demo.png) | ![AIQD connections and setup guidance](docs/assets/screenshots/doctor-demo.png) |
 
-![AI Agent Quota dashboard](docs/assets/screenshots/dashboard-demo.png)
+| Settings | Tray mini panel | Desktop widget |
+| --- | --- | --- |
+| ![AIQD settings and first-run setup](docs/assets/screenshots/settings-demo.png) | ![AIQD tray mini panel](docs/assets/screenshots/mini-panel-demo.png) | ![AIQD desktop widget](docs/assets/screenshots/widget-demo.png) |
 
-Diagnostics:
+See [screenshot notes](docs/assets/screenshots/README.md) for image safety details.
 
-![AI Agent Quota diagnostics](docs/assets/screenshots/doctor-demo.png)
+## Install the Windows preview
 
-Settings and first-run setup:
+1. Download the Windows x64 installer from the [v0.1.0 release](https://github.com/ToniMakes/ai-agent-quota-dashboard/releases/tag/v0.1.0).
+2. Run the installer and open **AI Agent Quota Dashboard** from the desktop shortcut.
+3. Choose the tools you use in the first-run guide. For Claude, choose Claude Desktop or Claude Code CLI; you do not need both.
+4. Follow the current step in **Settings**, then refresh AIQD to check for local usage data.
 
-![AI Agent Quota settings](docs/assets/screenshots/settings-demo.png)
+Claude Desktop users can open the desktop app once and refresh AIQD. Claude Code CLI users may need to connect the local statusline receiver, then open Claude Code and let it send a new usage reading. The app will explain the next step for the selected source.
 
-Tray mini panel:
+The optional **Start AIQD when I sign in** installer setting is off by default. See [Distribution and Startup](docs/distribution.md) for details.
 
-![AI Agent Quota tray mini panel](docs/assets/screenshots/mini-panel-demo.png)
+## Data sources and limits
 
-Always-on-top widget:
+AIQD reads only supported, quota-related fields from local data produced by tools you already use:
 
-![AI Agent Quota desktop widget](docs/assets/screenshots/widget-demo.png)
+- **Codex:** supported local CLI rate-limit events. A clearly labeled manual fallback is available only in developer workflows.
+- **Claude Code:** rate-limit data sent to AIQD's local statusline receiver.
+- **Claude Desktop:** supported local plan-usage history, as an alternative to Claude Code.
 
-Screenshot safety notes are in [docs/assets/screenshots](docs/assets/screenshots).
+Claude Desktop and Claude Code are alternative sources for the Claude card. AIQD does not read browser cookies or monitor browser-only use such as `claude.ai` or `chatgpt.com`. Some sources do not report a reset time, and local app or CLI formats may change. See [supported sources and data quality](docs/compatibility.md) for current details.
 
-## Non-goals
+## Privacy
 
-This project does not:
+The desktop app stores quota readings and refresh history on your device and serves its dashboard through `127.0.0.1`. It does not collect passwords or browser cookies, or upload prompts, replies, source code, or chat content. It does not simulate logins, switch accounts, bypass rate limits, or call hidden provider APIs.
 
-- Read browser cookies
-- Collect passwords
-- Simulate logins
-- Call private or hidden APIs
-- Bypass rate limits
-- Switch accounts to avoid limits
-- Upload prompts, responses, source code, or chat content
+The public website is separate from the desktop app. Its feedback form sends the details and email address you choose to provide only when you submit feedback. Read the full [privacy notes](docs/privacy.md) and [security policy](SECURITY.md).
 
-## Quick Start
+## Run from source
 
-Current public release:
-
-1. Download the installer from the GitHub Release assets.
-   The Windows x64 artifact is named `AI.Agent.Quota.Dashboard-0.1.0-win-x64.exe`.
-2. Run the installer. The optional `Start AIQD when I sign in` checkbox defaults to off.
-3. Open the AIQD desktop shortcut.
-4. The first-launch guide asks which agents you use. If you choose Claude, pick either Claude Desktop or Claude Code CLI.
-5. Claude Desktop needs no setup: use Claude Desktop once, then refresh AIQD. If you choose Claude Code CLI, AIQD connects the local statusline receiver and then Claude Code needs to run once.
-6. Return to AIQD and check the dashboard.
-
-Developer source mode:
-
-Clone the repository, install dependencies, and run the local dashboard or desktop shell from source.
-
-Demo mode:
-
-```bash
-npm install
-npm run dev
-```
-
-Then open:
-
-```text
-http://127.0.0.1:4317
-```
-
-`npm run dev` enables demo data. To scan local paths without demo snapshots:
-
-```bash
-npm run dev:local
-```
-
-If demo snapshots were previously written to the local SQLite database, `npm run dev:local`, `doctor`, and `export` hide them unless demo mode is explicitly enabled.
-
-Real local desktop trial from source:
+These steps are for developers. `npm run dev` starts the dashboard with demo data; it does not represent a connection to your provider accounts.
 
 ```bash
 npm install
 npm test
+npm run dev
+```
+
+Open <http://127.0.0.1:4317>. To scan local paths without demo snapshots, use `npm run dev:local`. On Windows PowerShell, use `npm.cmd` if the execution policy blocks `npm`.
+
+For a real-data local trial from source:
+
+```bash
 npm run trial:preflight
 npm run desktop:local
 ```
 
-Expected result: `trial:preflight` either reports ready or prints the next source-specific action. The desktop first-run guide then opens the exact Settings or Diagnostics section needed for real data setup.
-
-If Windows PowerShell blocks `npm` with `running scripts is disabled`, run the same commands with `npm.cmd`, for example `npm.cmd test` and `npm.cmd run desktop:local`.
-
-See [docs/real-data-trial.md](docs/real-data-trial.md) for the local data setup and verification guide.
-
-## Scripts
-
-```bash
-npm run dev        # local server with demo quota snapshots
-npm run dev:local  # local server without demo quota snapshots
-npm run desktop    # desktop tray app without demo quota snapshots
-npm run desktop:local
-npm run desktop:open
-npm run desktop:demo
-npm run desktop:smoke
-npm run desktop:first-run-smoke
-npm run doctor
-npm run icons:generate
-npm run package:win:dir
-npm run package:win
-npm run trial:preflight
-npm run trial:ready
-npm run claude:self-test
-npm run build      # compile TypeScript
-npm test           # typecheck and run node:test tests
-```
-
-## Desktop Shell
-
-The desktop shell is a lightweight Electron wrapper around the same local service and APIs.
-
-```bash
-npm run desktop
-```
-
-It starts the local backend, adds an AI Agent Quota tray icon, and provides:
-
-- a desktop-entry mode, `npm run desktop:open`, that opens the main dashboard window on launch
-- a packaged launch-at-login mode that starts only the tray shell and local backend unless setup or recovery needs attention
-- a tray mini panel that hides when it loses focus
-- an optional always-on-top desktop widget
-- a tray tooltip and menu summary for the current quota state
-- strict readiness status in the tray when real-data setup is not reliable yet
-- tray menu shortcuts for Refresh, Diagnostics, Settings, and Dashboard
-- a one-time first-run guide that uses strict trial readiness to open the exact Settings or Diagnostics section when real data is not ready, or shows the mini panel when it is ready
-- safe global shortcuts for AIQD itself: `Ctrl+Alt+Q` toggles the mini panel, `Ctrl+Alt+R` refreshes quota data, and `Ctrl+Alt+W` toggles the desktop widget
-- compact secondary-window quota rows and manual refresh in mini surfaces
-- single-instance behavior: launching the desktop app again opens the existing main dashboard window, while the tray remains available for the mini panel
-- automatic tray refresh when Claude Code sends the first statusline snapshot
-- remembered desktop widget position
-- `Esc` to hide the active mini surface
-- a normal full dashboard window for setup, Diagnostics, and exports
-
-The mini surfaces reuse the same normalized `/api/agents`, `/api/trial-readiness`, and setup endpoints as the main dashboard. They do not read extra files, collect prompts, or call hidden provider APIs.
-
-Desktop shortcuts do not approve or automate other apps. Override or disable them with `AIQD_SHORTCUT_PANEL`, `AIQD_SHORTCUT_REFRESH`, and `AIQD_SHORTCUT_WIDGET`; set a value to `off` to disable that shortcut.
-
-Source mode is a development shell. The v0.1 public preview ships as a packaged desktop installer so non-technical users do not need `npm`, `node`, or source checkout steps.
-
-Startup behavior is documented in [docs/distribution.md](docs/distribution.md). The installed desktop shortcut opens the main dashboard. Launch-at-login is explicit, reversible from Settings, and off by default for the first packaged release.
-
-If the local backend cannot start, the desktop shell shows recovery guidance with the backend error tail and the same Doctor/smoke commands used in development.
-
-Use `npm run desktop:smoke` to verify that the desktop shell can start the local backend and exit cleanly. Use `npm run desktop:first-run-smoke` to verify the first-run guide deep-link and local state marker against isolated temporary data.
-
-## Windows Installer
-
-The Windows preview installer is built with `electron-builder` and the NSIS target:
-
-```bash
-npm run package:win
-```
-
-The generated installer is written to:
-
-```text
-release/AI Agent Quota Dashboard-0.1.0-win-x64.exe
-```
-
-For a faster packaged-app smoke test without running the installer:
-
-```bash
-npm run package:win:dir
-```
-
-Then, from PowerShell:
-
-```powershell
-& ".\release\win-unpacked\AI Agent Quota Dashboard.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process --smoke
-& ".\release\win-unpacked\AI Agent Quota Dashboard.exe" --disable-gpu --disable-gpu-compositing --disable-gpu-sandbox --single-process --smoke-first-run-guide
-```
-
-The packaged app starts its local backend through Electron's bundled Node runtime, so normal users do not need to install Node.js or npm.
-
-The installer includes an optional `Start AIQD when I sign in` checkbox. It is off by default; the same setting can be enabled or disabled later from Settings > Desktop Preferences.
-
-The v0.1.0 desktop preview installer is unsigned because SignPath Foundation approval is still pending. Windows may show an unknown-publisher or SmartScreen warning. Verify the SHA256 listed on the GitHub Release before running the installer. See [docs/code-signing.md](docs/code-signing.md).
-
-### Code Signing Policy
-
-Code signing policy: [docs/code-signing.md](docs/code-signing.md). Free code signing provided by SignPath.io, certificate by SignPath Foundation.
-
-## Doctor CLI
-
-Run one local scan and print the same diagnostic signal without opening the dashboard:
-
-```bash
-node dist/index.js doctor
-node dist/index.js doctor --demo
-node dist/index.js doctor --json
-node dist/index.js doctor --strict
-```
-
-The command prints refresh counts, each agent's quota or empty-state guidance, and the underlying Doctor checks. It exits with code `1` only for blocking failures such as adapter errors or invalid config. Missing quota sources are warnings because a freshly installed app may simply need setup.
-
-Use `npm run trial:ready` or `doctor --strict` before a real-data desktop trial. Strict mode requires fresh non-demo quota snapshots for the required provider groups: Codex plus either Claude Code or Claude Desktop for Claude coverage. The Settings real-data overview shows the same strict readiness result through `/api/trial-readiness`.
-
-Use `npm run trial:preflight` when you want the shortest setup answer first. It runs one local refresh and prints source-specific next actions for Codex, Claude Code, and blocking Doctor issues without modifying external agent settings.
-
-`--json` prints a machine-readable report that excludes account identifiers, raw source references, and raw content, redacts local paths, and includes per-snapshot freshness reasons. The plain text report is meant for local troubleshooting and can include local filesystem paths.
-
-See [docs/diagnostics.md](docs/diagnostics.md) for what to share in public issues.
-
-## CLI Export
-
-Export normalized quota data without opening the dashboard:
-
-```bash
-node dist/index.js export
-node dist/index.js export --csv
-node dist/index.js export --json --no-refresh
-```
-
-The export command refreshes local sources by default. Use `--no-refresh` to export only the latest data already stored in SQLite. JSON output includes snapshots and reset events; CSV output includes latest quota snapshots. Both formats exclude account identifiers and raw local source references.
-
-## Codex Quota Detection
-
-AIQD first scans local Codex CLI session logs for supported `rate_limits` events. When those events are present, Codex quota is labeled `official_cli` and no manual setup is needed.
-
-First action: use Codex once, then refresh AIQD or run `npm run trial:preflight`.
-
-The manual fallback command remains available for developer or older-version workflows that do not expose usable local rate-limit events. The packaged Settings flow does not show a manual-entry form; normal users should use Codex once and refresh so AIQD can detect the local record automatically. To record a value from a developer workflow that you can visibly confirm:
-
-```bash
-node dist/index.js codex snapshot --remaining-percent 72 --reset-at 2026-08-16T03:00:00Z
-```
-
-The packaged Settings view does not provide a manual-entry form; it shows the automatic detection status and the next action instead.
-
-This writes a structured manual fallback snapshot to:
-
-```text
-~/.ai-agent-quota-dashboard/codex/codex-quota-snapshot.json
-```
-
-Manual Codex fallback snapshots are labeled `manual` and expire at the reported reset time.
-
-The Settings view shows whether automatic CLI detection is active, whether a fallback exists, the latest remaining quota, the reported reset time, copyable fallback commands, and the fields that are stored or deliberately not stored.
-
-## Local Data Paths
-
-The app scans conservative default paths for supported agents. You can add explicit local scan roots without editing JSON by hand:
-
-```bash
-node dist/index.js config path list
-node dist/index.js config path add codex "C:\path\to\codex-data"
-node dist/index.js config path add claude-code "C:\path\to\claude-data"
-node dist/index.js config path add claude-desktop "C:\path\to\plan-usage-history.json"
-node dist/index.js config path remove codex "C:\path\to\codex-data"
-```
-
-These commands write only the dashboard's own config file:
-
-```text
-~/.ai-agent-quota-dashboard/config.json
-```
-
-The Settings view shows the same config path, whether configured scan roots are readable, and copy buttons for the related commands. If the browser blocks clipboard access, the command is selected so it can be copied manually.
-
-## Claude Desktop And Claude Code
-
-AIQD reads Claude quota from two independent local sources and treats them as alternatives, not a chain: Claude Code statusline and Claude Desktop's local `plan-usage-history.json`. Either one being fresh is enough for Claude to count as ready; the Claude Code CLI is not required.
-
-On Windows, Claude Desktop maintains a local `%APPDATA%\Claude\plan-usage-history.json` file with plan usage samples. The adapter parses only narrow usage fields, including 5-hour and weekly used percentages plus observation timestamps, and does not scrape the app UI. See [Non-goals](#non-goals) for the project's broader data-access guarantees. Reset time is not reported by this file, so AIQD shows percentage and observed time only for this source.
-
-Here, "Claude Desktop" means the installed desktop app, not claude.ai opened in a regular web browser. See the intro above for why a browser-only account cannot be monitored.
-
-## Claude Code Statusline
-
-Claude Code can send official `rate_limits` data to a local statusline command. This project provides a sink that stores only sanitized rate limit fields.
-
-If you only use the desktop app and never open Claude Code from a terminal/CLI session, AIQD reads Claude Desktop's local usage history instead; you do not need to set up the statusline at all. If you do use Claude Code CLI, keep in mind that AIQD cannot refresh Claude Code statusline quota data until Claude Code renders its statusline again, so the last snapshot may show as stale until then.
-
-Real-data setup from source:
-
-1. Build the local CLI:
-
-```bash
-npm run build
-```
-
-2. Test the local statusline sink with temporary files and fake `rate_limits`:
-
-```bash
-node dist/index.js claude-statusline-sink --self-test
-```
-
-3. Install the generated statusline command into `~/.claude/settings.json`:
-
-```bash
-node dist/index.js setup claude-statusline --write
-```
-
-4. Open Claude Code, then refresh the dashboard or run Doctor:
-
-```bash
-node dist/index.js doctor
-```
-
-Expected result: after Claude Code renders its statusline once, Doctor shows supported `rate_limits` windows. Until then it may show `Waiting for Claude Code data`.
-
-If Doctor says the snapshot is old, open Claude Code once more so the statusline sends a fresh payload, then run `node dist/index.js doctor` again.
-
-If Doctor says Claude Code CLI is installed outside `PATH`, use the full-path command shown by Settings or Doctor, or add that install directory to `PATH` and restart the terminal.
-
-Preview without changing Claude settings: `node dist/index.js setup claude-statusline`.
-
-If a `statusLine` already exists, the command refuses to replace it unless you add `--force`.
-
-The Settings view shows the same setup state, readiness checks, latest received rate limit windows, snapshot age, and copyable commands. It is read-only: it does not modify Claude Code configuration from the browser.
-
-Portable or test installs can override Claude setup paths with `AIQD_CLAUDE_SETTINGS_PATH`, `AIQD_CLAUDE_STATUSLINE_DIR`, and `AIQD_CLAUDE_STATUSLINE_SHIM_PATH`.
-
-## Architecture
-
-```text
-src/
-  adapters/   provider-specific discovery and parsing
-  core/       quota models, confidence, state, forecast primitives
-  storage/    SQLite persistence
-  server/     localhost API and static file serving
-desktop/      Electron tray panel and always-on-top widget shell
-web/          dashboard UI
-docs/         architecture, privacy, roadmap
-```
-
-The UI never reads local files directly. Adapters read allowed local sources, normalize them into `QuotaSnapshot` and `UsageEvent`, and the API serves only normalized data.
-
-See [docs/data-sources.md](docs/data-sources.md) for the current parser trust boundaries.
-
-## Source Confidence
-
-Source priority:
-
-```text
-official_api / official_cli
-> official_statusline
-> planned local_plan_usage_history
-> local_quota_snapshot
-> local_usage_log
-> estimated
-> manual
-> unavailable
-```
-
-The product should be conservative: estimated data must be labeled as estimated, stale data must include a freshness reason, observed timestamps must be visible, and unknown data must not be presented as precise.
-
-Persisted `demo` snapshots are visible only when demo mode is explicitly enabled.
-
-## Reset Events
-
-Some agents, especially Codex, can change their reported reset anchor because of banked resets, shared agentic usage pools, credits, promotions, or backend limit updates. The dashboard treats `resetAt` as an observed value, not a prediction, and shows both relative and absolute reported reset times.
-
-When a reset time changes or remaining quota jumps back near full, the app records a reset event and shows it in the Recent Changes panel.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) before adding an adapter or parser. Parser changes must include sanitized fixtures and tests.
-
-Security and privacy-sensitive reports should follow [SECURITY.md](SECURITY.md). Do not paste prompts, responses, source code, credentials, cookies, session IDs, transcript paths, workspace paths, or full raw logs into public issues.
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md).
+## Documentation
+
+| If you want to… | Read |
+| --- | --- |
+| Understand the current preview | [Project status](docs/status.md) |
+| See supported sources and data-quality behavior | [Compatibility notes](docs/compatibility.md) and [data sources](docs/data-sources.md) |
+| Connect local data or solve a setup issue | [Local data trial](docs/real-data-trial.md) and [diagnostics](docs/diagnostics.md) |
+| Understand what is stored and where data goes | [Privacy](docs/privacy.md) |
+| Build, test, inspect, or contribute | [Contributing](CONTRIBUTING.md), [architecture](docs/architecture.md), and [documentation index](docs/README.md) |
+| Check the installer, startup, or signature | [Distribution](docs/distribution.md) and [code signing](docs/code-signing.md) |
+
+## Non-goals
+
+AIQD is a read-only quota dashboard. It does not read browser cookies, collect passwords, simulate logins, call private or hidden APIs, bypass rate limits, switch accounts to avoid limits, or upload prompts, responses, source code, or chat content.

@@ -244,16 +244,61 @@ async function load(options = {}) {
 function render() {
   applyStaticTranslations();
   const agents = sortAgents(buildDisplayAgents(filterAgentsByOnboarding(state.agents)));
+  const previousMeterValues = readMiniMeterValues();
 
   if (agents.length === 0) {
     elements.grid.innerHTML = `<p class="mini-empty">${escapeHtml(
-      tx("No agents", "没有 Agent")
+      tx("No tools selected", "尚未选择工具")
     )}</p>`;
   } else {
     elements.grid.innerHTML = agents.map(renderAgent).join("");
   }
 
+  animateMiniMeterChanges(previousMeterValues);
+
   renderFooter();
+}
+
+function readMiniMeterValues() {
+  const values = new Map();
+
+  for (const card of elements.grid.querySelectorAll(".mini-agent")) {
+    const agentId = card.dataset.agentId;
+
+    for (const meter of card.querySelectorAll("[data-quota-meter]")) {
+      const value = meter.style.getPropertyValue("--value");
+      if (agentId && value) {
+        values.set(`${agentId}:${meter.dataset.quotaMeter}`, value.trim());
+      }
+    }
+  }
+
+  return values;
+}
+
+function animateMiniMeterChanges(previousValues) {
+  for (const card of elements.grid.querySelectorAll(".mini-agent")) {
+    const agentId = card.dataset.agentId;
+
+    for (const meter of card.querySelectorAll("[data-quota-meter]")) {
+      const previousValue = previousValues.get(
+        `${agentId}:${meter.dataset.quotaMeter}`
+      );
+      const nextValue = meter.style.getPropertyValue("--value").trim();
+
+      if (!previousValue || previousValue === nextValue) {
+        continue;
+      }
+
+      meter.style.setProperty("--value", previousValue);
+      void meter.offsetWidth;
+      window.requestAnimationFrame(() => {
+        if (meter.isConnected) {
+          meter.style.setProperty("--value", nextValue);
+        }
+      });
+    }
+  }
 }
 
 function filterAgentsByOnboarding(agents) {
@@ -292,7 +337,11 @@ function renderAgent(agent) {
   const label = primary ? primaryLabel(primary) : guidance.label;
 
   return `
-    <article class="mini-agent ${escapeHtml(status)}" title="${escapeHtml(detail)}">
+    <article
+      class="mini-agent ${escapeHtml(status)}"
+      data-agent-id="${escapeHtml(agent.agent)}"
+      title="${escapeHtml(detail)}"
+    >
       <div class="mini-agent-top">
         <span class="status-dot ${escapeHtml(status)}" aria-hidden="true"></span>
         <strong>${escapeHtml(agent.shortName ?? agent.displayName)}</strong>
@@ -302,6 +351,7 @@ function renderAgent(agent) {
       <div class="mini-meter" aria-hidden="true">
         <div
           class="mini-meter-fill ${escapeHtml(primaryMeterClass(primary, status))}"
+          data-quota-meter="primary"
           style="--value: ${meterValue(primary)}%"
         ></div>
       </div>
@@ -324,7 +374,7 @@ async function refreshNow() {
     await fetchJson("/api/refresh", { method: "POST" });
     await load({ allowRefresh: false });
   } catch {
-    state.lastError = tx("Refresh failed", "刷新失败");
+    state.lastError = tx("Couldn’t check local data", "无法检查本地数据");
     renderError();
   } finally {
     state.isRefreshing = false;
@@ -394,7 +444,7 @@ function footerState() {
   if (state.isRefreshing) {
     return {
       kind: "pending",
-      text: tx("Refreshing now", "正在刷新")
+      text: tx("Checking local data…", "正在检查本地数据…")
     };
   }
 
@@ -410,10 +460,10 @@ function footerState() {
   if ((latestRun?.errors?.length ?? 0) > 0) {
     return {
       action: "doctor",
-      ariaLabel: tx("Open Diagnostics for refresh warning", "打开诊断查看刷新警告"),
+      ariaLabel: tx("Open Connections to review the refresh warning", "打开连接状态查看刷新提醒"),
       kind: "warning",
       target: "refresh-run-list",
-      text: tx("Refresh warning - open Diagnostics", "刷新有警告 - 打开诊断"),
+      text: tx("Check finished with warnings - open Connections", "检查完成，但有提醒 - 打开连接状态"),
       title: refreshRunTitle(latestRun)
     };
   }
@@ -426,7 +476,7 @@ function footerState() {
         action: setup.action,
         ariaLabel: readinessActionLabel(
           setup.action,
-          tx("finish real data setup", "完成真实数据设置")
+          tx("finish local source setup", "完成本地数据来源设置")
         ),
         kind: "info",
         target: setup.target,
@@ -447,7 +497,7 @@ function footerState() {
       action: setup.action,
       ariaLabel: readinessActionLabel(
         setup.action,
-        tx("set up real data", "设置真实数据")
+        tx("connect a local source", "连接本地数据来源")
       ),
       kind: "info",
       target: setup.target,
@@ -471,7 +521,7 @@ function footerState() {
 
     return {
       action: "settings",
-      ariaLabel: tx("Open Settings to set up real data", "打开设置配置真实数据"),
+      ariaLabel: tx("Open Settings to connect a local source", "打开设置连接本地数据来源"),
       kind: "info",
       target: setup.target,
       text: tx(
@@ -513,7 +563,7 @@ function footerState() {
 
   return {
     kind: "success",
-    text: tx("Updated {time}", "更新于 {time}", {
+    text: tx("Last checked {time}", "上次检查：{time}", {
       time: formatRelative(state.generatedAt)
     })
   };
@@ -521,7 +571,7 @@ function footerState() {
 
 function readinessActionLabel(action, reason) {
   return action === "doctor"
-    ? tx("Open Diagnostics to {reason}", "打开诊断以{reason}", { reason })
+    ? tx("Open Connections to {reason}", "打开连接状态以{reason}", { reason })
     : tx("Open Settings to {reason}", "打开设置以{reason}", { reason });
 }
 
@@ -552,7 +602,7 @@ function snapshotCountText(count) {
 
 function refreshRunTitle(run) {
   const lines = [
-    tx("Last refresh {time}", "上次刷新：{time}", {
+    tx("Last checked {time}", "上次检查：{time}", {
       time: formatRelative(run.observedAt)
     }),
     tx(
@@ -708,6 +758,7 @@ function renderWindowMeter(snapshot) {
     <div class="mini-window-meter" aria-hidden="true">
       <div
         class="mini-window-meter-fill ${escapeHtml(windowMeterClass(snapshot))}"
+        data-quota-meter="${escapeHtml(snapshot.windowType)}"
         style="--value: ${meterValue(snapshot)}%"
       ></div>
     </div>
@@ -766,7 +817,7 @@ function strictReadinessProgress() {
   const ready = checks.filter((check) => check.status === "pass").length;
   const missingText =
     failedChecks.map(readinessDisplayName).filter(Boolean).join(", ") ||
-    tx("real data", "真实数据");
+    tx("local usage data", "本地用量数据");
   const target = readinessCheckTarget(firstFailedCheck);
 
   return {
@@ -859,7 +910,7 @@ function setupProgress(agents) {
   const ready = Math.max(total - missing.length, 0);
   const missingNames = missing.map((agent) => setupAgentName(agent)).filter(Boolean);
   const missingText =
-    missingNames.length > 0 ? missingNames.join(", ") : tx("real data", "真实数据");
+    missingNames.length > 0 ? missingNames.join(", ") : tx("local usage data", "本地用量数据");
   const target = missing[0] ? setupAgentTarget(missing[0]) : undefined;
 
   return {
@@ -937,7 +988,7 @@ function emptyStateGuidance(agent) {
   if (agent.emptyState?.reason === "adapter_error") {
     return {
       action: "doctor",
-      actionLabel: tx("Diagnostics", "诊断"),
+      actionLabel: tx("Connections", "连接状态"),
       detail: tx("Something went wrong - see details", "出了点问题，查看详情"),
       label: tx("check", "检查"),
       target: "doctor-list",
@@ -980,11 +1031,11 @@ function emptyStateGuidance(agent) {
 
   return {
     action: "doctor",
-    actionLabel: tx("Diagnostics", "诊断"),
-    detail: agent.emptyState?.detail ?? tx("No quota data yet", "还没有额度数据"),
+    actionLabel: tx("Connections", "连接状态"),
+    detail: agent.emptyState?.detail ?? tx("No usage data yet", "还没有使用数据"),
     label: tx("unavailable", "不可用"),
     target: "doctor-list",
-    title: agent.emptyState?.title ?? tx("No quota data", "没有额度数据")
+    title: agent.emptyState?.title ?? tx("No usage data yet", "还没有使用数据")
   };
 }
 
@@ -1008,7 +1059,7 @@ function formatRemaining(snapshot) {
   }
 
   if (isStaleSnapshot(snapshot)) {
-    return tx("Refresh", "刷新");
+    return tx("Refresh data", "刷新数据");
   }
 
   if (typeof snapshot.remainingPercent === "number") {
@@ -1096,7 +1147,7 @@ function snapshotTimingTitle(snapshot) {
     });
   }
 
-  return tx("No reported reset", "未报告重置时间");
+  return tx("Reset time not reported", "此来源未提供重置时间");
 }
 
 function latestObservedAt(snapshots) {
@@ -1117,7 +1168,7 @@ function formatRemainingText(snapshot) {
   }
 
   if (isStaleSnapshot(snapshot)) {
-    return tx("needs refresh", "需要刷新");
+    return tx("needs a refresh", "数据较旧，需要更新");
   }
 
   if (typeof snapshot.remainingPercent === "number") {

@@ -216,6 +216,7 @@ button {
 .mini-grid {
   display: grid;
   flex: 1 1 auto;
+  align-content: start;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   min-height: 0;
@@ -532,6 +533,91 @@ button {
 
 .mini-shell[data-mode="widget"] .mini-footer {
   margin-top: 6px;
+}
+
+/* Keep quota and connection states visually aligned with the main dashboard. */
+:root {
+  --accent: #62c49a;
+  --accent-strong: #8bdfb7;
+  --warning: #e6b35e;
+  --critical: #ff958d;
+  --unknown: #b7a0d4;
+  --panel-border: rgb(177 209 189 / 18%);
+  --surface: rgb(255 255 255 / 6%);
+  --surface-strong: rgb(255 255 255 / 10%);
+  --panel-bg: rgb(22 30 25 / 96%);
+  --shadow: 0 16px 40px rgb(0 0 0 / 34%);
+}
+
+.mini-shell {
+  border-radius: 12px;
+  backdrop-filter: blur(16px);
+}
+
+.mini-shell[data-mode="widget"] {
+  border-color: rgb(98 196 154 / 30%);
+  border-radius: 14px;
+}
+
+.mini-agent {
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 75%, transparent);
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.status-dot {
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.mini-remaining {
+  font-size: 1.08rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.025em;
+}
+
+.mini-meter {
+  height: 5px;
+  background: rgb(255 255 255 / 12%);
+}
+
+.mini-meter-fill,
+.mini-window-meter-fill {
+  transition: width 180ms ease;
+}
+
+.tool-button,
+.mini-action {
+  border-radius: 9px;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    transform 110ms ease;
+}
+
+.mini-action {
+  min-height: 27px;
+  border-color: rgb(98 196 154 / 42%);
+  background: rgb(98 196 154 / 12%);
+}
+
+.tool-button:active:not(:disabled),
+.mini-action:active:not(:disabled) {
+  transform: translateY(1px);
+  transition-duration: 110ms;
+}
+
+.mini-footer {
+  padding-top: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 @media (max-width: 319px) {

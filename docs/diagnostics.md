@@ -1,43 +1,34 @@
-# Diagnostics
+# Troubleshooting and Diagnostic Reports
 
-Use the Doctor CLI when the dashboard has no quota data, shows stale data, or behaves differently from what an agent reports.
+If a tool has no reading or its data looks old, open AIQD's **Connections** view first. It shows whether each selected local source is ready and what to do next. A refresh checks local sources; it cannot make a provider create a new usage record.
 
-For Claude Code, the Diagnostics tab and Settings report the same statusline readiness checks: Claude settings, the managed shim, the latest sanitized snapshot, and whether supported `rate_limits` windows have been received recently.
+For example, open Codex and use it once before refreshing. For Claude Code, wait for a new statusline reading. For Claude Desktop, open the app so it records a recent usage sample. A Claude Desktop source may not report a reset time.
 
-Before opening Claude Code, you can run `node dist/index.js claude-statusline-sink --self-test` to verify the local sink with temporary files and fake `rate_limits`. The self-test does not read real Claude Code data and does not write to the normal statusline snapshot path.
+## Check from the command line
 
-## Human-Readable Report
+Developers can run the same local checks without opening the dashboard:
 
 ```bash
 npm run build
 node dist/index.js doctor
 ```
 
-The plain text report is for local troubleshooting. It can include local filesystem paths such as the SQLite store, config file, and inspected data paths.
+The plain-text report is intended for local troubleshooting and may include local file paths. Do not post it publicly without reviewing it.
 
-## Shareable JSON Report
+## Prepare a report to share
 
 ```bash
 npm run build
 node dist/index.js doctor --json
 ```
 
-The JSON report is intended for bug reports and data-source issues. It excludes or redacts account identifiers, raw source references, raw local file content, and local filesystem paths. See [Privacy](privacy.md) for the full data boundary. It also includes per-snapshot freshness reasons, such as whether a snapshot is fresh, source-marked stale, or expired.
+The JSON report is designed for bug reports. It omits or redacts account identifiers, raw local file content, raw source references, and local filesystem paths. It includes freshness reasons for saved readings. Review it before sharing; do not attach raw logs, credentials, prompts, responses, or workspace paths.
 
-Always review the output before posting it publicly.
+The command exits with:
 
-## Exit Codes
+- `0` when the scan completes. Missing quota data can be a warning while a source is waiting for its first reading.
+- `1` when a blocking issue prevents a valid scan, such as a source adapter failure or invalid configuration.
 
-- `0`: the scan completed. Missing quota data may still be reported as a warning when setup is incomplete or no supported source exists.
-- `1`: the scan found a blocking issue such as an adapter failure or unreadable/invalid config.
+## What to include in an issue
 
-## What To Share In Issues
-
-For most bugs, share:
-
-- App version or commit SHA
-- Operating system
-- Steps to reproduce
-- `doctor --json` output after reviewing it
-
-For parser or data-source requests, share only sanitized fixture shapes. Do not paste full raw logs.
+Share the AIQD version, operating system, selected source type, steps to reproduce, and a reviewed `doctor --json` report. For parser or compatibility requests, share only sanitized example data shapes. Send security reports according to [SECURITY.md](../SECURITY.md), not in a public issue.

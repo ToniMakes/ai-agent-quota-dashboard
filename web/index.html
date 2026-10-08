@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AI Agent Quota</title>
-    <link rel="stylesheet" href="/styles.css?v=20260913-reset-credits" />
+    <link rel="stylesheet" href="/styles.css?v=20261008-motion" />
   </head>
   <body>
     <main class="shell">
@@ -18,12 +18,12 @@
           <h1>AI Agent Quota</h1>
           <p
             class="topbar-subtitle"
-            data-i18n-en="Track remaining quota and reset times for all your AI tools in one place."
-            data-i18n-zh="一个面板，掌握多个 AI 工具的剩余额度和重置时间。"
-          >Track remaining quota and reset times for all your AI tools in one place.</p>
+            data-i18n-en="See remaining quota and reported reset times for supported AI coding tools."
+            data-i18n-zh="查看受支持 AI 编程工具的剩余额度和来源提供的重置时间。"
+          >See remaining quota and reported reset times for supported AI coding tools.</p>
         </div>
         <div class="topbar-actions">
-          <div id="topbar-startup-control" class="topbar-startup-control"></div>
+          <div id="topbar-startup-control" class="topbar-startup-control" hidden></div>
           <div class="topbar-primary-actions">
             <button
               id="language-toggle"
@@ -38,12 +38,12 @@
               id="refresh-button"
               class="button"
               type="button"
-              data-i18n-en="Refresh"
-              data-i18n-zh="刷新"
-            >Refresh</button>
+              data-i18n-en="Refresh data"
+              data-i18n-zh="刷新数据"
+            >Refresh data</button>
           </div>
           <div class="topbar-refresh-info">
-            <span id="last-refresh" class="last-refresh">Last refresh: --</span>
+            <span id="last-refresh" class="last-refresh">Last checked: --</span>
             <span id="refresh-status" class="refresh-status" aria-live="polite"></span>
           </div>
         </div>
@@ -66,9 +66,9 @@
           class="tab"
           type="button"
           data-view="doctor"
-          data-i18n-en="Diagnostics"
-          data-i18n-zh="诊断"
-        >Diagnostics</button>
+          data-i18n-en="Connections"
+          data-i18n-zh="连接状态"
+        >Connections</button>
         <button
           class="tab"
           type="button"
@@ -82,11 +82,11 @@
         <div id="agent-grid" class="agent-grid" aria-live="polite"></div>
         <details class="panel advanced-settings-panel">
           <summary>
-            <span data-i18n-en="Reported Resets" data-i18n-zh="即将到来的重置">Reported Resets</span>
+            <span data-i18n-en="Upcoming resets" data-i18n-zh="即将重置">Upcoming resets</span>
             <small
-              data-i18n-en="Observed source values; reset times can change."
-              data-i18n-zh="来自本地额度来源的观测值；重置时间可能会变化。"
-            >Observed source values; reset times can change.</small>
+              data-i18n-en="Reset times reported by your local data sources."
+              data-i18n-zh="本地数据来源报告的重置时间。"
+            >Reset times reported by your local data sources.</small>
           </summary>
           <div id="reset-list" class="reset-list"></div>
         </details>
@@ -94,31 +94,38 @@
           <summary>
             <span data-i18n-en="Recent Changes" data-i18n-zh="最近变化">Recent Changes</span>
             <small
-              data-i18n-en="Reset-time and quota change history. Useful for spotting patterns, not needed day to day."
-              data-i18n-zh="重置时间和额度变化的历史记录，用于观察规律，日常不用特意查看。"
-            >Reset-time and quota change history. Useful for spotting patterns, not needed day to day.</small>
+              data-i18n-en="Changes AIQD has observed in quota and reset times."
+              data-i18n-zh="AIQD 观测到的额度和重置时间变化。"
+            >Changes AIQD has observed in quota and reset times.</small>
           </summary>
           <div id="event-list" class="event-list"></div>
         </details>
       </section>
 
       <section id="doctor-view" class="view">
+        <div class="view-heading">
+          <h2 data-i18n-en="Connections" data-i18n-zh="连接状态">Connections</h2>
+          <p
+            data-i18n-en="See which data sources are ready and what to do next."
+            data-i18n-zh="查看数据来源是否就绪，以及接下来要做什么。"
+          >See which data sources are ready and what to do next.</p>
+        </div>
         <div class="panel">
           <div class="panel-header">
             <div>
-              <h2 data-i18n-en="Diagnostics" data-i18n-zh="诊断">Diagnostics</h2>
+              <h2 data-i18n-en="Connection status" data-i18n-zh="连接状态">Connection status</h2>
             </div>
             <span id="doctor-checklist-score" class="badge stale">--</span>
           </div>
-          <div id="doctor-checklist" class="settings-content"></div>
+          <div id="doctor-checklist" class="settings-content" aria-live="polite"></div>
         </div>
         <details class="panel advanced-settings-panel">
           <summary>
             <span data-i18n-en="Technical report" data-i18n-zh="技术报告">Technical report</span>
             <small
-              data-i18n-en="Raw per-source detail and refresh log. For troubleshooting or bug reports."
-              data-i18n-zh="每个来源的原始细节和刷新记录，排障或提 bug 反馈时用。"
-            >Raw per-source detail and refresh log. For troubleshooting or bug reports.</small>
+              data-i18n-en="Detailed source checks and refresh history for troubleshooting."
+              data-i18n-zh="用于排查问题的来源检查详情和刷新记录。"
+            >Detailed source checks and refresh history for troubleshooting.</small>
           </summary>
           <div class="advanced-settings-body">
             <div id="doctor-list" class="doctor-list"></div>
@@ -128,15 +135,22 @@
       </section>
 
       <section id="settings-view" class="view">
+        <div class="view-heading">
+          <h2 data-i18n-en="Settings" data-i18n-zh="设置">Settings</h2>
+          <p
+            data-i18n-en="Choose which tools to show and how AIQD works on this device."
+            data-i18n-zh="选择要显示的工具，并调整 AIQD 在此设备上的行为。"
+          >Choose which tools to show and how AIQD works on this device.</p>
+        </div>
         <div id="real-data-panel" class="panel settings-setup-panel">
           <div class="panel-header">
             <div>
-              <h2 data-i18n-en="Connect Real Quota" data-i18n-zh="首次接入真实额度">Connect Real Quota</h2>
+              <h2 data-i18n-en="Connect your data sources" data-i18n-zh="连接数据来源">Connect your data sources</h2>
               <p
                 class="panel-note"
-                data-i18n-en="Follow the current step below. When the check passes, Dashboard will show real local quota."
-                data-i18n-zh="照着下面的当前步骤做；检查通过后，仪表盘会显示真实本地额度。"
-              >Follow the current step below. When the check passes, Dashboard will show real local quota.</p>
+                data-i18n-en="AIQD reads supported usage data already available on this device. Follow the current step for each tool you use."
+                data-i18n-zh="AIQD 会读取此设备上已有的受支持用量数据。按你使用的工具完成对应步骤即可。"
+              >AIQD reads supported usage data already available on this device. Follow the current step for each tool you use.</p>
             </div>
             <span id="real-data-score" class="badge stale">--</span>
           </div>
@@ -163,11 +177,11 @@
           <div class="preference-group">
             <details class="advanced-settings-panel">
               <summary>
-                <span data-i18n-en="Which apps to show" data-i18n-zh="显示哪些 App">Which apps to show</span>
+                <span data-i18n-en="Which tools to show" data-i18n-zh="显示哪些工具">Which tools to show</span>
                 <small
-                  data-i18n-en="Codex, Claude, and which Claude source to use."
-                  data-i18n-zh="Codex、Claude，以及用哪个 Claude 来源。"
-                >Codex, Claude, and which Claude source to use.</small>
+                  data-i18n-en="Choose Codex, Claude, and your preferred Claude data source."
+                  data-i18n-zh="选择要显示 Codex 还是 Claude，并选择 Claude 的数据来源。"
+                >Choose Codex, Claude, and your preferred Claude data source.</small>
               </summary>
               <div id="agent-preferences-content" class="settings-content desktop-preference-content"></div>
             </details>
@@ -182,9 +196,9 @@
               data-i18n-zh="高级设置"
             >Advanced settings</span>
             <small
-              data-i18n-en="Close behavior, paths, shortcuts, and export. Usually not needed for first setup."
-              data-i18n-zh="关闭行为、路径、快捷键和导出；首次设置通常不用看。"
-            >Close behavior, paths, shortcuts, and export. Usually not needed for first setup.</small>
+              data-i18n-en="Close behavior, local paths, shortcuts, and data export."
+              data-i18n-zh="窗口关闭方式、本地路径、快捷键和数据导出。"
+            >Close behavior, local paths, shortcuts, and data export.</small>
           </summary>
           <div class="advanced-settings-body">
             <section class="advanced-settings-section">
@@ -224,15 +238,15 @@
 
       <p class="app-footer-note">
         <span
-          data-i18n-en="Feedback or bug reports:"
-          data-i18n-zh="有反馈或 bug，欢迎发到："
-        >Feedback or bug reports:</span>
+          data-i18n-en="Feedback:"
+          data-i18n-zh="反馈："
+        >Feedback:</span>
         <a href="mailto:hello@tonimakes.com">hello@tonimakes.com</a>
       </p>
     </main>
 
     <div id="first-run-onboarding-root" class="modal-root" hidden></div>
 
-    <script src="/app.js?v=20260913-reset-credits" type="module"></script>
+    <script src="/app.js?v=20261008-motion" type="module"></script>
   </body>
 </html>

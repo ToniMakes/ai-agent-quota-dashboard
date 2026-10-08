@@ -45,12 +45,12 @@ export function createI18n(getLanguage) {
       official_api: tx("Official API", "官方 API"),
       official_cli: tx("Official CLI", "官方 CLI"),
       official_statusline: tx("Claude Code", "Claude Code"),
-      local_quota_snapshot: tx("Local snapshot", "本地快照"),
-      local_usage_log: tx("Local log", "本地日志"),
+      local_quota_snapshot: tx("Local app data", "本地应用数据"),
+      local_usage_log: tx("Local usage record", "本地用量记录"),
       estimated: tx("Estimated", "估算"),
-      manual: tx("Manual", "手动"),
-      demo: tx("Demo", "演示"),
-      unavailable: tx("Unavailable", "不可用")
+      manual: tx("Manually entered", "手动记录"),
+      demo: tx("Demo data", "演示数据"),
+      unavailable: tx("Unavailable", "暂不可用")
     };
 
     return labels[source] ?? source;
@@ -252,18 +252,18 @@ export function formatUsed(snapshot, compactNumber) {
 // so the wording can't drift between the main dashboard and the mini panel.
 export function staleReasonLabel(snapshot, tx) {
   if (snapshot?.freshness?.reason === "expired") {
-    return tx("past the reported reset time", "已超过报告的重置时间");
+    return tx("past the reported reset time", "已超过来源报告的重置时间");
   }
 
   if (snapshot?.freshness?.reason === "too_old") {
-    return tx("needs refresh", "需要刷新");
+    return tx("needs a refresh", "数据较旧，需要更新");
   }
 
   if (snapshot?.freshness?.reason === "source_marked_stale" || snapshot?.stale) {
-    return tx("marked stale by source", "额度来源标记为过期");
+    return tx("marked as out of date by the source", "数据来源标记为较旧");
   }
 
-  return tx("needs fresh data", "需要新数据");
+  return tx("needs a newer reading", "需要更新的数据记录");
 }
 
 export function defaultCodexResetCreditReminderPreferences() {
@@ -403,7 +403,7 @@ export function readinessDisplayName(check, language) {
   }
 
   const labels = {
-    Diagnostics: "诊断",
+    Diagnostics: "连接状态",
     Mode: "模式"
   };
 

@@ -43,6 +43,7 @@ const { tx, locale, sourceLabel, compactNumber, formatRelative } = createI18n(
 const state = {
   agentPreferencesSaveStatus: undefined,
   agents: [],
+  dashboardHasRendered: false,
   claudeAutoSetupMode: undefined,
   claudeAutoSetupPending: false,
   claudeAutoSetupResult: undefined,
@@ -122,7 +123,7 @@ elements.languageToggle?.addEventListener("click", () => {
 });
 
 elements.refreshButton.addEventListener("click", () => {
-  void runRefresh(tx("Dashboard refreshed.", "仪表盘已刷新。"));
+  void runRefresh(tx("Local data check complete.", "本地数据检查已完成。"));
 });
 
 document.addEventListener("input", (event) => {
@@ -265,7 +266,7 @@ document.addEventListener("change", (event) => {
 
 for (const tab of elements.tabs) {
   tab.addEventListener("click", () => {
-    activateView(tab.dataset.view, { updateUrl: true });
+    activateView(tab.dataset.view, { animate: true, updateUrl: true });
   });
 }
 
@@ -293,7 +294,7 @@ document.addEventListener("click", async (event) => {
   const refreshActionButton = target.closest("[data-refresh-action]");
 
   if (refreshActionButton instanceof HTMLButtonElement) {
-    await runRefresh(tx("Checklist refresh completed.", "清单刷新完成。"));
+    await runRefresh(tx("Local data check complete.", "本地数据检查已完成。"));
     return;
   }
 
@@ -380,7 +381,7 @@ document.addEventListener("click", async (event) => {
   const viewName = navigationButton.dataset.openView;
 
   if (viewName) {
-    activateView(viewName, { updateUrl: true });
+    activateView(viewName, { animate: true, updateUrl: true });
   }
 
   const selector = navigationButton.dataset.scrollTarget;
@@ -450,12 +451,39 @@ function activateView(viewName, options = {}) {
     return;
   }
 
+  const targetView = document.getElementById(`${viewName}-view`);
+  const shouldAnimate =
+    options.animate === true &&
+    targetView &&
+    !targetView.classList.contains("is-active");
+
   for (const item of elements.tabs) {
     item.classList.toggle("is-active", item.dataset.view === viewName);
+    if (item.dataset.view === viewName) {
+      item.setAttribute("aria-current", "page");
+    } else {
+      item.removeAttribute("aria-current");
+    }
   }
 
   for (const view of elements.views) {
-    view.classList.toggle("is-active", view.id === `${viewName}-view`);
+    const isActive = view.id === `${viewName}-view`;
+    view.classList.toggle("is-active", isActive);
+
+    if (isActive && shouldAnimate) {
+      view.classList.remove("is-entering");
+      void view.offsetWidth;
+      view.classList.add("is-entering");
+      const clearViewEntrance = (event) => {
+        if (event.target !== view || event.animationName !== "aiqd-view-enter") {
+          return;
+        }
+
+        view.classList.remove("is-entering");
+        view.removeEventListener("animationend", clearViewEntrance);
+      };
+      view.addEventListener("animationend", clearViewEntrance);
+    }
   }
 
   if (options.updateUrl) {
@@ -511,17 +539,25 @@ function scrollToRequestedTarget() {
     const scrollTarget = document.getElementById(targetId);
     openAncestorDetails(scrollTarget);
     scrollTarget?.scrollIntoView({
-      behavior: "smooth",
+      behavior: getScrollBehavior(),
       block: "start"
     });
   });
+}
+
+function getScrollBehavior() {
+  const prefersReducedMotion =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  return prefersReducedMotion ? "auto" : "smooth";
 }
 
 function scrollToSelector(selector) {
   window.requestAnimationFrame(() => {
     const scrollTarget = document.querySelector(selector);
     openAncestorDetails(scrollTarget);
-    scrollTarget?.scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollTarget?.scrollIntoView({ behavior: getScrollBehavior(), block: "start" });
   });
 }
 
@@ -818,22 +854,55 @@ function renderFirstRunOnboarding() {
   if (preferences.completed) {
     elements.onboardingRoot.hidden = true;
     elements.onboardingRoot.innerHTML = "";
+    delete elements.onboardingRoot.dataset.renderedStep;
     return;
   }
 
   const draft = normalizedOnboardingDraft();
   const step = state.onboardingStep === "claude" ? "claude" : "agents";
+  const totalSteps = draft.agents.claude ? 2 : 1;
+  const previousStep = elements.onboardingRoot.dataset.renderedStep;
+  const isStepChange = Boolean(
+    previousStep && previousStep !== step
+  );
+  elements.onboardingRoot.dataset.renderedStep = step;
   elements.onboardingRoot.hidden = false;
   elements.onboardingRoot.innerHTML = `
     <div class="modal-backdrop" aria-hidden="true"></div>
-    <section class="first-run-modal" role="dialog" aria-modal="true" aria-labelledby="first-run-title">
+    <section class="first-run-modal${isStepChange ? " is-step-entering" : ""}" role="dialog" aria-modal="true" aria-labelledby="first-run-title">
+      <div class="onboarding-progress" role="group" aria-label="${escapeHtml(
+        tx("Setup progress", "设置进度")
+      )}">
+        <span class="onboarding-progress-label">${escapeHtml(
+          step === "claude"
+            ? tx("Step 2 of 2", "第 2 步，共 2 步")
+            : totalSteps === 2
+              ? tx("Step 1 of 2", "第 1 步，共 2 步")
+              : tx("Step 1 of 1", "第 1 步，共 1 步")
+        )}</span>
+        <span class="onboarding-progress-track" aria-hidden="true"><span class="${
+          step === "claude" || totalSteps === 1 ? "is-complete" : ""
+        }"></span></span>
+        <span class="onboarding-progress-steps">
+          <span class="${step === "agents" ? "is-current" : "is-complete"}" ${
+            step === "agents" ? 'aria-current="step"' : ""
+          }>${escapeHtml(tx("Tools", "工具"))}</span>
+          ${
+            totalSteps === 2
+              ? `<span class="${step === "claude" ? "is-current" : ""}" ${
+                  step === "claude" ? 'aria-current="step"' : ""
+                }>${escapeHtml(tx("Claude data source", "Claude 数据来源"))}</span>`
+              : ""
+          }
+        </span>
+      </div>
       <div class="first-run-modal-header">
         <div>
-          <p>${escapeHtml(tx("First launch", "首次打开"))}</p>
+          <p>${escapeHtml(tx("Welcome", "欢迎使用"))}</p>
           <h2 id="first-run-title">${escapeHtml(
             step === "claude"
               ? tx("How do you use Claude?", "你怎么使用 Claude？")
-              : tx("Which agents do you use?", "你使用哪些 Agent？")
+              : tx("Which tools do you use?", "你使用哪些工具？")
           )}</h2>
           <p class="first-run-modal-lede">${escapeHtml(
             step === "claude"
@@ -856,6 +925,23 @@ function renderFirstRunOnboarding() {
       ${renderOnboardingSaveStatus()}
     </section>
   `;
+
+  if (isStepChange) {
+    const progressFill = elements.onboardingRoot.querySelector(
+      ".onboarding-progress-track > span"
+    );
+
+    if (progressFill) {
+      progressFill.style.width = previousStep === "claude" ? "100%" : "50%";
+      void progressFill.offsetWidth;
+      window.requestAnimationFrame(() => {
+        if (progressFill.isConnected) {
+          progressFill.style.width =
+            step === "claude" || totalSteps === 1 ? "100%" : "50%";
+        }
+      });
+    }
+  }
 }
 
 function renderOnboardingAgentStep(draft) {
@@ -965,7 +1051,7 @@ function renderOnboardingSaveStatus() {
   }
 
   return `
-    <div class="first-run-modal-status ${escapeHtml(
+    <div role="status" aria-live="polite" class="first-run-modal-status ${escapeHtml(
       state.onboardingSaveStatus.kind
     )}">
       <strong>${escapeHtml(state.onboardingSaveStatus.message)}</strong>
@@ -980,7 +1066,7 @@ function renderOnboardingSaveStatus() {
 
 function render() {
   applyStaticTranslations();
-  elements.lastRefresh.textContent = tx("Last refresh: {time}", "上次刷新：{time}", {
+  elements.lastRefresh.textContent = tx("Last checked: {time}", "上次检查：{time}", {
     time: formatRelative(state.generatedAt)
   });
   renderRefreshStatus();
@@ -1066,10 +1152,10 @@ async function runRefresh(successMessage) {
   }
 
   elements.refreshButton.disabled = true;
-  elements.refreshButton.textContent = tx("Refreshing", "刷新中");
+  elements.refreshButton.textContent = tx("Checking…", "检查中…");
   state.refreshStatus = {
     kind: "pending",
-    message: tx("Refreshing local quota sources.", "正在刷新本地额度来源。")
+    message: tx("Checking local data sources…", "正在检查本地数据来源…")
   };
   renderRefreshStatus();
 
@@ -1082,13 +1168,13 @@ async function runRefresh(successMessage) {
     state.refreshStatus = {
       detail: error instanceof Error ? error.message : String(error),
       kind: "error",
-      message: tx("Refresh failed.", "刷新失败。")
+      message: tx("Couldn’t check local data sources.", "无法检查本地数据来源。")
     };
     renderRefreshStatus();
     return undefined;
   } finally {
     elements.refreshButton.disabled = false;
-    elements.refreshButton.textContent = tx("Refresh", "刷新");
+    elements.refreshButton.textContent = tx("Refresh data", "刷新数据");
   }
 }
 
@@ -1349,15 +1435,74 @@ async function pollClaudeStatusline() {
 
 function renderAgents() {
   const displayAgents = buildDisplayAgents(filterAgentsByOnboarding(state.agents));
+  const previousMeterValues = new Map();
+
+  for (const card of elements.agentGrid.querySelectorAll(".agent-card")) {
+    const agentId = card.dataset.agentId;
+
+    for (const meter of card.querySelectorAll("[data-quota-meter]")) {
+      const value = meter.style.getPropertyValue("--value");
+      if (agentId && value) {
+        previousMeterValues.set(`${agentId}:${meter.dataset.quotaMeter}`, value.trim());
+      }
+    }
+  }
+
+  const isFirstDataRender = !state.dashboardHasRendered && Boolean(state.generatedAt);
 
   if (displayAgents.length === 0) {
     elements.agentGrid.innerHTML = `<p class="empty">${escapeHtml(
-      tx("No agents configured.", "尚未配置 Agent。")
+      tx("No tools selected yet.", "还没有选择要显示的工具。")
     )}</p>`;
+    state.dashboardHasRendered ||= Boolean(state.generatedAt);
     return;
   }
 
-  elements.agentGrid.innerHTML = displayAgents.map(renderAgentCard).join("");
+  elements.agentGrid.innerHTML = displayAgents
+    .map((agent, index) =>
+      renderAgentCard(agent, {
+        entryDelay: Math.min(index * 30, 90),
+        isFirstRender: isFirstDataRender
+      })
+    )
+    .join("");
+
+  for (const card of elements.agentGrid.querySelectorAll(".agent-card")) {
+    const agentId = card.dataset.agentId;
+    let hasChangedQuota = false;
+
+    for (const meter of card.querySelectorAll("[data-quota-meter]")) {
+      const key = `${agentId}:${meter.dataset.quotaMeter}`;
+      const previousValue = previousMeterValues.get(key);
+      const nextValue = meter.style.getPropertyValue("--value").trim();
+
+      if (previousValue && previousValue !== nextValue) {
+        meter.style.setProperty("--value", previousValue);
+        void meter.offsetWidth;
+        window.requestAnimationFrame(() => {
+          if (meter.isConnected) {
+            meter.style.setProperty("--value", nextValue);
+          }
+        });
+        hasChangedQuota = true;
+      }
+    }
+
+    if (hasChangedQuota) {
+      card.classList.add("has-quota-change");
+      const clearQuotaHighlight = (event) => {
+        if (event.target !== card || event.animationName !== "aiqd-quota-change") {
+          return;
+        }
+
+        card.classList.remove("has-quota-change");
+        card.removeEventListener("animationend", clearQuotaHighlight);
+      };
+      card.addEventListener("animationend", clearQuotaHighlight);
+    }
+  }
+
+  state.dashboardHasRendered ||= Boolean(state.generatedAt);
 }
 
 function filterAgentsByOnboarding(agents) {
@@ -1388,19 +1533,23 @@ function buildDisplayAgents(agents) {
   );
 }
 
-function renderAgentCard(agent) {
+function renderAgentCard(agent, options = {}) {
   const primary = dashboardPrimarySnapshot(agent);
   const status = agent.status ?? "unknown";
   const subscriptionTier = agentSubscriptionTier(agent);
   const source = primary
     ? sourceLabel(primary.source)
-    : tx("Unavailable", "不可用");
+    : tx("Unavailable", "暂不可用");
   const quotaSummary = isStaleSnapshot(primary)
     ? renderStaleQuotaSummary(agent, primary)
     : renderPrimaryQuotaSummary(primary, status);
 
   return `
-    <article class="agent-card">
+    <article
+      class="agent-card${options.isFirstRender ? " is-entering" : ""}"
+      data-agent-id="${escapeHtml(agent.agent)}"
+      ${options.isFirstRender ? `style="--entry-delay: ${options.entryDelay}ms"` : ""}
+    >
       <div class="agent-card-header">
         <div>
           <h3 class="agent-name">${escapeHtml(agent.displayName)}</h3>
@@ -1422,7 +1571,7 @@ function renderAgentCard(agent) {
         ${renderSnapshotLines(agent, primary)}
         ${renderCodexResetCreditPanel(agent)}
         <div class="quota-line">
-          <span class="label">${escapeHtml(tx("Source", "来源"))}</span>
+          <span class="label">${escapeHtml(tx("Data source", "数据来源"))}</span>
           <span class="value">${escapeHtml(source)}</span>
         </div>
         ${primary ? renderObservedLine(primary) : ""}
@@ -1462,6 +1611,7 @@ function renderPrimaryQuotaSummary(primary, status) {
       <div class="meter" aria-hidden="true">
         <div
           class="meter-fill ${escapeHtml(primaryMeterClass(primary, status))}"
+          data-quota-meter="primary"
           style="--value: ${meterValue}%"
         ></div>
       </div>
@@ -1475,7 +1625,7 @@ function renderStaleQuotaSummary(agent, snapshot) {
     ? tx("It reported a reset {time}.", "它报告的重置时间是 {time}。", {
         time: formatRelative(snapshot.resetAt)
       })
-    : tx("It did not report a reset time.", "它没有报告重置时间。");
+    : tx("Reset time not reported by this source.", "此数据来源未提供重置时间。");
   const source = sourceLabel(snapshot.source);
   // Based on the snapshot's own source, not agent.agent: the dashboard merges
   // Claude Code and Claude Desktop into one "claude" card (see
@@ -1487,27 +1637,27 @@ function renderStaleQuotaSummary(agent, snapshot) {
   const isMergedClaude = agent.agent === "claude" && agent.provider === "anthropic";
   const detail = isClaudeCode && isMergedClaude
     ? tx(
-        "This is not zero quota. AIQD just has old Claude Code data; opening Claude Desktop once can replace it with fresh data.",
-        "这不是额度用完。只是 AIQD 手上的 Claude Code 数据比较旧了；打开一次 Claude Desktop，就能换成更新的数据。"
+        "Your quota has not reached zero. AIQD has an old Claude Code reading; open Claude Desktop once to check for a newer one.",
+        "额度并没有用完。AIQD 保存的 Claude Code 数据较旧；打开一次 Claude Desktop，检查是否有新记录。"
       )
     : isClaudeCode
     ? tx(
-        "This is not zero quota. AIQD just has old Claude Code data.",
-        "这不是额度用完。只是 AIQD 手上的 Claude Code 数据比较旧了。"
+        "Your quota has not reached zero. The latest Claude Code reading is out of date.",
+        "额度并没有用完。最近一条 Claude Code 数据已过期。"
       )
     : isCodex
       ? tx(
-          "This is not zero quota. The last Codex CLI record is too old to use.",
-          "这不是额度用完。上一条 Codex CLI 记录已经过旧，不能继续使用。"
+          "Your quota has not reached zero. The latest Codex reading is out of date.",
+          "额度并没有用完。最近一条 Codex 数据已过期。"
         )
     : isClaudeDesktop
       ? tx(
-          "This is not zero quota. AIQD only has an old Claude Desktop usage sample.",
-          "这不是额度用完。AIQD 只剩一条旧的 Claude Desktop 用量样本。"
+          "Your quota has not reached zero. The latest Claude Desktop reading is out of date.",
+          "额度并没有用完。最近一条 Claude Desktop 数据已过期。"
         )
       : tx(
-          "This is not zero quota. The last local quota snapshot is past its reported reset time.",
-          "这不是额度用完。上一条本地额度快照已经超过它报告的重置时间。"
+          "Your quota has not reached zero. This reading is past the reset time reported by its source.",
+          "额度并没有用完。这条数据已超过来源报告的重置时间。"
         );
   const action = isClaudeCode && isMergedClaude
     ? tx(
@@ -1521,8 +1671,8 @@ function renderStaleQuotaSummary(agent, snapshot) {
       )
     : isCodex
       ? tx(
-          "Use Codex once so it records fresh quota data, then click Refresh.",
-          "请先使用一次 Codex，让它记录最新额度数据，然后再点击“刷新”。"
+        "Use Codex once so it records a new quota reading, then refresh AIQD.",
+        "先使用一次 Codex，让它记录新的额度数据，然后刷新 AIQD。"
         )
     : isClaudeDesktop
       ? tx(
@@ -1537,13 +1687,13 @@ function renderStaleQuotaSummary(agent, snapshot) {
   return `
     <div class="stale-quota-state">
       <div class="stale-quota-copy">
-        <strong>${escapeHtml(tx("Needs fresh data", "需要新数据"))}</strong>
+        <strong>${escapeHtml(tx("This data needs a refresh", "这条数据需要更新"))}</strong>
         <p>${escapeHtml(detail)}</p>
       </div>
       <div class="stale-quota-facts" aria-label="${escapeHtml(
         tx("Expired observation details", "过期观测详情")
       )}">
-        <span>${escapeHtml(tx("Last source", "上次来源"))}</span>
+        <span>${escapeHtml(tx("Data source", "数据来源"))}</span>
         <strong>${escapeHtml(source)}</strong>
         <span>${escapeHtml(tx("Reported reset", "报告的重置时间"))}</span>
         <strong>${escapeHtml(reset)}</strong>
@@ -1566,12 +1716,12 @@ function renderCodexResetCreditPanel(agent) {
   const statusClass = reminder.withinReminder ? "warning" : "healthy";
   const summary = credits.length > 0
     ? tx("{count} available", "可用 {count} 次", { count: credits.length })
-    : tx("No local data", "本地未发现数据");
+    : tx("No reset entries yet", "暂无重置记录");
   const next = reminder.nextCredit
     ? tx("Next expires {time}", "最近到期：{time}", {
         time: formatTimestamp(reminder.nextCredit.expiresAt)
       })
-    : tx("No local reset-credit source", "本地未发现重置额度来源");
+    : tx("No reset entries found", "未发现重置记录");
 
   return `
     <section class="reset-credit-panel ${escapeHtml(statusClass)}">
@@ -1636,7 +1786,7 @@ function resetCreditTitle(credit) {
 function renderObservedLine(snapshot) {
   return `
     <div class="quota-line">
-      <span class="label">${escapeHtml(tx("Updated", "更新时间"))}</span>
+      <span class="label">${escapeHtml(tx("Last observed", "最后记录"))}</span>
       <span class="value observed-value">
         <time datetime="${escapeHtml(snapshot.observedAt)}">${escapeHtml(
           formatRelative(snapshot.observedAt)
@@ -1684,8 +1834,8 @@ function renderSnapshotLines(agent, primary) {
     const action =
       emptyState?.action ??
       tx(
-        "Open Diagnostics for source checks and refresh history.",
-        "打开诊断查看额度来源检查和刷新历史。"
+        "Open Connections to check this source.",
+        "打开连接状态查看此数据来源。"
       );
     const emptyText = agentEmptyText(agent);
 
@@ -1724,7 +1874,7 @@ function renderPrimaryQuotaMeta(snapshot) {
     ? tx("Reset {time}", "{time}重置", {
         time: formatRelative(snapshot.resetAt)
       })
-    : tx("No reported reset", "未报告重置时间");
+    : tx("Reset time not reported", "此来源未提供重置时间");
   const resetAbsolute = snapshot.resetAt ? formatTimestamp(snapshot.resetAt) : "";
 
   return `
@@ -1756,7 +1906,7 @@ function renderQuotaWindowRow(snapshot, options = {}) {
     ? tx("Reset {time}", "{time}重置", {
         time: formatRelative(snapshot.resetAt)
       })
-    : tx("No reported reset", "未报告重置时间");
+    : tx("Reset time not reported", "此来源未提供重置时间");
   const resetAbsolute = snapshot.resetAt ? formatTimestamp(snapshot.resetAt) : "";
 
   return `
@@ -1817,6 +1967,7 @@ function renderSnapshotMeter(snapshot) {
     >
       <div
         class="quota-window-meter-fill ${escapeHtml(snapshotMeterClass(snapshot))}"
+        data-quota-meter="${escapeHtml(snapshot.windowType)}"
         style="--value: ${snapshotMeterValue(snapshot)}%"
       ></div>
     </div>
@@ -1960,6 +2111,12 @@ function renderDoctorChecklist() {
     return;
   }
 
+  const previousStates = new Map(
+    [...elements.doctorChecklist.querySelectorAll("[data-check-id]")].map((row) => [
+      row.dataset.checkId,
+      row.dataset.checkState
+    ])
+  );
   const items = buildDoctorChecklistItems();
   const hasIssue = items.some(
     (item) => item.state === "warn" || item.state === "fail"
@@ -1972,7 +2129,7 @@ function renderDoctorChecklist() {
     elements.doctorChecklistScore.textContent = hasIssue
       ? tx("Needs attention", "需要处理")
       : allReady
-        ? tx("All connected", "都已连接")
+      ? tx("Sources ready", "来源已就绪")
         : tx("Setting up", "设置中");
     elements.doctorChecklistScore.className = `badge ${
       hasIssue ? "warning" : allReady ? "healthy" : "stale"
@@ -1981,7 +2138,14 @@ function renderDoctorChecklist() {
 
   elements.doctorChecklist.innerHTML = `
     <div class="setup-overview-list doctor-checklist-list">
-      ${items.map(renderDoctorChecklistItem).join("")}
+      ${items
+        .map((item) =>
+          renderDoctorChecklistItem(
+            item,
+            previousStates.has(item.id) && previousStates.get(item.id) !== item.state
+          )
+        )
+        .join("")}
     </div>
   `;
 }
@@ -2018,6 +2182,7 @@ function buildDoctorCodexChecklistItem() {
         ? tx("Needs attention", "需要处理")
         : tx("Waiting", "等待中"),
     countsTowardReady: true,
+    id: "codex",
     label: "Codex",
     state: item.state,
     statusLine: ready ? "" : item.nextAction,
@@ -2044,6 +2209,7 @@ function buildDoctorClaudeChecklistItem() {
         ? tx("Needs attention", "需要处理")
         : tx("Waiting", "等待中"),
     countsTowardReady: true,
+    id: "claude",
     label: "Claude",
     state: primary?.state ?? "info",
     statusLine: ready
@@ -2062,10 +2228,11 @@ function buildDoctorRefreshChecklistItem() {
 
   if (!latestRun) {
     return {
-      actionLabel: tx("Refresh now", "立即刷新"),
+      actionLabel: tx("Check now", "立即检查"),
       badgeText: tx("Not run yet", "尚未运行"),
       countsTowardReady: false,
-      label: tx("Last refresh", "上次刷新"),
+      id: "refresh",
+      label: tx("Last checked", "上次检查"),
       refreshAction: true,
       state: "info",
       statusLine: tx(
@@ -2078,13 +2245,14 @@ function buildDoctorRefreshChecklistItem() {
   const hasErrors = (latestRun.errors?.length ?? 0) > 0;
 
   return {
-    actionLabel: hasErrors ? tx("View details", "查看详情") : tx("Refresh now", "立即刷新"),
+    actionLabel: hasErrors ? tx("View details", "查看详情") : tx("Check now", "立即检查"),
     actionView: hasErrors ? "doctor" : undefined,
     badgeText: hasErrors
       ? tx("Needs attention", "需要处理")
       : formatRelative(latestRun.observedAt),
     countsTowardReady: false,
-    label: tx("Last refresh", "上次刷新"),
+    id: "refresh",
+    label: tx("Last checked", "上次检查"),
     refreshAction: !hasErrors,
     state: hasErrors ? "warn" : "pass",
     statusLine: hasErrors
@@ -2098,9 +2266,13 @@ function buildDoctorRefreshChecklistItem() {
   };
 }
 
-function renderDoctorChecklistItem(item) {
+function renderDoctorChecklistItem(item, stateChanged = false) {
   return `
-    <div class="setup-overview-row doctor-checklist-row">
+    <div
+      class="setup-overview-row doctor-checklist-row${stateChanged ? " is-updated" : ""}"
+      data-check-id="${escapeHtml(item.id)}"
+      data-check-state="${escapeHtml(item.state)}"
+    >
       <div>
         <strong>${escapeHtml(item.label)}</strong>
         ${item.statusLine ? `<div class="settings-detail">${escapeHtml(item.statusLine)}</div>` : ""}
@@ -2389,7 +2561,7 @@ function renderInitialSetupFlow(items, readiness) {
 
   return `
     <div class="initial-setup-flow" aria-label="${escapeHtml(
-      tx("Initial real-data setup steps", "真实数据初始配置步骤")
+      tx("Initial local source setup steps", "本地数据来源的初始设置步骤")
     )}">
       <div class="setup-flow-intro">
         <strong>${escapeHtml(
@@ -2710,7 +2882,7 @@ function buildInitialSetupModel(items, readiness) {
       ),
       progressDetail: codexComplete
         ? buildCodexDoneDetail(codex)
-        : tx("Waiting for Codex CLI quota detection.", "等待 Codex CLI 额度检测。"),
+        : tx("Waiting for a Codex usage reading.", "等待 Codex 用量数据。"),
       refreshAction: !codexComplete,
         secondaryActionLabel: undefined,
       secondaryTarget: undefined,
@@ -2995,10 +3167,10 @@ function buildInitialSetupModel(items, readiness) {
     {
       actionLabel: readinessComplete
         ? tx("Open dashboard", "打开仪表盘")
-        : tx("Verify real data", "验证真实数据"),
+        : tx("Check local readings", "检查本地数据"),
       actionTitle: tx(
-        "Verify the dashboard is using real data",
-        "验证仪表盘正在使用真实数据"
+        "Check that the dashboard shows local readings",
+        "确认仪表盘显示了本地数据"
       ),
       checklist: [
         tx(
@@ -3016,8 +3188,8 @@ function buildInitialSetupModel(items, readiness) {
       ],
       complete: readinessComplete,
       detail: tx(
-        "Refresh once selected sources are ready. This confirms the dashboard is using real, non-demo data.",
-        "已选择的来源就绪后刷新检查，确认仪表盘使用的是真实、非 demo 数据。"
+        "When your selected sources are ready, check again to confirm that local usage readings appear.",
+        "所选来源就绪后再检查一次，确认本地用量数据已显示。"
       ),
       id: "verify",
       number: "3",
@@ -3134,7 +3306,7 @@ function renderSetupCurrentAction(model, selectedStep) {
         )}</span>
         <strong>${escapeHtml(
           allDone
-            ? tx("Real-data dashboard is ready", "真实数据仪表盘已就绪")
+            ? tx("Local readings are ready", "本地数据已就绪")
             : step.actionTitle
         )}</strong>
         ${
@@ -3154,8 +3326,8 @@ function renderSetupCurrentAction(model, selectedStep) {
         <p class="outcome-note">${escapeHtml(
           allDone
             ? tx(
-                "Result: you can now read real quota and reset dates.",
-                "结果：现在可以查看真实额度和重置日期。"
+                "Result: local quota readings are available. Reset times appear when a source reports them.",
+                "结果：已找到本地额度数据。只有来源提供时才会显示重置时间。"
               )
             : stepComplete
               ? tx("Status: {status}", "状态：{status}", {
@@ -3952,6 +4124,9 @@ function renderCodexSnapshotForm(status) {
           tx("Save snapshot", "保存快照")
         )}</button>
         <span
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
           class="form-status ${saveStatus?.kind ?? ""}"
           data-codex-snapshot-form-status
         >${escapeHtml(saveStatus?.message ?? "")}</span>
@@ -4001,7 +4176,7 @@ function renderCodexSnapshotPostSaveActions(saveStatus) {
         )}</span>
         <strong>${escapeHtml(
           allDone
-            ? tx("Open the real-data dashboard", "打开真实数据仪表盘")
+            ? tx("Open the usage dashboard", "打开用量仪表盘")
             : step.actionTitle
         )}</strong>
         ${
@@ -4017,8 +4192,8 @@ function renderCodexSnapshotPostSaveActions(saveStatus) {
         <p class="why-note">${escapeHtml(
           allDone
             ? tx(
-                "Why: this is the point where AIQD can show real local quota data.",
-                "为什么：到这一步 AIQD 才能显示真实本地额度数据。"
+                "Why: AIQD can now show the local usage readings it found.",
+                "原因：AIQD 现在可以显示已找到的本地用量数据。"
               )
             : tx("Why: {why}", "为什么：{why}", { why: step.why })
         )}</p>
@@ -4456,7 +4631,7 @@ function renderClaudeCliTechnicalDetails(status) {
         tx("Readiness", "就绪状态"),
         localizedReadinessLabel(status.readinessLabel) ?? tx("Unknown", "未知"),
         localizedNextAction(status.nextAction) ??
-          tx("Open Diagnostics for setup details.", "运行诊断查看设置详情。"),
+          tx("Open Connections for setup details.", "打开连接状态查看设置详情。"),
         readinessBadgeClass(status.readiness),
         statusLabel(status.readiness ?? "unknown")
       )}
@@ -4657,7 +4832,7 @@ function renderRealDataSteps(status) {
 
   return `
     <div class="setup-flow" aria-label="${escapeHtml(
-      tx("Claude Code real data setup", "Claude Code 真实数据设置")
+      tx("Claude Code local data setup", "Claude Code 本地数据设置")
     )}">
       ${steps
         .map(
@@ -5345,7 +5520,12 @@ function renderPreferenceMessage(status, badgeClass) {
         : tx("check", "检查");
 
   return `
-    <div class="preference-message ${escapeHtml(kind)}">
+    <div
+      class="preference-message ${escapeHtml(kind)}"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
       <span>
         <strong>${escapeHtml(status.message)}</strong>
         ${
@@ -5911,7 +6091,7 @@ function eventDetail(event) {
 function renderResetValue(value) {
   if (!value) {
     return `<span class="reset-unavailable">${escapeHtml(
-      tx("No reported reset", "未报告重置时间")
+      tx("Reset time not reported", "此来源未提供重置时间")
     )}</span>`;
   }
 
@@ -6038,7 +6218,7 @@ function statusLabel(status) {
     needs_attention: tx("needs attention", "需要处理"),
     pass: tx("pass", "通过"),
     ready: tx("ready", "就绪"),
-    stale: tx("needs refresh", "需刷新"),
+    stale: tx("Needs refresh", "需要更新"),
     unknown: tx("unknown", "未知"),
     waiting_for_data: tx("waiting", "等待中"),
     warn: tx("warn", "警告"),
@@ -6086,7 +6266,7 @@ function localizedNextAction(action) {
   const translations = [
     [
       "Open Codex /status",
-      "先刷新检测本地 Codex CLI 额度；如果没有读到，再把可见的剩余百分比和重置时间保存到下方。"
+      "先刷新 AIQD 检查 Codex 本地数据；如果仍没有记录，再使用手动备用方式。"
     ],
     [
       "Use Codex once and refresh",
@@ -6094,7 +6274,7 @@ function localizedNextAction(action) {
     ],
     [
       "Install the statusline sink",
-      "安装 statusline sink，然后从 CLI/终端项目会话打开 Claude Code。"
+      "连接本地 Claude Code 数据来源，然后打开 Claude Code 产生一条新记录。"
     ],
     [
       "Install Claude Code CLI",
@@ -6110,11 +6290,11 @@ function localizedNextAction(action) {
     ],
     [
       "Open Claude Code",
-      "从 CLI/终端项目会话打开 Claude Code；普通 Claude 桌面应用不会发送这些字段。"
+      "打开 Claude Code 并等待新的用量记录，然后再次检查。"
     ],
     [
       "Run Doctor",
-      "运行诊断查看设置详情。"
+      "打开连接状态查看设置详情。"
     ],
     [
       "Record a visible Codex quota value",
@@ -6131,8 +6311,8 @@ function agentEmptyText(agent) {
   if (agent.emptyState?.reason === "waiting_for_statusline_data") {
     return {
       detail: tx(
-        "Open Claude Code from a terminal once, following the current step in Settings.",
-        "按设置页当前步骤，从终端启动 Claude Code 一次。"
+        "Open Claude Code and let it record a new usage update, then refresh AIQD.",
+        "打开 Claude Code 并等待它记录新的用量数据，然后刷新 AIQD。"
       ),
       title: tx("Waiting for Claude Code data", "等待 Claude Code 数据")
     };
@@ -6141,8 +6321,8 @@ function agentEmptyText(agent) {
   if (agent.emptyState?.reason === "waiting_for_desktop_data") {
     return {
       detail: tx(
-        "Open Claude Desktop so it records a new usage sample, then refresh AIQD.",
-        "打开 Claude Desktop，让它记录一次新的用量样本，然后刷新 AIQD。"
+        "Open Claude Desktop once so it records recent usage, then refresh AIQD.",
+        "打开一次 Claude Desktop，让它记录最新用量，然后刷新 AIQD。"
       ),
       title: tx("Waiting for Claude Desktop data", "等待 Claude Desktop 数据")
     };
@@ -6150,18 +6330,18 @@ function agentEmptyText(agent) {
 
   if (agent.emptyState?.reason === "adapter_error") {
     return {
-      detail: tx("Open Diagnostics to see what went wrong.", "打开诊断页查看出了什么问题。"),
-      title: tx("Something went wrong", "出了点问题")
+      detail: tx("Open Connections to check this data source.", "打开连接状态检查此数据来源。"),
+      title: tx("Couldn’t read local data", "无法读取本地数据")
     };
   }
 
   if (agent.agent === "codex") {
     return {
       detail: tx(
-        "AIQD checks for Codex usage automatically first. Use Codex once, then refresh; if nothing appears, use the manual form in Settings.",
-        "AIQD 会先自动检查 Codex 用量。使用 Codex 一次后刷新；如果还是没有数据，就用设置页里的手动表单。"
+        "Use Codex once, then refresh AIQD. If no data appears, open Connections for help.",
+        "先使用一次 Codex，再刷新 AIQD。如果仍没有数据，请打开连接状态查看指引。"
       ),
-      title: tx("Waiting for Codex data", "等待 Codex 数据")
+      title: tx("No usage data yet", "还没有使用数据")
     };
   }
 
@@ -6169,10 +6349,10 @@ function agentEmptyText(agent) {
     detail:
       agent.emptyState?.detail ??
       tx(
-        "The latest refresh did not find any quota data for this app.",
-        "最近一次刷新没有找到这个 App 的额度数据。"
+        "AIQD couldn’t find local usage data for this tool. Open it once, then refresh AIQD.",
+        "AIQD 没有找到此工具的本地用量数据。先打开并使用一次，再刷新 AIQD。"
       ),
-    title: agent.emptyState?.title ?? tx("No quota data yet", "还没有额度数据")
+    title: agent.emptyState?.title ?? tx("No usage data yet", "还没有使用数据")
   };
 }
 

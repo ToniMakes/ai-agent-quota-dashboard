@@ -1,42 +1,40 @@
 # Project Status
 
-Last updated: 2026-09-16
+Last updated: 2026-10-08
 
-AI Agent Quota Dashboard is a v0.1.0 Windows desktop preview. The public path is installer-first for normal users, with source mode available for developers.
+AI Agent Quota Dashboard is currently published as a v0.1.0 Windows x64 desktop preview. The installer is the recommended path for most users; developers can also run the project from source. The downloadable release may not include changes that have landed on the development branch.
 
 ## Available in the preview
 
-- Codex quota detection from supported local CLI rate-limit events
-- Claude quota detection from Claude Code statusline or Claude Desktop local usage data
-- Dashboard, Diagnostics, Settings, tray mini panel, and always-on-top widget
-- Local SQLite history for quota snapshots, refresh runs, and reset events
-- JSON and CSV export with private source references excluded
-- Strict readiness checks, freshness labels, source confidence, and unavailable states
-- Optional launch at login for packaged builds, disabled by default
-- Windows x64 NSIS installer built with Electron's bundled runtime
-- English and Chinese UI support, with English as the default
+- Codex quota readings from supported local CLI rate-limit events
+- Claude readings from Claude Code statusline data or Claude Desktop local usage history
+- A dashboard, Connections view, Settings, tray mini panel, and optional always-on-top widget
+- Local refresh history and observed reset changes
+- JSON and CSV exports that omit account identifiers and raw source references
+- English and Simplified Chinese interface languages, with English selected by default
+- A Windows x64 installer with an optional, off-by-default launch-at-sign-in setting
 
-## Privacy and security posture
+Displayed values depend on the local data available for each source. AIQD marks old or unavailable readings rather than presenting them as current. It does not monitor provider accounts used only in a web browser. See [compatibility and data-quality notes](compatibility.md) for details.
 
-The application keeps monitoring data local and serves its dashboard through loopback. It does not read browser cookies, collect passwords, simulate login, call hidden provider APIs, or upload prompts, responses, source code, or chat content. See [Privacy](privacy.md) and [Security](../SECURITY.md).
+## Privacy and security
 
-The public website is a static product page. It does not receive data from the desktop application and contains no application credentials or provider tokens.
+The desktop service binds to loopback and stores quota readings locally. It does not collect passwords or browser cookies, or upload prompts, responses, source code, or chat content. User-started Claude Code setup may write the local setting required for its statusline data source. See [Privacy](privacy.md) and [Security](../SECURITY.md).
 
-## Verification status
+The public website is separate from the desktop app and does not receive quota data. Its optional feedback form sends only the information a visitor chooses to submit.
 
-The repository has automated tests, desktop smoke checks, Windows packaging checks, and CI on Windows and Ubuntu. Release workflows validate the package version, build the installer, generate a SHA256 sidecar, and publish release assets from version tags.
+## Verification
 
-The v0.1.0 Windows installer is intentionally unsigned while the open-source signing path is pending. The release page contains a prominent warning and the final SHA256. Users should verify the checksum before running an unsigned installer.
+The repository includes automated tests, desktop smoke checks, Windows packaging checks, and CI on Windows and Ubuntu. Release workflows validate package versions, build the installer, generate a SHA256 file, and publish assets from version tags.
 
-The public demo screenshots use sanitized data. They must be reviewed again whenever the dashboard or mini panel layout changes. Screenshots are illustrative and are not a substitute for the installed application's current behavior.
+The v0.1.0 installer is unsigned. Check the release page for the SHA256 and signature status before running the installer. Public demo screenshots use sanitized data; they are illustrative and may not show the latest interface.
 
 ## Known limits
 
 - Browser-only use of supported providers is not monitored.
-- Claude Desktop data may not include a provider-reported reset time.
-- Claude Code may need one fresh statusline observation before its local data is ready.
+- Claude Desktop usage history may not provide a reset time.
+- Claude Code may need to produce a new statusline reading before its data appears or becomes current.
+- Supported local file formats can change when provider apps or CLIs update.
 - The preview has no automatic update channel.
-- Scheduled system reminders, historical trends, and additional providers remain future work.
-- The published release asset can differ from newer commits on `main` until a new release is built.
+- Additional providers and scheduled system reminders are not part of this preview.
 
-For installation and startup behavior, see [Distribution and Startup](distribution.md). For source-mode local verification, see [Local data trial](real-data-trial.md).
+For installation and startup behavior, see [Distribution and Startup](distribution.md). For a local data setup walkthrough, see [Local data trial](real-data-trial.md).
